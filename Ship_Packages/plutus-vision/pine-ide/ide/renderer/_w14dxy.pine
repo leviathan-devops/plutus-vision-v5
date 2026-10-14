@@ -1,0 +1,9 @@
+//@version=5
+// W14 DXY E1 zones (report-anchored, GENERATED for verification — not canon)
+indicator("W14 DXY E1", overlay=true)
+t0 = timestamp("GMT+0", 2026, 03, 30, 0, 0)
+t1 = timestamp("GMT+0", 2026, 04, 04, 0, 0)
+box.new(t0, 100.65, t1, 100.50, xloc=xloc.bar_time, bgcolor=color.new(color.red, 80), border_color=color.red, text="R1 HARD WALL 9", text_halign=text.halign.left)
+box.new(t0, 100.25, t1, 100.00, xloc=xloc.bar_time, bgcolor=color.new(color.orange, 82), border_color=color.orange, text="R2 MoM 6", text_halign=text.halign.left)
+box.new(t0, 99.60, t1, 99.30, xloc=xloc.bar_time, bgcolor=color.new(color.blue, 82), border_color=color.blue, text="D1 MoM 6", text_halign=text.halign.left)
+box.new(t0, 99.10, t1, 98.80, xloc=xloc.bar_time, bgcolor=color.new(color.green, 80), border_color=color.green, text="D2 BoM 7", text_halign=text.halign.left)

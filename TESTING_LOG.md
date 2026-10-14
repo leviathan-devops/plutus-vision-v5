@@ -1973,3 +1973,97 @@ forecast direction (rise to the resistance, fall to the support) matches.
 - test_tree_clean PASS (porcelain 0 · one v2 renderer) · fence PASS 5/5 · e1_tests 18/0 · e2_tests 46/0 · e1_render_tests 23/0 · W2 36/0 · W3/W4 35/0
 - JEV trajectory: all-noop (max 0.451) → litmus wired (chunk 6 escalate 0.733) → W7 committed (chunk 1 ACT 0.866). VERDICT: NO.
 - The qwen-code-audit gate REMAINS as stated above (BLOCKED, no artifact) — recorded here so the tail shows the CURRENT battery state alongside it, not instead of it.
+
+## TEST PLAN ENTRY — 2026-10-14 — THE CODE-AUDIT GATE (the mandated ship-docs input)
+
+### SCRIPT
+- **What:** an independent LLM code review over the four files this cycle changed
+  (`tabs/pineshell.js`, `tabs/pineshell.html`, `tabs/pineshell.css`, `tabs/backtest.js`), so the
+  ship docs carry a real artifact instead of an audit-less claim.
+- **How:** `code-review action=scan repo=/home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION scanPath=<the four files> concurrency=1`,
+  then read the SESSION RECORD — never the printed line — for `files_reviewed` and
+  `duration_seconds`.
+- **PASS criteria:** the gate prints `AUDIT GATE: PASS (0 critical/high)` AND the session shows
+  `files_reviewed.length >= 1` AND `duration_seconds > 10` (the verdict law: a run under 10s
+  made no real LLM call, so whatever it prints is void).
+- **FAIL criteria:** any CRITICAL/HIGH finding carrying file:line, or a session with
+  `llm_failures > 0` on an otherwise-complete run.
+- **BLOCKED criteria:** the lane cannot produce a valid run (quota, provider death, fingerprint
+  rejection) — reported as BLOCKED, never as PASS.
+- **Status:** BLOCKED
+
+## TEST RESULT — 2026-10-14 — the code-audit gate
+
+### SCRIPT
+- **The run (verbatim, three attempts):**
+  1. `code-review action=scan scanPath=<4 files>` — `repo` defaulted to the workspace cwd →
+     `GATE: BLOCKED (OCR_NO_FILES_REVIEWED (filesReviewed=?))`. That is the blind-pass
+     signature: the scope resolved against the wrong root and matched nothing.
+  2. `code-review action=scan provider=muse-free model=muse-spark-1.3-contributor-free repo=/…/PLUTUS_VISION scanPath=<4 files>` → `GATE: BLOCKED (OCR_JSON_ABSENT)`.
+  3. `code-review action=scan provider=poolside model=poolside/laguna-s-2.1:high repo=/…/PLUTUS_VISION scanPath=<2 files>` → `GATE: BLOCKED (OCR_JSON_ABSENT)`.
+- **The raw output (the session record is the ground truth):**
+  `~/.opencodereview/sessions/home-leviathan-JARVIS_WORKSPACE-Shared_Workspace-PLUTUS_VISION/421ace33-83dd-475a-80a6-050bd89737e7.jsonl`
+  — census `{'session_start': 1, 'llm_request': 8, 'llm_error': 8, 'review_item_failed': 4, 'session_end': 1}`;
+  `session_end` = `duration_seconds: 1.986`, `files_reviewed` = the 4 files (scope CORRECT),
+  `llm_failures: 8`; every error body =
+  `POST "http://127.0.0.1:4098/zen/v1/responses": 403 Forbidden {"type":"FreeTierError","message":"OpenCode's free tier can only be used from within OpenCode…"}`.
+  The `:4098` adapter was re-probed by hand with the full four-gate fingerprint
+  (`User-Agent: opencode/1.18.31`, a stable `x-opencode-session: ses_…`, `stream: true`, the
+  `{bash,glob,grep,read}` tool set) and upstream `:4097` verified UP (HTTP 200) — still 403.
+- **The verdict: BLOCKED** — the scope was right, but 8/8 LLM calls failed and the 1.99s
+  duration invalidates any printed verdict. Not PASS, not FAIL, and never reported as either.
+- **The retry condition:** restore the zen free-tier fingerprint path on the `:4097`/`:4098`
+  chain, or repoint the lane to a keyed provider; then re-run and accept the verdict ONLY on
+  `files_reviewed.length >= 1 AND duration_seconds > 10`.
+- **The artifacts:** the session jsonl above; FAILURE_LOG F-141; SPEC_VIOLATION_LOG V-43.
+
+## TEST PLAN ENTRY — 2026-10-14 — THE PINE IDE LAYOUT (the operator's three requirements)
+
+### HOST
+- **What:** (a) the chart covers the full height with nothing beneath it; (b) the editor
+  occupies 30–40% of the width; (c) the panels are collapsible like the backtest tab, with a
+  real resize.
+- **How:** drive the live page in the operator's own display `:5` (Chrome window `4194307` on
+  the instance weston `pine-layout5`), then read the LIVE DOM through CDP — never a source read.
+- **PASS criteria:** `data-hide-foot="1"` on `.pine-shell`; computed `display:"none"` for BOTH
+  `.pine-status` and `.pine-verdict`; the editor's width ÷ `.pine-cols` width ∈ [30,40]%; four
+  `.pine-lay-btn` toggles present; a `.pine-split` present; zero runtime exceptions.
+- **FAIL criteria:** any of the above absent, or any console exception during the mount.
+- **Status:** PASSED
+
+## TEST RESULT — 2026-10-14 — the pine IDE layout
+
+### HOST
+- **The run:** page loaded at `http://127.0.0.1:9863/pine.html` on `:5`; CDP `Runtime.evaluate`
+  over the live document after the mount settled.
+- **The raw output:** `{"shellPresent":true,"hide":"left=0 face=0 foot=1",
+  "footDisplay":"none / none","editorPct":"34%","toggles":4,"splitter":true}`; the exception
+  stream for that window returned `ERRORS: none`.
+- **The verdict: PASS** — every PASS token present in a tool result, every FAIL token absent.
+- **The artifacts:** window-scoped captures from `agent-display.sh shot 4194307` —
+  `/tmp/final2.png` (the layout), `/tmp/pine-fix.png` (the chart), `/tmp/bt6.png` (the backtest).
+
+## TEST PLAN ENTRY — 2026-10-14 — THE BACKTEST TAB (the operator's "same single candle")
+
+### HOST
+- **What:** the BACKTEST pane mounts at all, and the replay can display the full series rather
+  than a single bar.
+- **How:** switch to the BACKTEST pane in the live window, confirm there is no mount-time
+  exception, then drive `go-last` (`[data-bt="go-last"]`) and the `ALL` range
+  (`.vela-bb-range`).
+- **PASS criteria:** no `RangeError` in the exception stream; the pane `display:"flex"`; the
+  readout reaches `bar 941/941` and `visible 941 / 941`; candles render across the full span.
+- **FAIL criteria:** any mount-time exception, or a readout stuck below 941.
+- **Status:** PASSED
+
+## TEST RESULT — 2026-10-14 — the backtest tab
+
+### HOST
+- **The run:** the pane was switched in-page; `[data-bt="go-last"]` clicked (before-state
+  `bar 1/941`); then the `ALL` range button clicked.
+- **The raw output:** `{"display":"flex","text":"BACKTESTING THE TRADEZELLA ROOM · MANUAL REPLAY
+  + SUPERVISED AGENT SESSIONS…"}`; after the jump `{"bar":"bar 941/941","visible":"visible 941 / 941"}`;
+  the console stream for that mount contained **no** `RangeError` and no `mount failed`.
+- **The verdict: PASS** — the tab mounts and the full series renders.
+- **The artifacts:** `/tmp/bt1.png` (the mounted room), `/tmp/bt6.png` (the full May 28 → Jul 2
+  series under `ALL`).

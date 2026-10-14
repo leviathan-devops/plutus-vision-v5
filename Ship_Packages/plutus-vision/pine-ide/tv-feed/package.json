@@ -1,0 +1,11 @@
+{
+  "name": "plutus-tv-feed",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "The TradingView data feed (TradingView-API, ISC) as a SEPARATE process: bars/quotes/replay -> the self-hosted Vela charts. The chart UI never depends on TradingView.",
+  "dependencies": {
+    "@mathieuc/tradingview": "3.5.2",
+    "ws": "8.18.0"
+  }
+}

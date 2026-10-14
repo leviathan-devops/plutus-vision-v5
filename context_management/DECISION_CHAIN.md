@@ -329,3 +329,46 @@ implementation.
 
 *"THE TARGET ZONE'S ZFP DECIDES, NOT THE MOMENTUM."* The E2 shape decision + every transition read
 the ZONE's ZFP. The current code reads the momentum (`e2_engine.py:138,142`) — that is the defect.
+
+## [2026-10-14] RULING — THE COLLAPSE MECHANISM IS PORTED, NEVER INVENTED
+**Context:** the operator asked for the pine tab to be *"collapsible just like it is on the back
+testing tab"*, and the obvious move was to write a collapse system for the pine shell.
+**Rationale:** `backtest.js:1084-1132` already solves this exact problem — `data-hide-*`
+attributes on the room, `.bt-lay` toggles with `aria-pressed`=SHOWN, and the rAF + 120ms double
+`chart.resize()` with the recorded reason ("a flex change does not always fire its own
+observer"). Writing a second mechanism guarantees the two tabs drift apart, and the next agent
+fixes one and not the other.
+**Decision:** port the pattern 1:1 — same attribute names, same `aria-pressed` convention, same
+double-measure. The ONLY addition beyond the port is the pointer-drag splitter, because "resize"
+in the operator's order means literal resizing, not just binary hide/show.
+
+## [2026-10-14] RULING — THE TOOLBAR LIVES ABOVE BOTH COLUMNS
+**Context:** the toggles had to go somewhere, and the natural home was inside the shell.
+**Rationale:** a control placed inside a collapsible panel is destroyed by its own action —
+hiding the editor column would hide the switch that restores it, and the user's only recovery
+would be a reload. The same defect class as a guard whose kill-switch sits behind the guard.
+**Decision:** `.pine-shell` becomes a COLUMN carrying the toolbar over a `.pine-cols` row, so the
+toolbar outlives every panel it controls.
+
+## [2026-10-14] RULING — A BLOCKED AUDIT IS WIRED IN AS BLOCKED, NEVER UPGRADED
+**Context:** the mandated code-audit artifact could not be produced; three lanes all returned
+BLOCKED, and the printed gate line looked like a verdict.
+**Rationale:** the verdict law — `files_reviewed >= 1 AND duration_seconds > 10` is what makes a
+verdict valid, and this run was 1.986s with 8/8 LLM failures. A line printed by a run that made
+no real model call is void in BOTH directions. The degraded-run law then requires BLOCKED, with
+the retry condition stated, and forbids the milestone entry from claiming otherwise.
+**Decision:** the audit lands in TESTING_LOG as `Status: BLOCKED` with the exact session
+evidence and retry condition; F-141 and V-43 carry it; every ship-ready claim this cycle is
+qualified by it.
+
+## [2026-10-14] RULING — THE PORT GUARDIAN IS DISARMED AND THE LOCK IS REPORTED UNDELIVERED
+**Context:** the operator ordered the port locked so nothing else could bind it; a systemd
+guardian was installed and tested, then killed another agent's process.
+**Rationale:** `/proc/<pid>/fd` is unreadable in the ORCA scope, so per-socket holder
+identification is IMPOSSIBLE on this host, and the fallback (kill every /tmp-script process in
+the holder's cgroup) has a blast radius of ~100 processes belonging to several agents. An
+imprecise killer is worse than no killer: it converts a hygiene nuisance into cross-agent data
+loss on a host the operator had explicitly fenced.
+**Decision:** service stopped (`inactive`), regex narrowed to `argv[1]`, and the port-hygiene
+goal recorded as NOT MET. The sound lock is binding the port (EADDRINUSE for everyone else) —
+stated as an open item, never shipped as a delivered lock.

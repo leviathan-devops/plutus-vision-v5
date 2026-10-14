@@ -9,7 +9,26 @@
   named slot the kernel drives.
 -->
 <div class="pine-shell" data-pine-shell data-tab-key="pine-shell">
-  <div class="pine-left">
+  <!-- THE LAYOUT TOOLBAR (the backtest tab's .bt-lay, ported). aria-pressed=true = the
+       panel is SHOWN. It sits ABOVE both columns on purpose: a control can never live
+       inside the panel it controls, or hiding that panel would hide its own restore
+       switch. Operator, 2026-10-14: "the chart needs to cover the full height from the
+       top to the bottom" + "all of this should be collapsible just like it is on the
+       back testing tab". -->
+  <div class="pine-lay" role="toolbar" aria-label="Pine IDE layout">
+    <button type="button" class="pine-lay-btn" data-lay="left" aria-pressed="true"
+      title="Hide/show the editor column (micro-tabs · code · toolbar · VIL verdict rows)">◧ EDITOR</button>
+    <button type="button" class="pine-lay-btn" data-lay="face" aria-pressed="true"
+      title="Hide/show THE AGENT'S FACE (the agent cards + the terminal mirror)">▣ FACE</button>
+    <button type="button" class="pine-lay-btn" data-lay="foot" aria-pressed="false"
+      title="Hide/show the status strip + VERDICT block under the chart — HIDDEN by default so the chart runs full height">☰ VERDICT</button>
+    <button type="button" class="pine-lay-btn pine-lay-focus" data-lay="focus" aria-pressed="false"
+      title="FOCUS: hide every panel but the chart; press again to bring them all back">⛶ FOCUS</button>
+    <span class="pine-lay-hint">the chart keeps every pixel a hidden panel frees · drag the handle to resize</span>
+  </div>
+
+  <div class="pine-cols">
+    <div class="pine-left">
     <div class="pine-microtabs-host" data-slot="microtabs"></div>
     <div class="pine-editor-host" data-slot="editor"></div>
 
@@ -50,6 +69,10 @@
     </div>
   </div>
 
+  <!-- THE DRAG HANDLE — pineshell.js wires pointer-drag here to move the editor/chart
+       boundary by writing --pine-left-w on .pine-shell (the "resize" half of the ask). -->
+  <div class="pine-split" data-lay-split title="Drag to resize the editor ↔ chart"></div>
+
   <div class="pine-right">
     <div class="pine-chart-host" data-slot="chart" aria-label="the vision indicator render surface"></div>
     <div class="pine-status" data-slot="status" aria-live="polite">idle</div>
@@ -65,4 +88,5 @@
       </div>
     </div>
   </div>
+  </div><!-- /.pine-cols -->
 </div>

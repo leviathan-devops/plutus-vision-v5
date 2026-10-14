@@ -680,7 +680,14 @@
       tl.value = st ? String(st.cursor) : '0';
       tl.disabled = !st;
     }
-    if (j && st) j.value = new Date(st.now.time - new Date(st.now.time).getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    // GUARD — never let a date FORMAT kill the mount. st.now.time is invalid until a session has
+    // real bars (a `tv:` market with the :9448 feed down, or an empty fixture), and
+    // Date#toISOString(NaN) throws RangeError: Invalid time value, which aborted paint() and took
+    // the whole BACKTEST tab down with it (measured 2026-10-14: "[backtest-room] mount failed
+    // RangeError: Invalid time value at renderControlsState"). An invalid time now clears the field.
+    var jT = st && st.now ? new Date(st.now.time).getTime() : NaN;
+    if (j && isFinite(jT)) j.value = new Date(jT - new Date(jT).getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    else if (j) j.value = '';
     // the "now" readout — measured defect: this element existed and was never written
     setText('now', st
       ? 'bar ' + (st.cursor + 1) + '/' + st.barsTotal + ' · ' + F.date(st.now.iso) + ' ' + F.time(st.now.iso) + ' · C ' + (st.now.bar ? st.now.bar.close : '—')

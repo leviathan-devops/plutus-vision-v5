@@ -2407,3 +2407,67 @@ fence PASS 5/5 · JEV chunk 1 reached act (0.866), chunks 4/5/6 rising — VERDI
 **The honest notes:** P3/P4/P7/P8 remain [NO DATA] (no feed); the E2 reads BS on all 5 litmus
 weeks (no shape discrimination on DXY uptrend data); the Vela build does not paint Pine tables;
 the qwen-code-audit gate stays BLOCKED (no artifact — not upgraded, not substituted).
+
+## 2026-10-14 — PINE IDE LAYOUT · THE BACKTEST RESURRECTION · THE SHIP CYCLE
+
+**The built:** three things landed in one cycle, all inside the Pine IDE renderer tree.
+(1) **THE COLLAPSIBLE LAYOUT** — `tabs/pineshell.html` restructured so `.pine-shell` is a COLUMN
+carrying a layout toolbar above a `.pine-cols` row; `tabs/pineshell.css` gained the toolbar, the
+collapse rules, the 34% editor and the drag splitter; `tabs/pineshell.js` gained
+`readLayout`/`applyLayout`/`wireLayout` (localStorage `plutus.pine.layout`, the rAF+120ms double
+`chart.resize()`, and a pointer-drag splitter writing `--pine-left-w`).
+(2) **THE BACKTEST GUARD** — `tabs/backtest.js:683-690`, the unguarded `Date#toISOString`
+replaced by a hoisted `isFinite` test that clears the field instead of aborting the mount.
+(3) **THE PORT LOCK ATTEMPT** — `scripts/pv-port-guard.sh` + its systemd unit (installed,
+tested live, then DISARMED — F-140). `scripts/pv-server.py` also carries the two proxy-loop
+guards (+45 lines: the `X-PV-Hops` budget and the self-forward refusal) from the 8 GB
+corsserve-loop incident.
+
+**The why:** the operator's standing order, verbatim — *"the chart needs to cover the full height
+from the top to the bottom of the fucking dashboard… the actual area where we're typing the
+code… can be reduced by 10 to 20%. So it only takes up 40 or 30% of the screen. And all of this
+should be collapsible just like it is on the back testing tab."* The two blocking faults (the
+dead BACKTEST tab, the unreachable chart feed) were reported as a regression and had to be
+cleared before anything could ship.
+
+**The how:** the collapse mechanism was **ported, not invented** — `backtest.js:1084-1132`
+already solves this exact problem (`data-hide-*` on the room, the `.bt-lay` toggles with
+`aria-pressed`=shown, and the `chart.resize()` double-measure because "a flex change does not
+always fire its own observer"). The single addition beyond the port is the pointer-drag
+splitter, which makes "resize" literal rather than binary. The toolbar lives ABOVE both columns
+on purpose: a control can never sit inside the panel it controls, or hiding that panel hides its
+own restore switch.
+
+**The evidence:**
+- diff stat against HEAD (`branch step_agent`, HEAD `c058e3e`): `backtest.js | 9 ++-`,
+  `pineshell.css | 55 ++`, `pineshell.html | 26 ++`, `pineshell.js | 112 ++`,
+  `scripts/pv-server.py | 45 ++` — **5 files, 241 insertions, 6 deletions**.
+- post-edit artifact SHAs: `pineshell.js d4c96cd703220e06`, `pineshell.html 2a8cf681c5bf0261`,
+  `pineshell.css c5f083866db1ac8f`, `backtest.js 99a2057b595e5c24`,
+  `pv-port-guard.sh c25d2f26bd3ca755`.
+- shipped indicator `plutus-vision-v2.pine` SHA256
+  `125c94f86e6a2f1d3009a75c778e02ad16c48e4f3772e8d0d8d95c50af162400` (SHA16 `125c94f86e6a2f1d`).
+  The v1 seal `0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1` is UNTOUCHED
+  (HARD STOP H1).
+- workbench bundle `7ff93dcf5b2c9e77d0fbba310a7e9c2c04073e6521c233c664b140d888a61aec`.
+
+**The verification:**
+- `node --check` OK on `pineshell.js` and `backtest.js`; the fragment `<div>` opens 24 / closes
+  24 — BALANCED.
+- the LIVE DOM on the operator's own display `:5` (the only environment used this cycle):
+  `{"shellPresent":true,"hide":"left=0 face=0 foot=1","footDisplay":"none / none",
+   "editorPct":"34%","toggles":4,"splitter":true}` — `ERRORS: none`.
+- chart after the feed correction: `DXY · FIXTURE · 1h`, `FIXTURE · DXY · 1H · 508 bars`, the
+  EMA Ribbon rendering over real candles May 9 → May 17.
+- backtest after the guard: pane `display:flex`, `bar 941/941 · visible 941 / 941`, the full
+  May 28 → Jul 2 series under the `ALL` range, `REPLAY 941/941`.
+- the audit gate: **BLOCKED** (F-141) — `llm_failures: 8`, `duration_seconds: 1.986`, all 8
+  calls `403 FreeTierError`; session `421ace33-83dd-475a-80a6-050bd89737e7`.
+
+**The honest notes:**
+- **NO code-review PASS exists this cycle.** Every ship-ready claim here is qualified by F-141.
+- `pine-ide/tv-feed/` is still UNSTARTABLE (`ERR_MODULE_NOT_FOUND`, no `node_modules`); every
+  `tv:` market remains dead. Only the `fixture:` provider works.
+- The port is **NOT locked** (F-140). The killer is disarmed; binding the port is the open item.
+- The rendered layout was verified through the operator's own display and its live DOM, never
+  through a headless side-channel.

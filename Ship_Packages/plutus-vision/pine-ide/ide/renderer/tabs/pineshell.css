@@ -1,0 +1,265 @@
+/* =================================================================
+   pineshell.css — THE PINE SHELL TAB (SHELL_ANCHOR §5.3 + §15).
+   OLD MONEY ONLY (32 §1): deep neutrals, hairline rules, ONE restrained
+   accent (brass). Every colour is a tokens.css variable BY NAME, with a
+   literal fallback so the fragment also renders in a bare test harness.
+   ================================================================= */
+
+/* THE SHELL IS A COLUMN: [layout toolbar] over [the columns row]. The toolbar must
+   OUTLIVE the panels it controls — it is the only way back for a hidden panel, so it
+   can never be inside a collapsible column. */
+.pine-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  min-height: 0;
+  padding: 10px;
+  background: var(--bg-base, #0B0B0C);
+  color: var(--text-primary, #E8E4DC);
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  box-sizing: border-box;
+}
+
+/* ── the layout toolbar (the backtest tab's .bt-lay, ported 1:1) ────────────────
+   aria-pressed = the panel is SHOWN (backtest's convention, so both tabs read the
+   same). The chart column takes every pixel a hidden panel frees. */
+.pine-lay { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.pine-lay-btn {
+  padding: 4px 10px; background: transparent;
+  border: 1px solid var(--border-base, #1E1E21); border-radius: var(--radius-sm, 2px);
+  cursor: pointer;
+  font-family: var(--font-sans, 'Inter', sans-serif); font-weight: 600; font-size: 10px;
+  line-height: 1; letter-spacing: 0.09em; color: var(--text-muted, #6A675F);
+}
+.pine-lay-btn:hover { color: var(--text-primary, #E8E4DC); border-color: rgba(185,154,91,0.6); }
+.pine-lay-btn[aria-pressed="true"] { color: var(--text-primary, #E8E4DC);
+  border-color: rgba(185,154,91,0.55); background: rgba(185,154,91,0.07); }
+.pine-lay-focus[aria-pressed="true"] { color: #0B0B0C; background: #B99A5B; border-color: #B99A5B; }
+.pine-lay-hint { margin-left: auto; font-family: var(--font-mono, monospace); font-size: 9px;
+  letter-spacing: 0.06em; color: var(--text-faint, #4A4844); }
+
+/* ── the columns row ─────────────────────────────────────────────────────────── */
+.pine-cols { display: flex; gap: 4px; flex: 1 1 auto; min-height: 0; position: relative; }
+
+.pine-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* 34% — the operator (2026-10-14): the editor "does not need to be as wide as it
+     is… it only takes up 40 or 30% of the screen" (was 46%). --pine-left-w is the
+     drag splitter's own write target, set on .pine-shell by pineshell.js. */
+  flex: 0 0 var(--pine-left-w, 34%);
+  min-width: 300px;
+  min-height: 0;
+}
+
+.pine-right {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* the drag handle between the columns — the "resize" half of the ask */
+.pine-split { flex: 0 0 8px; align-self: stretch; cursor: col-resize;
+  position: relative; background: transparent; touch-action: none; }
+.pine-split::after { content: ''; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%); width: 2px; height: 48px; border-radius: 1px;
+  background: var(--border-base, #1E1E21); transition: background 0.12s; }
+.pine-split:hover::after, .pine-split.is-drag::after { background: rgba(185,154,91,0.85); }
+
+/* ── the collapse rules (the backtest tab's data-hide-*, ported) ──────────────── */
+.pine-shell[data-hide-left="1"] .pine-left,
+.pine-shell[data-hide-left="1"] .pine-split { display: none; }
+.pine-shell[data-hide-face="1"] .pine-chat { display: none; }
+/* THE FULL-HEIGHT CHART. With the foot hidden, .pine-right holds ONLY the chart host,
+   whose `flex: 1 1 auto` then spans the shell top-to-bottom — which is the operator's
+   standing order ("the chart needs to cover the full height from the top to the
+   bottom"). Shown again on demand by the VERDICT toggle. */
+.pine-shell[data-hide-foot="1"] .pine-status,
+.pine-shell[data-hide-foot="1"] .pine-verdict { display: none; }
+
+/* ── micro-tabs ───────────────────────────────────────────────── */
+.pine-microtabs { display: flex; align-items: stretch; gap: 4px; flex: 0 0 auto; }
+.pine-microtab-list { display: flex; gap: 4px; overflow-x: auto; flex: 1 1 auto; }
+.pine-microtab {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 8px; cursor: pointer;
+  background: var(--bg-panel, #101012);
+  border: 1px solid var(--border-base, #1E1E21);
+  border-radius: var(--radius-sm, 2px);
+  font-family: var(--font-mono, monospace); font-size: 10px; letter-spacing: 0.06em;
+  color: var(--text-secondary, #9A958C); white-space: nowrap;
+}
+.pine-microtab:hover { background: var(--bg-panel-hover, #17171A); border-color: rgba(185,154,91,0.35); }
+.pine-microtab.is-active { border-color: var(--border-accent, #B99A5B); color: var(--text-primary, #E8E4DC); }
+.pine-microtab.is-error { border-color: var(--accent-red, #9C6B6B); }
+.pine-microtab.is-busy { border-color: var(--accent-blue, #6E7E8F); }
+.pine-microtab-lane { font-size: 8px; letter-spacing: 0.16em; color: var(--border-accent, #B99A5B); }
+.pine-microtab-name { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+.pine-microtab-close { background: none; border: 0; color: var(--text-muted, #6A675F); cursor: pointer; font-size: 12px; line-height: 1; padding: 0 2px; }
+.pine-microtab-close:hover { color: var(--accent-red, #9C6B6B); }
+.pine-microtab-add {
+  background: var(--bg-panel, #101012); border: 1px solid var(--border-base, #1E1E21);
+  color: var(--text-secondary, #9A958C); border-radius: var(--radius-sm, 2px);
+  cursor: pointer; width: 24px; font-family: var(--font-mono, monospace);
+}
+.pine-microtab-add:hover { border-color: var(--border-accent, #B99A5B); color: var(--text-primary, #E8E4DC); }
+
+/* ── the editor ───────────────────────────────────────────────── */
+.pine-editor-host { flex: 1 1 auto; min-height: 160px; display: flex; }
+.pine-editor {
+  position: relative; display: flex; flex: 1 1 auto; min-height: 0;
+  background: var(--bg-void, #08080A);
+  border: 1px solid var(--border-base, #1E1E21);
+  border-radius: var(--radius-sm, 2px);
+  overflow: hidden;
+}
+.pine-gutter {
+  flex: 0 0 auto; padding: 8px 6px 8px 8px; overflow: hidden; text-align: right;
+  font-family: var(--font-mono, monospace); font-size: 11px; line-height: 1.45;
+  color: var(--text-faint, #4A4844); background: var(--bg-panel, #101012);
+  border-right: 1px solid var(--border-muted, #151517); user-select: none;
+}
+.pine-gutter span { display: block; }
+.pine-gutter-err { color: var(--accent-red, #9C6B6B); font-weight: 600; }
+.pine-src {
+  flex: 1 1 auto; min-width: 0; resize: none; border: 0; outline: none;
+  background: transparent; color: var(--text-primary, #E8E4DC);
+  font-family: var(--font-mono, monospace); font-size: 11.5px; line-height: 1.45;
+  padding: 8px 10px; white-space: pre; overflow: auto; tab-size: 2;
+}
+.pine-inline-error {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 5px 8px;
+  background: rgba(156,107,107,0.14); border-top: 1px solid var(--accent-red, #9C6B6B);
+  font-family: var(--font-mono, monospace); font-size: 10.5px; color: var(--text-primary, #E8E4DC);
+}
+.pine-inline-error b { color: var(--accent-red, #9C6B6B); letter-spacing: 0.08em; }
+
+/* ── the toolbar ──────────────────────────────────────────────── */
+.pine-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; flex: 0 0 auto; }
+.pine-btn {
+  font-family: var(--font-mono, monospace); font-size: 10px; letter-spacing: 0.10em;
+  color: var(--text-primary, #E8E4DC); background: var(--bg-panel-elevated, #141416);
+  border: 1px solid var(--border-solid, #1C1C1F); border-radius: var(--radius-sm, 2px);
+  padding: 5px 10px; cursor: pointer; text-transform: uppercase;
+}
+.pine-btn:hover { border-color: var(--border-accent, #B99A5B); }
+.pine-btn-run { border-color: var(--border-accent, #B99A5B); color: var(--accent-gold, #C8A96A); }
+.pine-btn-gate { border-color: rgba(185,154,91,0.5); }
+.pine-btn-pass:hover { border-color: var(--accent-green, #7E9C82); }
+.pine-btn-fail:hover { border-color: var(--accent-red, #9C6B6B); }
+.pine-auto { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono, monospace); font-size: 9.5px; letter-spacing: 0.08em; color: var(--text-secondary, #9A958C); }
+.pine-toolbar select, .pine-toolbar input[type="text"] {
+  font-family: var(--font-mono, monospace); font-size: 10px; color: var(--text-primary, #E8E4DC);
+  background: #121214; border: 1px solid var(--border-solid, #1C1C1F); border-radius: var(--radius-sm, 2px);
+  padding: 4px 6px; outline: none; max-width: 190px;
+}
+.pine-week { width: 92px; }
+.pine-rail-state { font-family: var(--font-mono, monospace); font-size: 9.5px; letter-spacing: 0.06em; color: var(--text-muted, #6A675F); }
+.pine-rail-state[data-state="ok"] { color: var(--accent-green, #7E9C82); }
+.pine-rail-state[data-state="error"] { color: var(--accent-red, #9C6B6B); }
+
+/* ── the VIL verdict rows ─────────────────────────────────────── */
+.pine-rows { flex: 0 0 auto; max-height: 108px; overflow: auto; border: 1px solid var(--border-base, #1E1E21); border-radius: var(--radius-sm, 2px); background: var(--bg-panel, #101012); }
+.pine-row { display: flex; gap: 10px; padding: 4px 8px; font-family: var(--font-mono, monospace); font-size: 9.5px; color: var(--text-secondary, #9A958C); border-bottom: 1px solid var(--border-muted, #151517); }
+.pine-row:last-child { border-bottom: 0; }
+.pine-row-muted { color: var(--text-muted, #6A675F); font-style: italic; }
+.pine-row-w { color: var(--text-primary, #E8E4DC); }
+.pine-row-v[data-v="PASS"] { color: var(--accent-green, #7E9C82); }
+.pine-row-v[data-v="FAIL"], .pine-row-v[data-v="INCONCLUSIVE"] { color: var(--accent-red, #9C6B6B); }
+.pine-row-d { color: var(--text-muted, #6A675F); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── the book-style chat / computer panel ─────────────────────── */
+.pine-chat {
+  /* THE PANEL NEVER SPILLS (operator 2026-10-02: "the top edge of the terminal is eating something above
+     it"): the face's own rows carry their natural heights and the terminal takes what is LEFT, so the
+     terminal's top edge cannot rise over the agent cards. overflow:hidden is the backstop - a row that
+     cannot fit scrolls INSIDE itself instead of pushing a sibling out of the panel. */
+  flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column;
+  border: 1px solid var(--border-base, #1E1E21); border-radius: var(--radius-sm, 2px);
+  background: linear-gradient(180deg, #0E0E10 0%, #0B0B0C 100%);
+}
+.pine-chat-head { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 10px; border-bottom: 1px solid var(--border-base, #1E1E21); }
+.pine-chat-title { font-family: var(--font-display, Georgia, serif); font-size: 13px; letter-spacing: 0.16em; color: var(--text-primary, #E8E4DC); }
+.pine-chat-sub { font-family: var(--font-mono, monospace); font-size: 9px; letter-spacing: 0.08em; color: var(--text-muted, #6A675F); }
+.pine-chat-log { flex: 1 1 auto; overflow: auto; padding: 6px 10px; }
+.pine-chat-line { display: flex; gap: 8px; padding: 2px 0; font-family: var(--font-mono, monospace); font-size: 10px; line-height: 1.4; }
+.pine-chat-when { color: var(--text-faint, #4A4844); flex: 0 0 auto; }
+.pine-chat-text { color: var(--text-secondary, #9A958C); word-break: break-word; }
+.pine-chat-agent .pine-chat-text { color: var(--text-primary, #E8E4DC); }
+.pine-chat-me .pine-chat-text { color: var(--accent-gold, #C8A96A); }
+.pine-chat-sys .pine-chat-text { color: var(--text-muted, #6A675F); font-style: italic; }
+.pine-chat-foot { display: flex; gap: 6px; padding: 6px 8px; border-top: 1px solid var(--border-base, #1E1E21); }
+.pine-chat-foot input { flex: 1 1 auto; background: #121214; border: 1px solid var(--border-solid, #1C1C1F); color: var(--text-primary, #E8E4DC); font-family: var(--font-mono, monospace); font-size: 10px; padding: 5px 7px; border-radius: var(--radius-sm, 2px); outline: none; }
+
+/* ── the chart + status + verdict block ───────────────────────── */
+.pine-chart-host { position: relative; flex: 1 1 auto; min-height: 320px; background: var(--bg-void, #08080A); border: 1px solid var(--border-base, #1E1E21); border-radius: var(--radius-sm, 2px); overflow: hidden; }
+.pine-chart-error { padding: 24px; font-family: var(--font-mono, monospace); font-size: 11px; color: var(--text-secondary, #9A958C); }
+.pine-chart-error b { color: var(--accent-red, #9C6B6B); }
+.pine-status {
+  flex: 0 0 auto; padding: 5px 8px; border: 1px solid var(--border-base, #1E1E21); border-radius: var(--radius-sm, 2px);
+  background: var(--bg-panel, #101012); font-family: var(--font-mono, monospace); font-size: 10px;
+  letter-spacing: 0.05em; color: var(--text-secondary, #9A958C);
+}
+.pine-status[data-state="ok"] { color: var(--accent-green, #7E9C82); }
+.pine-status[data-state="error"] { color: var(--accent-red, #9C6B6B); }
+.pine-status[data-state="busy"] { color: var(--accent-gold, #C8A96A); }
+.pine-verdict { flex: 0 0 auto; padding: 6px 8px; border: 1px solid var(--border-base, #1E1E21); border-radius: var(--radius-sm, 2px); background: var(--bg-panel, #101012); }
+.pine-verdict-line { display: flex; gap: 10px; font-family: var(--font-mono, monospace); font-size: 10px; color: var(--text-secondary, #9A958C); padding: 1px 0; }
+.pine-k { flex: 0 0 62px; color: var(--text-muted, #6A675F); letter-spacing: 0.10em; text-transform: uppercase; font-size: 9px; }
+.pine-verdict-actions { display: flex; gap: 6px; padding-top: 5px; }
+.pine-verdict [data-state="ok"] { color: var(--accent-green, #7E9C82); }
+.pine-verdict [data-state="error"] { color: var(--accent-red, #9C6B6B); }
+
+/* the workbench market chip (the chart's own topbar owns symbol/timeframe; this mirrors it) */
+.pine-market { font-family: var(--font-mono, monospace); font-size: 10px; letter-spacing: 0.06em; color: var(--text-secondary, #9A958C); padding: 3px 7px; border: 1px solid var(--border-base, #1E1E21); border-radius: var(--radius-sm, 2px); white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.pine-market[data-provider="tv"] { color: #C9A962; border-color: rgba(201,169,98,0.35); }
+.pine-market[data-provider="fixture"] { color: #9A958C; }
+
+/* ── THE AGENT'S FACE — agent cards · terminal mirror · log ─────────────────────────── */
+.pine-face { min-height: 0; }
+/* flex: 0 0 auto — THE FIX for the eaten card row. With the default flex-shrink:1 this row collapsed to
+   half its content height when the terminal grew, and its overflow-y:auto then CLIPPED the cards (measured
+   2026-10-02: the OPERATOR / pine-verify / + BIND row sliced through the middle). It must never shrink. */
+.pine-face-agents { flex: 0 0 auto; display: flex; flex-wrap: wrap; gap: 5px; padding: 6px 8px; max-height: 96px; overflow-y: auto; border-bottom: 1px solid var(--border-base, #1E1E21); }
+.pine-agent-card { position: relative; display: inline-flex; align-items: center; gap: 6px; max-width: 200px; padding: 4px 9px 4px 8px;
+  background: #0E0E10; border: 1px solid var(--border-solid, #1C1C1F); border-radius: var(--radius-sm, 2px); cursor: pointer;
+  font-family: var(--font-mono, monospace); font-size: 10px; letter-spacing: 0.06em; color: var(--text-secondary, #9A958C); }
+.pine-agent-card:hover { border-color: rgba(200,169,106,0.35); color: var(--text-primary, #E8E4DC); }
+.pine-agent-card.is-active { border-color: #C8A96A; color: #E8D6A8; background: rgba(200,169,106,0.07); }
+.pine-agent-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pine-agent-dot { flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%; background: var(--text-faint, #4A4844); }
+.pine-agent-card[data-status="busy"] .pine-agent-dot { background: #C8A96A; box-shadow: 0 0 6px rgba(200,169,106,0.6); }
+.pine-agent-card[data-status="idle"] .pine-agent-dot { background: #7E9C82; }
+.pine-agent-card[data-status="off"] .pine-agent-dot, .pine-agent-card[data-status="gone"] .pine-agent-dot { background: #9C6B6B; }
+.pine-agent-card[data-status="local"] .pine-agent-dot { background: #6A675F; }
+.pine-agent-unread { min-width: 14px; padding: 0 4px; border-radius: 7px; background: #C8A96A; color: #0B0B0C; font-size: 9px; text-align: center; }
+.pine-agent-x { margin-left: 2px; color: var(--text-faint, #4A4844); font-size: 11px; }
+.pine-agent-x:hover { color: #9C6B6B; }
+.pine-agent-add { padding: 4px 9px; background: transparent; border: 1px dashed var(--border-solid, #2A2A2E); border-radius: var(--radius-sm, 2px);
+  font-family: var(--font-mono, monospace); font-size: 10px; letter-spacing: 0.1em; color: var(--text-muted, #6A675F); cursor: pointer; }
+.pine-agent-add:hover { color: #C8A96A; border-color: rgba(200,169,106,0.4); }
+.pine-face-bind { max-height: 150px; overflow: auto; margin: 0 8px 6px; padding: 4px; border: 1px solid rgba(200,169,106,0.3); background: #0C0C0E; border-radius: var(--radius-sm, 2px); }
+.pine-bind-head { padding: 3px 6px; font-family: var(--font-mono, monospace); font-size: 9px; letter-spacing: 0.14em; color: #C8A96A; }
+.pine-bind-row { display: block; width: 100%; box-sizing: border-box; text-align: left; padding: 4px 6px; background: none; border: 0; cursor: pointer;
+  font-family: var(--font-mono, monospace); font-size: 10px; color: var(--text-secondary, #9A958C); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pine-bind-row:hover { background: rgba(200,169,106,0.08); color: var(--text-primary, #E8E4DC); }
+.pine-face-bar { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-bottom: 1px solid var(--border-base, #1E1E21); }
+.pine-face-view { padding: 3px 8px; background: none; border: 1px solid transparent; border-radius: var(--radius-sm, 2px); cursor: pointer;
+  font-family: var(--font-mono, monospace); font-size: 9px; letter-spacing: 0.16em; color: var(--text-muted, #6A675F); }
+.pine-face-view.is-active { color: #C8A96A; border-color: rgba(200,169,106,0.35); }
+.pine-face-follow { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-mono, monospace); font-size: 9px; letter-spacing: 0.12em; color: var(--text-muted, #6A675F); }
+.pine-face-term { flex: 1 1 auto; min-height: 0; margin: 0; overflow: auto; padding: 8px 10px; background: #0C0C0C;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace); font-size: 10.5px; line-height: 1.35; color: #D0D0D0; white-space: pre; }
+/* A NORMAL TERMINAL (operator 2026-10-02: "fix the color scheme of the terminal so its a normal terminal and not
+   taking the dashboard ui onto it"): the panel is a terminal's own black + light grey (TERM_BG / TERM_FG in
+   agent-face.mjs), and every coloured cell is the program's own SGR - no dashboard ink, no gold cursor. */
+.pine-face-term::selection, .pine-face-term *::selection { background: #3A3A3A; color: #F0F0F0; }
+/* the armed unbind (the × reads 'unbind?' for 4s; a second click unbinds - no native dialog) */
+.pine-agent-x.armed{color:#E8E4DC;background:rgba(156,60,60,.55);border-radius:2px;padding:0 4px;font-size:10px;letter-spacing:.04em;}
+.pine-chat-by { flex: 0 0 auto; min-width: 34px; color: #7E7A70; }
+.pine-chat-run .pine-chat-text { color: #9FB8A3; }

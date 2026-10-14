@@ -386,3 +386,31 @@ mechanism + file:line.
   st_21 4/0 · st_22 7/0 · st_26 4/0.
 - THE LIVE RENDER: the IDE (CDP :9222) shows 4 boxes + the ceiling label "40% ZFP" (was 27%).
 - the checkpoint: `Checkpoints/indicator-port-w1-w7-2026-10-08/`
+
+## EVIDENCE — 2026-10-14 — THE LAYOUT CYCLE (the ship pass)
+**THE DEPLOYED FINGERPRINT (re-measured, never inherited):**
+```
+pine-ide/ide/renderer/plutus-vision-v2.pine   sha256 125c94f86e6a2f1d3009a75c778e02ad16c48e4f3772e8d0d8d95c50af162400   SHA16 125c94f86e6a2f1d
+pine-ide/ide/renderer/plutus-vision-v1.pine   sha256 0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1   UNTOUCHED (HARD STOP H1)
+pine-ide/charts/workbench.bundle.js           sha256 7ff93dcf5b2c9e77d0fbba310a7e9c2c04073e6521c233c664b140d888a61aec
+```
+**The changed-file SHAs (post-edit):** `pineshell.js d4c96cd703220e06` ·
+`pineshell.html 2a8cf681c5bf0261` · `pineshell.css c5f083866db1ac8f` ·
+`backtest.js 99a2057b595e5c24` · `pv-port-guard.sh c25d2f26bd3ca755`. Diff vs HEAD
+(`step_agent` @ `c058e3e`): **5 files, 241 insertions, 6 deletions**.
+
+**THE BEHAVIOURAL EVIDENCE (tokens read from tool results, never asserted):**
+- layout, live DOM on display `:5`:
+  `{"shellPresent":true,"hide":"left=0 face=0 foot=1","footDisplay":"none / none","editorPct":"34%","toggles":4,"splitter":true}` — `ERRORS: none`.
+- backtest: `[data-bt="go-last"]` before-state `bar 1/941` → after
+  `{"bar":"bar 941/941","visible":"visible 941 / 941"}`; mount stream contains no `RangeError`.
+- chart: `DXY · FIXTURE · 1h`, status `FIXTURE · DXY · 1H · 508 bars · rail :9754 · station UP`.
+
+**THE AUDIT ARTIFACT — BLOCKED, NOT PASSED:**
+`~/.opencodereview/sessions/home-leviathan-JARVIS_WORKSPACE-Shared_Workspace-PLUTUS_VISION/421ace33-83dd-475a-80a6-050bd89737e7.jsonl`
+— census `{'session_start':1,'llm_request':8,'llm_error':8,'review_item_failed':4,'session_end':1}`;
+`session_end` → `duration_seconds: 1.986`, `files_reviewed` = the 4 changed files (scope CORRECT),
+`llm_failures: 8`; every error `403 FreeTierError` from `127.0.0.1:4098/zen/v1/responses`.
+Retry condition recorded at FAILURE_LOG F-141 / TESTING_LOG.
+
+**THE GATES:** ship docs GATE S1-S7 **PASSED** (2026-10-14). The code-audit gate **BLOCKED**.

@@ -64,6 +64,31 @@ from urllib.parse import urlparse, parse_qs
 FACE_API = os.environ.get("PV_FACE_API") or "http://127.0.0.1:9430"
 FACE_PREFIXES = ("/api/v1/workspaces", "/api/v1/commands", "/api/v1/orca/")
 FACE_TIMEOUT = float(os.environ.get("PV_FACE_TIMEOUT", "20"))
+# ── THE PROXY LOOP GUARD (added 2026-10-14) ──────────────────────────────────
+# The /tmp corsserve incident: a shim on :9430 proxied /api/ back to this host
+# while this host proxied face routes to :9430 → infinite bounce, 12,900 threads,
+# 587 MB. MAX_PROXY_HOPS is the hard ceiling on any proxy chain.
+MAX_PROXY_HOPS = int(os.environ.get("PV_MAX_PROXY_HOPS", "5"))
+# This host's OWN bind (port + the ports that proxy back to us) — a proxy must
+# never target one of these; that is a self-loop by construction.
+_SELF_PORTS = {str(p) for p in (9851, 9863)}
+def _self_ports():
+    """This host's own port (argv[1] if launched as a server) + the renderer set."""
+    try:
+        import sys as _s
+        if len(_s.argv) > 1 and _s.argv[1].isdigit():
+            return _SELF_PORTS | {_s.argv[1]}
+    except Exception:
+        pass
+    return set(_SELF_PORTS)
+def _is_self_url(url: str) -> bool:
+    """True when `url` targets a port that would bounce straight back to us."""
+    try:
+        from urllib.parse import urlparse as _up
+        u = _up(url)
+        return (u.hostname in ("127.0.0.1", "localhost", "::1")) and (str(u.port) in _self_ports())
+    except Exception:
+        return False
 
 
 def face_route(path: str) -> bool:
@@ -531,10 +556,30 @@ class Handler(SimpleHTTPRequestHandler):
     # upstream is a LOUD named refusal (WORKSPACES_API_DOWN), never a fake success.
     def _proxy(self, method: str):
         u = urlparse(self.path)
+        # ── LOOP GUARD (added 2026-10-14 — the /tmp corsserve RAM-drain incident) ──
+        # MEASURED FAILURE: a /tmp CORS shim squatted :9430 and proxied /api/ back to
+        # this host, while this host proxies face routes to :9430 → an INFINITE loop
+        # (158,843 reqs / 12,900 threads / 587 MB in ~2 min). A proxy must never bounce.
+        # Two independent guards:
+        #   (1) HOP BUDGET — every hop stamps X-PV-Hops; refuse past MAX_PROXY_HOPS.
+        #       This kills ANY loop regardless of which ports are involved.
+        #   (2) SELF-REFUSAL — never proxy to this host's OWN port (a self-loop).
+        try:
+            hops = int(self.headers.get("X-PV-Hops") or 0)
+        except (TypeError, ValueError):
+            hops = 0
+        if hops >= MAX_PROXY_HOPS:
+            return self._json(508, {"success": False, "code": "PROXY_LOOP_REFUSED",
+                                    "error": f"refusing after {hops} proxy hops (X-PV-Hops) — a loop is forming; "
+                                             f"check FACE_API ({FACE_API}) for a shim that proxies back here"})
+        if _is_self_url(FACE_API):
+            return self._json(508, {"success": False, "code": "PROXY_SELF_REFUSED",
+                                    "error": f"FACE_API ({FACE_API}) points at THIS host — refusing a self-proxy loop"})
         n = int(self.headers.get("Content-Length") or 0)
         body = self.rfile.read(n) if n > 0 else None
         url = FACE_API + u.path + (("?" + u.query) if u.query else "")
         req = urllib.request.Request(url, data=body, method=method)
+        req.add_header("X-PV-Hops", str(hops + 1))
         for h in ("Authorization", "Content-Type", "Accept"):
             v = self.headers.get(h)
             if v:

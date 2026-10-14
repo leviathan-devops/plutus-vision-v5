@@ -1,0 +1,58 @@
+<!-- =================================================================
+     journal.html — THE JOURNAL TAB'S BODY FRAGMENT  (SHELL_ANCHOR §5.1 T3)
+     Loaded at mount by dashboard/renderer/tabs/journal.js through
+     PlutusShell.loadFragment('tabs/journal.html') — i.e. over the dashboard's
+     own static root (http://127.0.0.1:9851/tabs/journal.html), because the
+     renderer runs on file:// where a fetch of a sibling file is blocked.
+     It is a FRAGMENT (no <html>/<head>/<body>): it is injected into
+     #main-content, and it never assumes it owns the document.
+     Styles: tabs/journal.css (injected by journal.js). Tokens: the dashboard's
+     own tokens.css via PlutusShell.ensureTokens().
+     ================================================================= -->
+<div class="jt-root" data-tab-key="journal-live">
+  <!-- THE TOOLBAR — the journal's own pages, one click away, plus the state of
+       its SERVER (the tab never starts it: the Electron main process does). -->
+  <div class="ps-toolbar jt-toolbar">
+    <span class="jt-brand">
+      <span class="ps-dot ps-dot-unknown" id="jt-dot"></span>
+      <span class="jt-brand-label">JOURNAL</span>
+    </span>
+
+    <nav class="jt-links" id="jt-links">
+      <button class="ps-tlink" data-jt-route="/" title="the journal's own dashboard">Dashboard</button>
+      <button class="ps-tlink" data-jt-route="/calendar" title="the P&amp;L calendar">Calendar</button>
+      <button class="ps-tlink" data-jt-route="/journal" title="the daily journal">Day</button>
+      <button class="ps-tlink" data-jt-route="/trades" title="every round-trip trade">Trades</button>
+      <button class="ps-tlink" data-jt-route="/reports" title="reports + the Edge Score">Reports</button>
+      <button class="ps-tlink" data-jt-route="/playbooks" title="strategies / playbooks">Strategies</button>
+      <button class="ps-tlink" data-jt-route="/notebook" title="the notebook">Notebook</button>
+      <button class="ps-tlink" data-jt-route="/prop-firms" title="prop-firm tracking">Prop firms</button>
+    </nav>
+
+    <span class="jt-spacer"></span>
+    <span class="ps-note" id="jt-status">checking…</span>
+    <button class="ps-tlink jt-action" id="jt-reload" title="reload the journal surface">Reload</button>
+    <button class="ps-tlink jt-action" id="jt-recheck" title="re-read the journal server's state">Recheck</button>
+  </div>
+
+  <!-- THE STAGE — the journal's own UI, or the NAMED down state. Never blank. -->
+  <div class="jt-stage">
+    <div class="jt-down" id="jt-down" hidden>
+      <div class="jt-down-card">
+        <div class="jt-down-code" id="jt-down-code">JOURNAL_DOWN</div>
+        <div class="jt-down-why" id="jt-down-why">—</div>
+        <div class="jt-down-meta" id="jt-down-meta">—</div>
+        <div class="jt-down-hint">
+          The Electron main process owns this child's lifecycle
+          (<code>dashboard/journal-server/lifecycle.mjs</code> → <code>start()</code>);
+          the tab never starts it. To run it by hand:
+          <code>node dashboard/journal-server/start.mjs</code>
+        </div>
+        <div class="jt-down-actions">
+          <button class="jt-btn" id="jt-down-recheck">Recheck now</button>
+        </div>
+      </div>
+    </div>
+    <div class="jt-view-host" id="jt-view-host"></div>
+  </div>
+</div>

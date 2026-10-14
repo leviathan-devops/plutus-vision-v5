@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plutus Vision — Pine IDE + Backtest</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="tabs/pineshell.css">
+  <script>
+    window.dashboardConfig = {
+      apiBase: 'http://127.0.0.1:9851',
+      wsUrl: 'ws://127.0.0.1:9431',
+      authToken: 'rw_dev_plutus_backtest',
+      pineStation: 'http://127.0.0.1:9741'
+    };
+  </script>
+  <style>
+    /* THE STANDALONE HEIGHT CHAIN.
+       pineshell.css sizes itself with `.pine-shell { height: 100% }` — which
+       resolves to `auto` unless EVERY ancestor has a definite height. Under the
+       dashboard that chain comes from the app shell; here we supply it, or the
+       Vela chart host (flex: 1 1 auto, min-height: 320px) grows unbounded and
+       sizes its canvas to the full content height (measured: 24,677px tall —
+       the plot then renders far outside the viewport and reads as blank). */
+    html, body { height: 100%; margin: 0; padding: 0; }
+    body.pine-standalone {
+      height: 100vh; width: 100vw; overflow: hidden;
+      display: flex; flex-direction: column;
+      background: var(--bg-void, #08080A);
+    }
+    /* ── THE TWO-TAB MINI-DASHBOARD (2026-10-06) ──────────────────────────────
+       The operator's ask: "upgrade the Pine IDE desktop app to have both the Pine
+       IDE and a backtesting tab — like a little mini dashboard." One page, two
+       panes: the Pine IDE (the indicator + chart) and the Backtest room (bar
+       replay) — so the SAME indicator can be replayed and played forward. */
+    .pv-nav { display: flex; gap: 2px; padding: 5px 7px; background: #0a0a0c;
+      border-bottom: 1px solid #1b1b21; flex: 0 0 auto; }
+    .pv-nav .nav-btn { padding: 7px 18px; background: #14141a; color: #9a9aa6;
+      border: 1px solid #26262e; border-radius: 5px; cursor: pointer;
+      font: 600 11px/1 ui-sans-serif, system-ui; letter-spacing: .07em; }
+    .pv-nav .nav-btn:hover { color: #d6d6de; border-color: #34343e; }
+    .pv-nav .nav-btn.active { background: #1d1d27; color: #fff; border-color: #40404d; }
+    .pv-panes { flex: 1 1 auto; position: relative; min-height: 0; }
+    .pv-pane { position: absolute; inset: 0; display: none;
+      flex-direction: row; min-height: 0; }
+    .pv-pane.pv-on { display: flex; }
+    .pv-pane > * { flex: 1 1 auto; min-width: 0; min-height: 0; }
+  </style>
+</head>
+<body class="pine-standalone">
+  <nav class="pv-nav" role="tablist" aria-label="Plutus Vision panes">
+    <button class="nav-btn active" data-page="pine-shell" role="tab" aria-selected="true">PINE IDE</button>
+    <button class="nav-btn" data-page="backtest-room" role="tab" aria-selected="false">BACKTEST</button>
+  </nav>
+  <div class="pv-panes">
+    <div id="pine-shell-root" class="pv-pane pv-on" data-shell-host="pine-shell"></div>
+    <div id="page-backtest-room" class="pv-pane"></div>
+  </div>
+
+  <script>
+    /* THE PANE SWITCHER — capture-phase so it co-fires with the tab desks' own
+       nav-click handlers (registered on the same node; stopPropagation does not
+       block a same-node peer — only stopImmediatePropagation would). */
+    (function () {
+      function activate(page) {
+        var id = (page === 'backtest-room') ? 'page-backtest-room' : 'pine-shell-root';
+        Array.prototype.forEach.call(document.querySelectorAll('.pv-pane'), function (p) {
+          p.classList.toggle('pv-on', p.id === id);
+        });
+        Array.prototype.forEach.call(document.querySelectorAll('.pv-nav .nav-btn'), function (b) {
+          var on = b.dataset.page === page;
+          b.classList.toggle('active', on);
+          b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+      }
+      document.addEventListener('click', function (ev) {
+        var t = ev.target;
+        var b = t && t.closest ? t.closest('.pv-nav .nav-btn[data-page]') : null;
+        if (b) activate(b.dataset.page);
+      }, true);
+      // expose for the rails / a driver
+      window.PVActivate = activate;
+    })();
+  </script>
+  <script src="tabs/_shell.js"></script>
+  <script src="tabs/_term-bridge.js"></script>
+  <script src="tabs/pineshell.js"></script>
+  <script src="tabs/backtest.js"></script>
+</body>
+</html>

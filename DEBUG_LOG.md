@@ -2938,3 +2938,151 @@ DXY points because DXY is its worked example; the indicator is 4-pair.)
   buffer-sha == file-sha before it binds any screenshot (fail-closed on stale).
 - **THE LESSON:** the render pipeline has TWO sources of truth (file + buffer) while the face
   backend is down. A screenshot without a buffer-sha binding proves nothing about the file.
+
+## EN-133 — THE BACKTEST TAB DIED ON A DATE FORMAT (2026-10-14)
+- **THE FINDING:** the BACKTEST pane would not mount at all. The console carried
+  `[backtest-room] mount failed RangeError: Invalid time value at Date.toISOString
+  (<anonymous>) at renderControlsState (tabs/backtest.js:683:102) at paint (tabs/backtest.js:501:5)`
+  on every page load. The operator read it as a regression and demanded the working
+  checkpoint: *"the back testing is fucking broken. It's the same single candle"*.
+- **THE ROOT CAUSE:** `renderControlsState` executed
+  `j.value = new Date(st.now.time - new Date(st.now.time).getTimezoneOffset()*60000).toISOString()`
+  with NO validity guard. `st.now.time` is NaN until the replay session holds real bars, and
+  `Date#toISOString(NaN)` THROWS. The throw propagated out of `renderControlsState` into
+  `paint()`, and `paint()` is the mount's render chain — so one unguarded date format took the
+  whole component down.
+- **THE FIX:** `tabs/backtest.js:683-690` — hoist the timestamp, test `isFinite()`, and clear
+  the field instead of throwing. Blast radius measured with ripwire `verb=callers` BEFORE the
+  edit: `defs="1" count="1"` — only `paint` at `tabs/backtest.js:499` calls it, so the guard
+  cannot reach anything else.
+- **THE VERIFICATION:** the same load now logs no RangeError and the pane mounts — measured DOM
+  `{"display":"flex","text":"BACKTESTING THE TRADEZELLA ROOM · MANUAL REPLAY + SUPERVISED AGENT SESSIONS…"}`,
+  and the replay drove to `bar 941/941 · visible 941 / 941` with the full May 28 → Jul 2 series
+  rendered under the `ALL` range.
+- **THE LESSON:** a value used as a DATE is validated at the point of FORMATTING, not at the
+  point of loading — "no bars yet" is a reachable state by design, not an unreachable one. And
+  a throw inside a render chain is a WHOLE-COMPONENT outage, never a bad cell: guard the format
+  at the format site, never ask the caller to pre-validate.
+
+## EN-134 — THE LAYOUT NEVER WIRED, AND THE REASON WAS THE BROWSER (2026-10-14)
+- **THE FINDING:** the new collapsible-layout code logged `[PineShell] mounted` yet the
+  `data-hide-*` attributes never appeared on `.pine-shell`, so the verdict block stayed under
+  the chart. CDP read the live DOM:
+  `{"attrs":["data-pine-shell=","data-tab-key=pine-shell"],"verdictDisplay":"block","cssHasHideRule":true}`
+  — the CSS rule WAS present, the attributes were NOT.
+- **THE ROOT CAUSE — two layers, and the second is the one that mattered.**
+  (1) my first `wireLayout` did `container.querySelector('[data-pine-shell]')` scoped to the
+  mount container and returned SILENTLY on null — a silent-skip, which is exactly why there
+  was no error to read.
+  (2) even after adding a document-scoped fallback the attributes still did not land, because
+  **the browser was executing a CACHED pineshell.js**. Proven by comparing the executed
+  function against the served bytes: served `grep -c "layout wired"` = 1, but
+  `window.PlutusPineShellTab.mount.toString().includes('layout wired')` = false.
+  The server had the fix; the browser had the old copy.
+- **THE FIX:** `pv-server.py` sends no `Cache-Control`, so Chrome applies heuristic freshness
+  (10% of age-since-last-modified) and did not revalidate across ctrl+R. A fresh per-instance
+  profile (`--user-data-dir=…/pine-layout5/cp2`) proved the code correct on first load:
+  `[PineShell] layout wired · shell=pine-shell · hide=0/0/1`. The container-scoped lookup was
+  ALSO hardened to fall back to the document, with a `console.warn` naming the container id
+  when neither resolves.
+- **THE LESSON:** when a shipped change "does not take effect", prove WHICH COPY RAN before
+  debugging the logic — `fn.toString()` against the served bytes is the instrument, and it
+  settles it in one call. Never write a silent `if (!x) return;` on a wiring path: it converts
+  a findable bug into an unfindable one. A static dev server with no `Cache-Control` is a
+  debugging hazard in its own right.
+
+## EN-135 — THE CHART WAS ON A FEED THAT CANNOT EXIST (2026-10-14)
+- **THE FINDING:** the Pine chart rendered `FEED_UNREACHABLE: http://127.0.0.1:9448/bars —
+  Failed to fetch` with the chip `TV · DXY · 1H · 0 bars`; before that,
+  `FIXTURE_CELL_ABSENT: EUR/USD 1H — the fixture carries DXY 1H (HTTP 200)`.
+- **THE ROOT CAUSE:** `plutus.pine.market` had been persisted as
+  `{"provider":"tv","ticker":"DXY","timeframe":"60"}` by a symbol-search pick, while
+  `pine-ide/tv-feed/server.mjs` — the separate `:9448` process — was **NOT RUNNING**
+  (measured: `ERR_MODULE_NOT_FOUND` on launch; no `node_modules` in that directory). The
+  kernel's own comment (`pine-ide.mjs:96`) states DXY comes from the FIXTURE feed and "every
+  other market comes from the tv: feed", so `tv:DXY` is a combination the design never
+  supports.
+- **THE FIX:** set the persisted market to
+  `{"provider":"fixture","ticker":"DXY","timeframe":"60"}` — the key is `plutus.pine.market`,
+  shape-validated by `pine-persist.mjs` `MARKET_RE` (`provider ∈ {tv,fixture}`). Measured after
+  reload: `DXY · FIXTURE · 1h`, `FIXTURE · DXY · 1H · 508 bars`, EMA Ribbon rendering over real
+  candles.
+- **THE LESSON:** a persisted UI selection OUTLIVES the service that made it valid. When a feed
+  dies, every market persisted against it is silently poisoned, and the error names the URL
+  rather than the stale selection — so the symptom points at the wrong layer. `tv-feed` remains
+  UNFIXED (needs `npm install` in `pine-ide/tv-feed/`); recorded as an open gap, never as a fix.
+
+## EN-136 — THE PORT GUARDIAN KILLED A BYSTANDER (2026-10-14)
+- **THE FINDING:** the newly-installed `pv-port-guard` systemd service logged
+  `SQUATTER :9741 pid=2746683 KILLED — cmd='/bin/sh -c node /tmp/cu-step.mjs 9333 tab-backtest && AGENT_DISPLAY_ID=cu-clay-a136aa91 …'`
+  — ANOTHER AGENT's process, on a port it does not hold.
+- **THE ROOT CAUSE:** pid discovery on this host cannot see the socket owner. Measured on a
+  control listener (`:9995`, same uid, launched from this session):
+  `ls /proc/<pid>/fd` → `Permission denied`, `socket fds: 0`, and `ss -ltnp`'s pid field empty.
+  So `ss -ltnp`, `fuser -n tcp`, and a /proc-inode scan all report NO owner even for a live
+  listener. The guardian therefore resolved the holder's CGROUP via `ss -ltne` and killed every
+  process in it whose cmdline matched `interpreter + /tmp/script` — a ~100-process scope, so
+  ANY /tmp script in the session was a candidate regardless of whether it held the port.
+- **THE FIX:** `systemctl --user stop pv-port-guard.service` (verified `inactive`). A second
+  defect was caught in the same test: the squatter regex matched `/tmp/` anywhere in argv, so a
+  LEGITIMATE `pv-server` whose renderer-root argument is a `/tmp` path was also killed; the
+  regex was narrowed to `interpreter<space>/tmp/` (the script as argv[1]) before the service
+  was disarmed.
+- **THE LESSON:** without per-fd visibility there is no precise holder, and an imprecise killer
+  is worse than no killer — it converts a port-hygiene nuisance into cross-agent data loss on a
+  host the operator had explicitly fenced. The only sound port lock is BINDING the port
+  (EADDRINUSE for everyone else). Disarmed, and never re-armed in its current form.
+
+## EN-137 — THE PINE IDE LAYOUT: THE ASK, BUILT AND MEASURED (2026-10-14)
+- **THE FINDING (the operator's words, verbatim):** *"why is the chart only 40% of the
+  screen?… Why is there shit underneath the chart?… the chart needs to cover the full height
+  from the top to the bottom… the actual area where we're typing the code… can be reduced by 10
+  to 20%. So it only takes up 40 or 30% of the screen. And all of this should be collapsible
+  just like it is on the back testing tab."*
+- **THE ROOT LAYOUT:** `.pine-shell` was `display:flex` (row) with `.pine-left { flex:1 1 46% }`
+  and `.pine-right { flex:1 1 54% }`, and `.pine-right` stacked [chart][status][verdict] — so
+  the verdict block occupied ~165px of the chart column's height by DEFAULT.
+- **THE FIX:** (a) `.pine-shell` becomes a COLUMN carrying a layout toolbar above a
+  `.pine-cols` row, so a control can never live inside the panel it controls; (b) `.pine-left`
+  → `flex: 0 0 var(--pine-left-w, 34%)`; (c) `data-hide-foot="1"` by default hides
+  `.pine-status` + `.pine-verdict`, leaving the chart host as the column's only child; (d) the
+  backtest tab's collapse pattern ported 1:1 (`data-hide-*` + `aria-pressed`=shown +
+  localStorage `plutus.pine.layout` + the rAF/120ms double `chart.resize()`); (e) a
+  pointer-drag splitter writing `--pine-left-w`.
+- **THE VERIFICATION** (live DOM read from the operator's own display `:5` — not a source
+  read): `{"shellPresent":true,"hide":"left=0 face=0 foot=1","footDisplay":"none / none",
+  "editorPct":"34%","toggles":4,"splitter":true}` — `ERRORS: none`.
+- **THE LESSON:** "collapsible" is a contract with the CHART, not with the DOM — a flex change
+  does not always fire the chart's own observer, so every layout mutation must drive
+  `chart.resize()` explicitly. The backtest tab already knew this; port the MECHANISM, never
+  just the CSS.
+
+## EN-138 — CORRECTION TO EN-134: THE STALE-COPY CAUSE WAS NOT THE MISSING HEADER (2026-10-14)
+- **THE FINDING:** EN-134 recorded the root cause as "`pv-server.py` sends no `Cache-Control`, so
+  Chrome applied heuristic freshness and did not revalidate". That attribution is **FALSE**, and
+  it was caught by the FULL_BUILD_CONTEXT author while re-measuring rather than by me.
+- **THE MEASUREMENT (re-run by hand before correcting anything):**
+  `scripts/pv-server.py:633` sends `Cache-Control: no-store, no-cache, must-revalidate` and
+  `:634` sends `Pragma: no-cache`; a live header dump from the running `:9863` confirms both are
+  emitted, with `Content-Length: 15044` matching the file on disk. The server also has a second
+  site at `:426` (`Cache-Control: no-store`). So the header was present the whole time.
+- **WHAT STILL STANDS:** the OBSERVATION in EN-134 is unrefuted and was directly measured — the
+  served bytes carried `layout wired` (`grep -c` = 1) while the executed function did not
+  (`mount.toString().includes('layout wired')` = false), and a fresh `--user-data-dir` profile
+  made the code work on first load. Served-vs-executed really did disagree.
+- **WHAT IS NOW UNKNOWN:** the MECHANISM. With a `no-cache` header a revalidation should have
+  fetched fresh bytes, so the leading candidates are (a) the browser's ESM module cache holding
+  the already-parsed module across that particular reload, (b) the ctrl+r keypress never reaching
+  the window, or (c) the fragment having been torn down by the pane switch so the attributes
+  landed on a detached node. I did not measure which, so the mechanism is recorded as
+  **UNRESOLVED**, not as a new guess.
+- **THE FIX TO THE RECORD:** CURRENT_STATE §7.2, NEXT_STEPS W-N3, TASK_QUEUE A3, the
+  SHIP_MANIFEST honest gap #5 and the README gap #5 were all corrected in place; the surviving
+  advice is the INSTRUMENT, not the header — compare the served bytes against the executed
+  function before debugging a change that "did nothing", because that comparison is what settled
+  it and it is header-agnostic.
+- **THE LESSON:** I wrote a plausible mechanism beside a true observation and then built a work
+  item on top of it. The observation was measured; the attribution was not. A root cause that was
+  never separately measured is a hypothesis, and it must be labelled as one at the moment it is
+  written — otherwise it hardens into canon through repetition, which is exactly what happened
+  across four documents here before an author re-measured.

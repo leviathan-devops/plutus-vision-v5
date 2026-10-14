@@ -927,3 +927,54 @@ raises the extremes toward HEAVY and flips the E2 to the reversal the operator e
 - ROOT CAUSE: the E1 box's right edge (_rx = _bAnchor + _bpw) was PAST the chart's last bar (the target week is the future) -> the renderer DROPPED the box.
 - FIX: xloc.bar_time (the canon Part X Principle 5) — _lx = e1_anchor_ms - 2w, _rx = e1_anchor_ms + 1w. Now boxes:5.
 - THE YELLOW BOXES: the E2 day tags (style_label_down) with color=color(na) -> the engine's default GOLD background. Fix: color.new(color.black,100).
+
+## 2026-10-14 · THREE FAULTS — AND TWO OF THEM WERE SIGNAL-LIES
+- **SYMPTOM 1:** the BACKTEST pane would not mount — `[backtest-room] mount failed RangeError:
+  Invalid time value` on every page load.
+  **ROOT CAUSE 1:** `renderControlsState` executed `.toISOString()` on a NaN `st.now.time`.
+  `Date#toISOString(NaN)` THROWS, and the throw escaped into `paint()` — the mount's render
+  chain — so one unguarded date format took down the whole component.
+  **FIX 1:** `tabs/backtest.js:683-690` — hoist the timestamp, test `isFinite()`, clear the
+  field instead of throwing. Blast radius measured first: ripwire `defs=1 count=1`, only `paint`.
+  **LESSON 1:** validate at the FORMAT site, not the load site — "no bars yet" is reachable by
+  design, not an impossible state. A throw inside a render chain is a COMPONENT outage, never a
+  bad cell.
+- **SYMPTOM 2:** the new layout logged `[PineShell] mounted` but set no `data-hide-*` attribute,
+  and the CSS rule WAS present in the served bytes.
+  **ROOT CAUSE 2 (two layers):** a silent `if (!shell) return;` hid the first defect — no error,
+  nothing to read. The real cause was that **the browser was executing a CACHED pineshell.js**:
+  served `grep -c "layout wired"` = 1 but `mount.toString().includes('layout wired')` = false.
+  `pv-server.py` sends no `Cache-Control`, so Chrome applied heuristic freshness and did not
+  revalidate across ctrl+R.
+  **FIX 2:** a fresh per-instance profile proved the code correct on first load; the lookup was
+  hardened to a document fallback carrying a `console.warn` that can FAIL.
+  **LESSON 2:** prove WHICH COPY RAN before debugging the logic — `fn.toString()` against the
+  served bytes settles it in one call. A silent skip on a wiring path turns a findable bug into
+  an unfindable one.
+- **SYMPTOM 3:** the new port guardian logged `SQUATTER :9741 pid=2746683 KILLED` for ANOTHER
+  AGENT's process on a port that process does not hold.
+  **ROOT CAUSE 3:** `/proc/<pid>/fd` is unreadable inside the ORCA scope (measured on a control
+  listener on `:9995`: fd dir `Permission denied`, `ss` pid field empty), so the service killed
+  every `/tmp`-script process in the holder's ~100-process cgroup instead of the holder.
+  **FIX 3:** service stopped and verified `inactive`; the regex narrowed to `argv[1]`. The port
+  is NOT locked.
+  **LESSON 3:** without per-fd visibility there is no precise holder, and an imprecise killer is
+  worse than none — it converts a hygiene nuisance into cross-agent data loss. The only sound
+  port lock is BINDING the port (EADDRINUSE for everyone else).
+
+## 2026-10-14 · THE ROOT CAUSE I WROTE WAS WRONG (caught by a re-measure, not by me)
+- **SYMPTOM:** EN-134 recorded "pv-server sends no Cache-Control" as the cause of the
+  served-vs-executed mismatch, and four documents repeated it.
+- **ROOT CAUSE OF THE ERROR:** I measured the OBSERVATION (served bytes vs executed function —
+  both directly checked) but did NOT measure the ATTRIBUTION, and wrote a plausible mechanism
+  beside a true observation. Repetition across CURRENT_STATE / NEXT_STEPS / TASK_QUEUE /
+  SHIP_MANIFEST hardened it into canon.
+- **FIX:** re-measured by hand — `scripts/pv-server.py:633` sends
+  `Cache-Control: no-store, no-cache, must-revalidate`, `:634` sends `Pragma: no-cache`, and a
+  live header dump from `:9863` confirms both. EN-138 appended; the five documents corrected in
+  place; the mechanism recorded as UNRESOLVED rather than replaced with a new guess.
+- **LESSON:** a root cause that was not separately measured is a hypothesis — label it as one AT
+  THE MOMENT IT IS WRITTEN, in the same sentence as the observation it accompanies. Once it sits
+  unlabelled in a doc, the next four references cite it as fact.
+- **EVIDENCE:** `pv-server.py:633-634`; the `curl -D-` dump showing both headers with
+  `Content-Length: 15044`; DEBUG_LOG EN-138.

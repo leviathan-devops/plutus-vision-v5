@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plutus Dashboard</title>
+    <link rel="stylesheet" href="styles.css?v=1">
+    <link rel="stylesheet" href="tokens.css?v=1">
+    <link rel="stylesheet" href="tabs/pineshell.css?v=1">
+    <script>
+      // THIS SANDBOX: pin every config the renderer reads, before app.js loads.
+      window.dashboardConfig = {
+        apiBase: 'http://127.0.0.1:9851',
+        wsUrl: 'ws://127.0.0.1:9431',
+        authToken: 'rw_dev_plutus_backtest',
+        pineStation: 'http://127.0.0.1:9741'
+      };
+    </script>
+</head>
+<body>
+    <div class="app-shell">
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="data"><span class="tab-label">DATA</span></button>
+            <button class="tab-btn" data-tab="agent"><span class="tab-label">AGENT</span></button>
+            <button class="tab-btn" data-tab="trade"><span class="tab-label">TRADE</span></button>
+            <button class="tab-btn" data-tab="browser"><span class="tab-label">WEB RESEARCH</span></button>
+            <button class="tab-btn" data-tab="mt5"><span class="tab-label">MT5</span></button>
+            <button class="tab-btn" data-tab="journal"><span class="tab-label">JOURNAL</span></button>
+            <button class="tab-btn" data-tab="backtest"><span class="tab-label">BACKTEST</span></button>
+            <button class="tab-btn" data-tab="pine"><span class="tab-label">PINE SHELL</span></button>
+        </div>
+
+        <div class="tab-panel" data-panel="data" style="display:flex;">
+    <div id="app">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    
+                    <span class="logo-text">PLUTUS</span>
+                </div>
+                <div class="logo-subtitle">DASHBOARD</div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-label">MACRO PAGES</div>
+                    <button class="nav-btn" data-page="live-funded"><span class="nav-label">LIVE (FUNDED)</span></button>
+                    <button class="nav-btn" data-page="live-demo"><span class="nav-label">LIVE (DEMO)</span></button>
+                    <button class="nav-btn" data-page="backtesting"><span class="nav-label">BACKTEST DATA</span></button>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-label">ANALYSIS</div>
+                    <button class="nav-btn" data-page="overview"><span class="nav-label">OVERVIEW</span></button>
+                    <button class="nav-btn" data-page="analytics"><span class="nav-label">ANALYTICS</span></button>
+                    <button class="nav-btn" data-page="poseidon"><span class="nav-label">POSEIDON</span></button>
+                    <button class="nav-btn" data-page="split-tests"><span class="nav-label">SPLIT TESTS</span></button>
+                    <button class="nav-btn" data-page="journal"><span class="nav-label">JOURNAL DATA</span></button>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-label">SYSTEM</div>
+                    <button class="nav-btn" data-page="agents"><span class="nav-label">AGENTS</span></button>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="ws-status" id="ws-status"><span class="ws-dot ws-dot-disconnected" id="ws-dot"></span><span class="ws-label" id="ws-label">Disconnected</span></div>
+                <div class="api-status" id="api-status"><span class="api-dot api-dot-unknown" id="api-dot"></span><span class="api-label" id="api-label">API: Checking...</span></div>
+                <div class="version-tag">v1.0.0-phase1</div>
+            </div>
+        </aside>
+        <main class="main-content" id="main-content"></main>
+    </div>
+        </div>
+
+        <div class="tab-panel" data-panel="agent" style="display:none;">
+            <div class="tab-placeholder" id="agent-placeholder" style="width:100%;height:100%;">
+                <div class="placeholder-icon"></div>
+                <div class="placeholder-title">PLUTUS-FANG</div>
+                <div class="placeholder-text">Agent OS not connected.</div>
+                <div class="placeholder-status" id="agent-status">● OFFLINE</div>
+            </div>
+        </div>
+
+        <div class="tab-panel" data-panel="trade" style="display:none;">
+            <div style="display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden;">
+                <!-- ROW: chart (flex) + chat (right 360px) -->
+                <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+                    <div id="trade-chart-area" style="flex:1;position:relative;min-width:0;display:flex;flex-direction:column;background:var(--bg-base,#0B0B0C);">
+                        <!-- CONTROL BAR: the agent-display chart (pair / reframe / clear) -->
+                        <div class="surface-bar">
+                            <button id="tv-reframe" title="Frame the trading week into the anchor / reset the TV chart" class="ctl">WEEK</button>
+                            <button id="tv-reload" title="Reload the chart surface" class="ctl">⟳</button>
+                            <button id="tv-clear" title="Clear drawings" class="ctl">CLEAR</button>
+                            <span class="ctl-label">PAIR</span>
+                            <select id="tv-pair" class="ctl">
+                                <option value="EURUSD">EURUSD</option>
+                                <option value="GBPUSD">GBPUSD</option>
+                                <option value="DXY">DXY</option>
+                            </select>
+                            <span class="ctl-label">TF</span>
+                            <select id="tv-tf" class="ctl">
+                                <option value="15m">15m</option>
+                                <option value="30m">30m</option>
+                                <option value="1H" selected>1H</option>
+                                <option value="4H">4H</option>
+                            </select>
+                            <!-- ── THE CHART BACKEND TOGGLE (SHELL_ANCHOR §4/§10) ──
+                                 The control sits at the tab's TOP-RIGHT and NEVER
+                                 disappears: a dead backend shows its NAMED token in
+                                 the region, and the operator can always switch back. -->
+                            <div id="chart-toggle" class="chart-toggle" title="Which backend the chart region shows">
+                                <button id="cb-tv" class="cb-opt" data-active="0">TRADINGVIEW</button>
+                                <button id="cb-self" class="cb-opt" data-active="1">SELF-HOSTED</button>
+                                <span id="cb-note" class="cb-note">SELF-HOSTED</span>
+                            </div>
+                            <span id="tv-status" class="ctl-status">● AGENT DISPLAY</span>
+                        </div>
+                        <!-- THE EMBEDDED COMPOSITOR SURFACE (the chart tab content area) -->
+                        <div id="trade-embed" class="embed-host" style="flex:1;position:relative;width:100%;min-height:0;"></div>
+                    </div>
+                    <div id="trade-chat-container" style="width:360px;border-left:1px solid var(--border-base,#1a2332);background:var(--bg-base,#0B0B0C);flex-shrink:0;display:flex;flex-direction:column;"></div>
+                </div>
+                <!-- TRACKER: full-width strip UNDER the chart -->
+                <div id="trade-tracker-container" style="flex-shrink:0;border-top:1px solid var(--border-base,#1a2332);background:var(--bg-base,#0B0B0C);overflow:hidden;"></div>
+            </div>
+        </div>
+
+        <div class="tab-panel" data-panel="browser" style="display:none;">
+            <div id="browser-container" style="display:flex;flex-direction:column;width:100%;height:100%;background:var(--bg-base,#0B0B0C);overflow:hidden;">
+                <!-- TOOLBAR: drives the AGENT BROWSER SURFACE on the compositor -->
+                <div class="surface-bar">
+                    <button id="browser-back" title="Back" class="ctl">←</button>
+                    <button id="browser-fwd" title="Forward" class="ctl">→</button>
+                    <button id="browser-reload" title="Reload" class="ctl">⟳</button>
+                    <button id="browser-home" title="Home" class="ctl">⌂</button>
+                    <input id="browser-url" type="text" value="https://www.forexfactory.com/calendar" class="ctl-url" />
+                    <button id="browser-go" class="ctl-go">GO</button>
+                    <span id="browser-status" class="ctl-status">● AGENT BROWSER</span>
+                </div>
+                <div class="surface-bar surface-bar--links">
+                    <button class="browser-quick" data-url="https://www.tradingview.com/chart/" class="ctl-chip">TRADINGVIEW</button>
+                    <button class="browser-quick" data-url="https://www.forexfactory.com/calendar" class="ctl-chip">FX CALENDAR</button>
+                    <button class="browser-quick" data-url="https://investinglive.com/Orders/" class="ctl-chip">INVESTING ORDERS</button>
+                    <button class="browser-quick" data-url="https://www.tradingview.com/markets/currencies/" class="ctl-chip">TV MARKETS</button>
+                </div>
+                <!-- THE AGENT BROWSER — a window of this Electron app on the compositor -->
+                <div id="browser-embed" class="embed-host" style="flex:1;width:100%;min-height:0;position:relative;"></div>
+            </div>
+        </div>
+
+        <div class="tab-panel" data-panel="mt5" style="display:none;">
+            <div class="tab-placeholder" id="mt5-placeholder">
+                <div class="placeholder-icon"></div>
+                <div class="placeholder-title">MT5 TERMINAL</div>
+                <div class="placeholder-text">MetaTrader 5 bridge not connected. Account 25854220 (VantageMarkets-Demo).</div>
+                <div class="placeholder-status" id="mt5-status">● OFFLINE</div>
+            </div>
+        </div>
+
+        <div class="tab-panel shell-panel" data-panel="journal" style="display:none;"><div class="shell-host" data-shell-host="journal-live"></div></div>
+        <div class="tab-panel shell-panel" data-panel="backtest" style="display:none;"><div class="shell-host" data-shell-host="backtest-room"></div></div>
+        <div class="tab-panel shell-panel" data-panel="pine" style="display:none;"><div class="shell-host" data-shell-host="pine-shell"></div></div>
+    </div>
+
+    <script src="app.js?v=w6r2"></script>
+    <script src="toast.js"></script>
+    <script src="tab-manager.js"></script>
+    <script src="trade-tracker.js"></script>
+    <script src="trade-canvas.js"></script>
+    <script src="trade-chat.js"></script>
+    <script src="agent-tab.js"></script>
+    <script src="browser-tab.js"></script>
+    <script src="mt5-tab.js"></script>
+    <script src="trade-tab.js?v=ws1"></script>
+    <script src="display-surface.js?v=ws1"></script>
+    <!-- THE SHELL TAB MODULES: _shell.js FIRST (it provides PlutusShell.registerTab
+         for every tab module after it). Each tab is self-contained and self-mounts
+         when its container exists, so app.js needs no branch per tab. -->
+    <script src="tabs/_shell.js"></script>
+    <script src="tabs/journal.js"></script>
+    <script src="tabs/backtest.js"></script>
+    <script src="tabs/pineshell.js"></script>
+    <script src="tabs/_rail.js"></script>
+    <script src="tabs/_agent-desk.js"></script>
+    <script>
+    document.querySelectorAll('.tab-btn[data-tab]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var tab = this.getAttribute('data-tab');
+            setTimeout(function() {
+                if (tab === 'agent' && window.AgentTab) window.AgentTab.init();
+                if (tab === 'trade' && window.TradeTab) window.TradeTab.init();
+                if (tab === 'browser' && window.BrowserTab) window.BrowserTab.init();
+                if (tab === 'mt5' && window.MT5Tab) window.MT5Tab.init();
+                // the compositor surface follows the tab through tab-manager.switchTab() ONLY — a second
+                // notification from here raced the stale-embed guard (audit 4a37c656)
+            }, 50);
+        });
+    });
+    // First paint starts on DATA (no compositor surface needed).
+    </script>
+</body>
+</html>

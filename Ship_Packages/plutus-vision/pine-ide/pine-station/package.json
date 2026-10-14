@@ -1,0 +1,15 @@
+{
+  "name": "plutus-pine-station",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "THE PINE STATION — PineTS transpile+run, AGPL-isolated. The shell's chart talks to this process over 127.0.0.1:9441 and receives JSON only. No AGPL package is ever imported into the dashboard bundle.",
+  "license": "AGPL-3.0",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "pinets": "^0.10.0",
+    "@luxalgo/vela-pinets": "^0.2.14"
+  }
+}

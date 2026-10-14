@@ -1,9 +1,9 @@
 # SHIP DOCS MANIFEST — PLUTUS VISION (the JEV context backbone)
 Project root: /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION
 Dist artifact: pine-ide/ide/renderer/plutus-vision-v2.pine (the file the SHA gate reads; the v1 seal is pine-ide/ide/renderer/plutus-vision-v1.pine)
-Served SHA16: f4010d3131367969 (the computed E1+E2 artifact, SC-19=0 — re-measure, never trust)
+Served SHA16: 125c94f86e6a2f1d (re-measured 2026-10-14 — full sha256 125c94f86e6a2f1d3009a75c778e02ad16c48e4f3772e8d0d8d95c50af162400; the prior row f4010d31 was STALE, see V-44)
 V1 seal SHA: 0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1 (HARD STOP H1 — never touch)
-Last updated: 2026-10-11 (W7 — the prior Oct-09 row pointed at the ROOT build copy 668e89d7, not the served renderer; corrected)
+Last updated: 2026-10-14 (the layout + backtest ship cycle; entry counters live: F-141 · EN-137 · V-44 · P-11 · T-30; audit gate BLOCKED — F-141)
 Ship gate: JEV_GATE/run_gate.sh (the ONLY success gate — all chunks act or REJECT); the fence SPEC.md:25 is the commit gate (FENCE-ROW PASS 5/5 in the message)
 Entry counters (floors — the logs are append-only, count live): F-137 · EN-130+ · see the logs, never this row
 

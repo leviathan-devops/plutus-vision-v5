@@ -1012,3 +1012,29 @@ not from disk — the render showed stale values until the computed pine was loa
 - Deleted role_weight; wired regime + side-aware extreme + 4H bonus.
 - E1 + E2 render to xloc.bar_time; fixed the pair-relative scales + the day-tag gold background.
 - v2 ecfc5051; battery green; live render verified; checkpoint saved.
+
+## 2026-10-14 · THE PINE IDE LAYOUT CYCLE (the ship pass)
+- **WHAT:** the collapsible layout the operator ordered — a full-height chart with nothing
+  beneath it, the editor down to 34%, and EDITOR/FACE/VERDICT/FOCUS toggles plus a pointer-drag
+  splitter — and the BACKTEST tab resurrected (an unguarded `Date#toISOString` was aborting the
+  whole mount). The chart feed was corrected to `fixture:DXY`. All six ship docs refreshed;
+  **GATE S1-S7 PASSED**.
+- **WHY:** the operator's standing order — *"the chart needs to cover the full height from the
+  top to the bottom… the area where we're typing the code… reduced by 10 to 20%… all of this
+  should be collapsible just like it is on the back testing tab"* — plus two faults he read as
+  a four-step regression against the ship-approved checkpoint.
+- **HOW:** ported the backtest tab's OWN collapse mechanism (`backtest.js:1084-1132`) instead of
+  inventing one; `.pine-shell` became a COLUMN so the toolbar can never live inside a panel it
+  controls; `flex: 0 0 var(--pine-left-w, 34%)`; `data-hide-foot="1"` by default so the chart
+  host is the column's only child; the rAF + 120ms double `chart.resize()` because a flex change
+  does not always fire the chart's observer; a pointer-drag splitter writing `--pine-left-w`.
+  The backtest guard was blast-radius-checked with ripwire (`defs=1 count=1`, only `paint`)
+  BEFORE the edit.
+- **EVIDENCE:** live DOM on display `:5` —
+  `{"shellPresent":true,"hide":"left=0 face=0 foot=1","footDisplay":"none / none","editorPct":"34%","toggles":4,"splitter":true}`, `ERRORS: none`; backtest `bar 941/941 · visible 941 / 941`; chart
+  `DXY · FIXTURE · 1h · 508 bars`. Diff vs HEAD: 5 files, +241/-6. v2 SHA
+  `125c94f86e6a2f1d3009a75c778e02ad16c48e4f3772e8d0d8d95c50af162400`; the v1 seal
+  `0d20e831…` UNTOUCHED.
+- **NEXT:** the code-audit lane is BLOCKED (F-141) — restore the `:4097/:4098` fingerprint path
+  or repoint to a keyed provider, then re-run. `tv-feed` still needs `npm install`. The port is
+  still UNLOCKED (F-140); the sound lock is binding it, which is an open item, not a delivery.

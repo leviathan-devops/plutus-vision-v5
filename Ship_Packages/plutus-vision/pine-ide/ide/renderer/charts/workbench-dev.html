@@ -1,0 +1,13 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>workbench dev harness</title>
+<style>html,body{margin:0;height:100%;background:#0B0B0C}#wb{position:absolute;inset:0}</style></head>
+<body><div id="wb"></div>
+<script type="module">
+import { mountWorkbench, memoryStorage } from './workbench.bundle.js';
+const q = new URLSearchParams(location.search);
+window.__store = memoryStorage();
+try {
+  window.__wb = mountWorkbench(document.getElementById('wb'), { symbol: q.get('symbol') || 'tv:EURUSD', timeframe: q.get('tf') || '60', storage: window.__store, persistKey: 'dev' });
+  window.__err = null;
+} catch (e) { window.__err = String(e && e.stack || e); document.body.textContent = window.__err; }
+</script></body></html>

@@ -1,0 +1,189 @@
+<!-- ============================================================================
+     tabs/backtest.html — THE BACKTESTING ROOM's body fragment  (SHELL_ANCHOR §5.2)
+     ----------------------------------------------------------------------------
+     Loaded by tabs/backtest.js through PlutusShell.loadFragment('tabs/backtest.html')
+     (the renderer runs on file:// where a sibling-file fetch is blocked, so the
+     fragment is read from the dashboard's static root on :9430 — or, standalone,
+     from the room's own control surface). Styling: tabs/backtest.css (self-injected).
+     Every control carries a data-bt hook; nothing here is decorative — each control
+     issues a control-surface verb. The future is hidden by the ENGINE, not by this
+     markup: the chart can only ever draw bars the engine returned.
+     ============================================================================ -->
+<div class="bt-room" id="bt-room" data-tab-key="backtest-room">
+
+  <header class="bt-head">
+    <div class="bt-title">BACKTESTING
+      <span class="bt-sub">the TradeZella room · manual replay + supervised agent sessions</span>
+    </div>
+    <div class="bt-head-right">
+      <!-- THE LAYOUT: collapse any panel; the chart takes the space (persisted per operator) -->
+      <div class="bt-layout" data-bt="layout" title="collapse panels — the chart fills the space">
+        <button class="bt-lay" data-bt="lay-left" data-pane="left" aria-pressed="true">SESSIONS</button>
+        <button class="bt-lay" data-bt="lay-journal" data-pane="journal" aria-pressed="true">JOURNAL</button>
+        <button class="bt-lay" data-bt="lay-right" data-pane="right" aria-pressed="true">TICKET</button>
+        <button class="bt-lay bt-lay-focus" data-bt="lay-focus" aria-pressed="false">FOCUS</button>
+      </div>
+      <span class="bt-svc"><span class="ps-dot ps-dot-unknown" data-bt="dot"></span><span data-bt="svc">—</span></span>
+      <button class="ps-tlink" data-bt="refresh">REFRESH</button>
+    </div>
+  </header>
+
+  <div class="bt-body">
+
+    <!-- ─────────────────────────────── LEFT · sessions + create ─────────────── -->
+    <!-- a collapsed side panel becomes a RAIL (click to expand) — the chart takes the space -->
+    <button class="bt-rail bt-rail-left" data-bt="rail-left" title="expand the sessions panel">SESSIONS ›</button>
+    <aside class="bt-col bt-col-left">
+      <button class="bt-collapse bt-collapse-left" data-bt="col-left" title="collapse this panel — the chart takes the space">‹</button>
+      <section class="bt-panel bt-create" data-bt="create-panel">
+        <h3>New session</h3>
+        <label class="bt-f"><span>NAME</span><input type="text" data-bt="f-name" placeholder="e.g. TTE week 27 — BS"></label>
+        <label class="bt-f"><span>STRATEGY / PLAYBOOK</span><input type="text" data-bt="f-strategy" placeholder="e.g. BS / SHELL_ANCHOR §5.2"></label>
+        <label class="bt-f"><span>DATA</span><select data-bt="f-source">
+          <option value="fixture">CANON WEEK · the pipeline's bundled bars (offline)</option>
+          <option value="tv">TV FEED · deep history (up to 5000 closed bars)</option>
+        </select></label>
+        <label class="bt-f"><span>SYMBOL (up to 5)</span><select data-bt="f-symbol"></select></label>
+        <label class="bt-f"><span>TIMEFRAME</span><select data-bt="f-timeframe"></select></label>
+        <div class="bt-f2 bt-f2-stack">
+          <label class="bt-f"><span>FROM (the replay starts here; the rest stays hidden)</span><input type="datetime-local" data-bt="f-from"></label>
+          <label class="bt-f"><span>TO (the session's last bar)</span><input type="datetime-local" data-bt="f-to"></label>
+        </div>
+        <label class="bt-f"><span>STARTING BALANCE</span><input type="number" data-bt="f-balance" value="10000" step="100"></label>
+        <div class="bt-err" data-bt="create-err"></div>
+        <button class="bt-btn bt-btn-primary" data-bt="create">CREATE SESSION</button>
+        <div class="ps-note" data-bt="cellinfo"></div>
+      </section>
+
+      <section class="bt-panel bt-grow">
+        <h3>Sessions</h3>
+        <div class="bt-list" data-bt="sessions"></div>
+      </section>
+    </aside>
+
+    <!-- ─────────────────────────────── CENTER · chart + replay + strip + journal ── -->
+    <main class="bt-col bt-col-center">
+      <div class="bt-chartwrap">
+        <div data-bt="chart" class="bt-chart-host"></div>
+        <div class="bt-chart-empty" data-bt="chart-empty">no session — create one on the left</div>
+        <div class="bt-chart-hud" data-bt="hud"></div>
+        <div class="bt-chart-legend" data-bt="legend"></div>
+      </div>
+
+      <div class="bt-controls" data-bt="controls">
+        <button class="bt-ctl" data-bt="go-first" title="to the first bar">&#9198;</button>
+        <button class="bt-ctl" data-bt="step-back" title="back one bar">&#9664;</button>
+        <button class="bt-ctl bt-ctl-play" data-bt="play" title="play">&#9654;</button>
+        <button class="bt-ctl" data-bt="pause" title="pause">&#10073;&#10073;</button>
+        <button class="bt-ctl" data-bt="step-fwd" title="forward one bar">&#9654;</button>
+        <button class="bt-ctl" data-bt="go-last" title="to the last bar">&#9197;</button>
+        <span class="bt-sep"></span>
+        <span class="ps-label">SPEED</span>
+        <select data-bt="speed" title="bars / second">
+          <option value="0.5">0.5×</option><option value="1">1×</option><option value="2" selected>2×</option>
+          <option value="5">5×</option><option value="10">10×</option><option value="25">25×</option>
+        </select>
+        <span class="bt-sep"></span>
+        <span class="ps-label">JUMP TO</span>
+        <input type="datetime-local" data-bt="jump-at"><button class="bt-btn" data-bt="jump-go">GO</button>
+        <span class="bt-sep"></span>
+        <input class="bt-timeline" type="range" min="0" max="0" value="0" data-bt="timeline" title="timeline">
+        <span class="bt-now" data-bt="now">—</span>
+      </div>
+
+      <section class="bt-strip" data-bt="strip"></section>
+      <div class="bt-strip-note" data-bt="strip-note"></div>
+
+      <button class="bt-rail-h" data-bt="rail-journal" title="expand the journal">JOURNAL ▴</button>
+      <section class="bt-panel bt-journal">
+        <button class="bt-collapse bt-collapse-journal" data-bt="col-journal" title="collapse the journal — the chart takes the space">▾</button>
+        <h3>Journal <span class="bt-h3sub">every simulated trade auto-logs here</span></h3>
+        <div class="bt-journal-grid">
+          <div class="bt-journal-trades" data-bt="jtrades"></div>
+          <div class="bt-journal-notes">
+            <label class="bt-f"><span>SESSION NOTES</span><textarea data-bt="snotes" rows="4" placeholder="what the session is testing, what you learned"></textarea></label>
+            <label class="bt-f"><span>TAGS (comma separated)</span><input type="text" data-bt="stags" placeholder="BS, london, sweep"></label>
+            <button class="bt-btn" data-bt="save-note">SAVE SESSION NOTE</button>
+            <div class="ps-note" data-bt="note-info"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ─────────────────────────────── RIGHT · ticket + position + orders ────── -->
+    <aside class="bt-col bt-col-right">
+      <button class="bt-collapse bt-collapse-right" data-bt="col-right" title="collapse this panel — the chart takes the space">›</button>
+      <section class="bt-panel bt-ticket">
+        <h3>Order ticket</h3>
+        <div class="bt-side" data-bt="side">
+          <button class="bt-side-btn active" data-side="buy">BUY</button>
+          <button class="bt-side-btn" data-side="sell">SELL</button>
+        </div>
+        <div class="bt-f2">
+          <label class="bt-f"><span>TYPE</span><select data-bt="o-type">
+            <option value="market" selected>MARKET (next open)</option>
+            <option value="limit">LIMIT</option>
+            <option value="stop">STOP</option>
+          </select></label>
+          <label class="bt-f"><span>TRIGGER PRICE</span><input type="number" step="0.00001" data-bt="o-price" disabled></label>
+        </div>
+        <div class="bt-f2">
+          <label class="bt-f"><span>SIZE BY</span><select data-bt="o-sizemode">
+            <option value="qty" selected>UNITS</option><option value="riskPct">RISK % OF BALANCE</option>
+          </select></label>
+          <label class="bt-f"><span>VALUE</span><input type="number" step="1" data-bt="o-size" value="10000"></label>
+        </div>
+        <div class="bt-f2">
+          <label class="bt-f"><span>SL</span><select data-bt="o-slmode">
+            <option value="ticks">TICKS</option><option value="price">PRICE</option><option value="pct">%</option>
+          </select></label>
+          <label class="bt-f"><span>SL VALUE</span><input type="number" step="0.00001" data-bt="o-sl" value="200"></label>
+        </div>
+        <div class="bt-f2">
+          <label class="bt-f"><span>TP</span><select data-bt="o-tpmode">
+            <option value="r" selected>R</option><option value="ticks">TICKS</option><option value="price">PRICE</option><option value="pct">%</option>
+          </select></label>
+          <label class="bt-f"><span>TP VALUE</span><input type="number" step="0.00001" data-bt="o-tp" value="2"></label>
+        </div>
+        <div class="bt-f2">
+          <label class="bt-f"><span>TRAILING (TICKS)</span><input type="number" step="1" data-bt="o-trail" placeholder="off"></label>
+          <label class="bt-f bt-f-check"><input type="checkbox" data-bt="o-be"> AUTO-BREAKEVEN AT 1R</label>
+        </div>
+        <label class="bt-f"><span>TAG</span><input type="text" data-bt="o-tag" placeholder="BS"></label>
+        <div class="bt-err" data-bt="order-err"></div>
+        <button class="bt-btn bt-btn-primary" data-bt="place">PLACE ORDER</button>
+        <div class="ps-note" data-bt="ticket-info">market fills at the NEXT bar's open; limit/stop at the level when touched; SL wins when both SL and TP are touched in one bar</div>
+      </section>
+
+      <section class="bt-panel">
+        <h3>Open position</h3>
+        <div data-bt="position" class="bt-pos"></div>
+        <div class="bt-manage" data-bt="manage">
+          <div class="bt-f2">
+            <label class="bt-f"><span>MODIFY SL (TICKS)</span><input type="number" step="1" data-bt="m-sl"></label>
+            <label class="bt-f"><span>MODIFY TP (TICKS)</span><input type="number" step="1" data-bt="m-tp"></label>
+          </div>
+          <div class="bt-f2">
+            <label class="bt-f"><span>SET TRAILING (TICKS)</span><input type="number" step="1" data-bt="m-trail"></label>
+            <label class="bt-f bt-f-check"><input type="checkbox" data-bt="m-be"> ARM AUTO-BREAKEVEN (1R)</label>
+          </div>
+          <button class="bt-btn" data-bt="apply-manage">APPLY</button>
+          <div class="bt-parts">
+            <span class="ps-label">CLOSE</span>
+            <button class="bt-btn" data-bt="pc-25">25%</button>
+            <button class="bt-btn" data-bt="pc-50">50%</button>
+            <button class="bt-btn" data-bt="pc-75">75%</button>
+            <button class="bt-btn bt-btn-danger" data-bt="pc-100">100%</button>
+            <input type="number" step="1" min="1" max="100" data-bt="pc-custom" placeholder="%"><button class="bt-btn" data-bt="pc-go">CLOSE %</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="bt-panel">
+        <h3>Working orders</h3>
+        <div data-bt="orders" class="bt-orders"></div>
+      </section>
+    </aside>
+    <button class="bt-rail bt-rail-right" data-bt="rail-right" title="expand the order ticket">‹ TICKET</button>
+  </div>
+</div>

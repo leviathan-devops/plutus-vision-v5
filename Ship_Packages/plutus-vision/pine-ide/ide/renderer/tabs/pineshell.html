@@ -1,0 +1,92 @@
+<!--
+  pineshell.html — THE PINE SHELL TAB FRAGMENT (SHELL_ANCHOR §5.3 + §15, the operator's
+  re-scoped design: the FINAL SUCCESS GATE COMPILER, not a TS playground).
+
+  The integrator loads this fragment into the tab container; pine-ide.mjs binds to the
+  slots below by class. LEFT = micro-tabs + the PINE editor + the toolbar + the verdict
+  rows + the book-style chat/computer panel. RIGHT = the live Vela chart + the status
+  strip + the capture/verdict block. Nothing here is cosmetic-only: every element is a
+  named slot the kernel drives.
+-->
+<div class="pine-shell" data-pine-shell data-tab-key="pine-shell">
+  <!-- THE LAYOUT TOOLBAR (the backtest tab's .bt-lay, ported). aria-pressed=true = the
+       panel is SHOWN. It sits ABOVE both columns on purpose: a control can never live
+       inside the panel it controls, or hiding that panel would hide its own restore
+       switch. Operator, 2026-10-14: "the chart needs to cover the full height from the
+       top to the bottom" + "all of this should be collapsible just like it is on the
+       back testing tab". -->
+  <div class="pine-lay" role="toolbar" aria-label="Pine IDE layout">
+    <button type="button" class="pine-lay-btn" data-lay="left" aria-pressed="true"
+      title="Hide/show the editor column (micro-tabs · code · toolbar · VIL verdict rows)">◧ EDITOR</button>
+    <button type="button" class="pine-lay-btn" data-lay="face" aria-pressed="true"
+      title="Hide/show THE AGENT'S FACE (the agent cards + the terminal mirror)">▣ FACE</button>
+    <button type="button" class="pine-lay-btn" data-lay="foot" aria-pressed="false"
+      title="Hide/show the status strip + VERDICT block under the chart — HIDDEN by default so the chart runs full height">☰ VERDICT</button>
+    <button type="button" class="pine-lay-btn pine-lay-focus" data-lay="focus" aria-pressed="false"
+      title="FOCUS: hide every panel but the chart; press again to bring them all back">⛶ FOCUS</button>
+    <span class="pine-lay-hint">the chart keeps every pixel a hidden panel frees · drag the handle to resize</span>
+  </div>
+
+  <div class="pine-cols">
+    <div class="pine-left">
+    <div class="pine-microtabs-host" data-slot="microtabs"></div>
+    <div class="pine-editor-host" data-slot="editor"></div>
+
+    <div class="pine-toolbar" data-slot="toolbar">
+      <button type="button" class="pine-btn pine-btn-run" data-act="run" title="Compile + run this Pine through the pine station and draw it">▶ RUN</button>
+      <button type="button" class="pine-btn" data-act="capture" title="Capture the chart canvas → PNG + sha256 (written under evidence/shell)">◎ CAPTURE</button>
+      <button type="button" class="pine-btn pine-btn-gate" data-act="gate" title="THE GATE: load the artifact, run, render, capture, and write the VIL verdict row">⚑ GATE</button>
+      <label class="pine-auto" title="Re-run on keystroke (the real-time kernel, debounced)">
+        <input type="checkbox" data-act="auto" checked> AUTO 120ms
+      </label>
+      <select data-act="artifact" title="The artifact to gate (canon Part X / the week's emitted Pine)"></select>
+      <input type="text" data-act="week" class="pine-week" placeholder="2026-W29" size="10" title="The gate week (YYYY-Www or YYYY-MM-DD) — the ledger row key">
+      <span class="pine-market" data-slot="market" title="The chart's market — change it from the chart's own topbar (symbol search · timeframe)">—</span>
+      <span class="pine-rail-state" data-slot="rail-state">rail —</span>
+    </div>
+
+    <div class="pine-rows" data-slot="rows" aria-label="VIL verdict rows"></div>
+
+    <div class="pine-chat pine-face" data-slot="chat" data-face-view="terminal">
+      <div class="pine-chat-head">
+        <span class="pine-chat-title">THE AGENT'S FACE</span>
+        <span class="pine-chat-sub" data-slot="chat-sub">workspaces…</span>
+      </div>
+      <div class="pine-face-agents" data-slot="agents" aria-label="agent workspaces — click one to swap the code and chart panels to it"></div>
+      <div class="pine-face-bind" data-slot="face-bind" hidden></div>
+      <div class="pine-face-bar">
+        <button type="button" class="pine-face-view is-active" data-act="face-view" data-view="terminal" title="The agent's Orca terminal (its rendered screen) — typing here goes into that terminal">TERMINAL</button>
+        <button type="button" class="pine-face-view" data-act="face-view" data-view="log" title="The workspace's log: notes, pushes, runs, verdicts">LOG</button>
+        <button type="button" class="pine-face-view" data-act="term-reset" title="RESTART this terminal: kills the session (and whatever runs in it) and opens a fresh one — the recovery path for a stuck or old adopted session">RESTART</button>
+        <label class="pine-face-follow" title="When an agent queues a run/gate/capture, open its workspace and execute it on the chart"><input type="checkbox" data-act="face-follow" checked> FOLLOW AGENTS</label>
+      </div>
+      <pre class="pine-face-term" data-slot="face-term" aria-label="agent terminal mirror"></pre>
+      <div class="pine-chat-log" data-slot="chat-log" hidden></div>
+      <div class="pine-chat-foot">
+        <input type="text" data-act="chat-input" placeholder="type into the agent's terminal · Enter sends" aria-label="face input">
+        <button type="button" class="pine-btn" data-act="chat-send">SEND</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- THE DRAG HANDLE — pineshell.js wires pointer-drag here to move the editor/chart
+       boundary by writing --pine-left-w on .pine-shell (the "resize" half of the ask). -->
+  <div class="pine-split" data-lay-split title="Drag to resize the editor ↔ chart"></div>
+
+  <div class="pine-right">
+    <div class="pine-chart-host" data-slot="chart" aria-label="the vision indicator render surface"></div>
+    <div class="pine-status" data-slot="status" aria-live="polite">idle</div>
+    <div class="pine-verdict" data-slot="verdict">
+      <div class="pine-verdict-line"><span class="pine-k">verdict</span><span data-slot="verdict-state">VIL_UNLOOKED</span></div>
+      <div class="pine-verdict-line"><span class="pine-k">capture</span><span data-slot="verdict-capture">—</span></div>
+      <div class="pine-verdict-line"><span class="pine-k">look</span><span data-slot="verdict-look">—</span></div>
+      <div class="pine-verdict-actions">
+        <button type="button" class="pine-btn pine-btn-pass" data-act="look-pass" title="The orchestrator's look: PASS (refused on a blank/failed frame)">PASS</button>
+        <button type="button" class="pine-btn pine-btn-fail" data-act="look-fail" title="The orchestrator's look: FAIL">FAIL</button>
+        <button type="button" class="pine-btn" data-act="look-inconclusive" title="The orchestrator's look: INCONCLUSIVE">INCONCL.</button>
+        <button type="button" class="pine-btn" data-act="rows-refresh" title="Re-read the week's ledger rows">ROWS ↻</button>
+      </div>
+    </div>
+  </div>
+  </div><!-- /.pine-cols -->
+</div>

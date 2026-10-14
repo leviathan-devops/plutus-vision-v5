@@ -1,0 +1,136 @@
+<!doctype html>
+<!-- THE TRADE CHART (SELF-HOSTED backend) — the same navigable Vela workbench as the Pine Shell and the Backtest
+     room, on the live TradingView feed (:9448: deep history + live ticks). Served by :9430 next to the bundle
+     (one loopback origin). window.PlutusChart keeps the surface contract the TRADE control bar and the agents
+     drive (pair / tf / frame-week / clear / draw / status); the old side panel (canon-week sparklines, a
+     broker ladder with no broker) is gone. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PLUTUS-CHART</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0B0B0C; overflow: hidden; }
+  #wb { position: absolute; inset: 0; }
+  #boot { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: #8A8373; font: 11px/1.5 Inter, Helvetica Neue, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div id="wb"></div>
+<div id="boot">loading the chart…</div>
+<script type="module">
+const boot = document.getElementById('boot');
+const q = new URLSearchParams(location.search);
+// the TRADE bar's timeframe names -> the workbench's
+const TF = { '1m': '1', '5m': '5', '15m': '15', '30m': '30', '1H': '60', '4H': '240', '1D': '1D', '1W': '1W' };
+const TF_NAME = { 1: '1m', 5: '5m', 15: '15m', 30: '30m', 60: '1H', 240: '4H', '1D': '1D', D: '1D', '1W': '1W', W: '1W' };
+const tickerOf = (pair) => String(pair || 'EURUSD').replace(/[^A-Za-z0-9_:]/g, '').toUpperCase();
+const tfOf = (tf) => TF[String(tf)] || (Object.values(TF).includes(String(tf)) ? String(tf) : null);
+let wb = null;
+try {
+  const { mountWorkbench, memoryStorage } = await import('/charts/workbench.bundle.js');
+  wb = mountWorkbench(document.getElementById('wb'), {
+    symbol: 'tv:' + tickerOf(q.get('pair')),
+    timeframe: tfOf(q.get('tf')) || '60',
+    // Vela's storage is an async get/set/remove adapter — backed by localStorage (the drawings/layout survive a
+    // reload), or memory when storage is unavailable
+    storage: (() => {
+      try {
+        localStorage.setItem('__t', '1'); localStorage.removeItem('__t');
+        const P = 'plutus.trade.';
+        // Vela hands the adapter its state as a STRING: it is stored as-is (an earlier build double-encoded it —
+        // a double-encoded value is unwrapped on read)
+        const read = (k) => {
+          const raw = localStorage.getItem(P + k);
+          if (raw === null) return null;
+          try { const once = JSON.parse(raw); return typeof once === 'string' ? once : raw; } catch { return raw; }
+        };
+        return {
+          get: async (k) => read(k),
+          set: async (k, v) => { localStorage.setItem(P + k, typeof v === 'string' ? v : JSON.stringify(v)); },
+          remove: async (k) => { localStorage.removeItem(P + k); },
+        };
+      } catch { return memoryStorage(); }
+    })(),
+    persistKey: 'plutus-trade-chart',
+  });
+  boot.remove();
+} catch (e) {
+  boot.textContent = 'WORKBENCH_ABSENT — ' + (e && e.message ? e.message : e);
+}
+
+const ok = (extra) => ({ ok: true, ...(extra || {}) });
+const refuse = (code, message) => ({ ok: false, code, message });
+const need = () => { if (!wb || !wb.chart) throw Object.assign(new Error('the chart is not mounted'), { code: 'WORKBENCH_NOT_READY' }); return wb.chart; };
+const drawing = (type, init) => {
+  const d = need().drawings.add(type, init);
+  return d ? ok({ id: d.id, type }) : refuse('DRAWING_UNSUPPORTED', type);
+};
+const BRASS = '#B99A5B';
+
+window.PlutusChart = Object.freeze({
+  version: 'trade-workbench/1',
+  state() {
+    const m = wb && wb.market;
+    const bars = wb ? (wb.getBars() || []) : [];
+    const err = wb ? (wb.lastError() || wb.streamError()) : { code: 'WORKBENCH_ABSENT' };
+    return {
+      cell: m && m.symbol ? String(m.symbol).replace(/^tv:/i, '') : null,
+      timeframe: m ? (TF_NAME[m.timeframe] || m.timeframe) : null,
+      bars: bars.length,
+      first: bars.length ? new Date(bars[0].time).toISOString() : null,
+      last: bars.length ? new Date(bars[bars.length - 1].time).toISOString() : null,
+      feed: err ? err.code : 'LIVE',
+      error: err ? err.message || null : null,
+    };
+  },
+  async setPair(pair) {
+    need();
+    const t = tickerOf(pair);
+    if (!t) return refuse('BAD_PAIR', String(pair));
+    await wb.setMarket({ symbol: 'tv:' + t });
+    return ok({ symbol: 'tv:' + t });
+  },
+  async setTimeframe(tf) {
+    need();
+    const code = tfOf(tf);
+    if (!code) return refuse('BAD_TIMEFRAME', `${tf} (1m 5m 15m 30m 1H 4H 1D 1W)`);
+    await wb.setMarket({ timeframe: code });
+    return ok({ timeframe: code });
+  },
+  frameWeek() { need().setVisibleRangePreset('1W'); return ok({ preset: '1W' }); },
+  clearDrawings() {
+    const c = need();
+    let n = 0;
+    try { for (const d of ((c.drawings.toJSON() || {}).drawings || [])) { try { c.drawings.remove(d.id); n++; } catch { /* gone */ } } } catch { /* none */ }
+    return ok({ removed: n });
+  },
+  // studies run in-chart (Vela's Indicators) and through the PINE SHELL — this chart has no station lane
+  rerunActive() { return ok({ note: 'in-chart indicators recompute on every bar' }); },
+  runCanon() { return refuse('USE_PINE_SHELL', 'the canon renders in the PINE SHELL tab'); },
+  applyStudy() { return refuse('USE_PINE_SHELL', 'station studies run in the PINE SHELL tab; use Indicators here'); },
+  runStudySource() { return refuse('USE_PINE_SHELL', 'Pine source runs in the PINE SHELL tab'); },
+  drawBox(a, b, style) {
+    return drawing('box', { anchors: [{ time: a.time, price: Number(a.price) }, { time: b.time, price: Number(b.price) }],
+      style: { lineColor: (style && style.color) || BRASS, lineWidth: 1, lineStyle: 'solid', fillColor: (style && style.fill) || 'rgba(185,154,91,0.10)' } });
+  },
+  drawLine(a, b, style) {
+    return drawing('trendline', { anchors: [{ time: a.time, price: Number(a.price) }, { time: b.time, price: Number(b.price) }],
+      style: { lineColor: (style && style.color) || BRASS, lineWidth: (style && style.width) || 1, lineStyle: (style && style.style) || 'solid' } });
+  },
+  drawHLine(price, style) {
+    const bars = wb.getBars() || [];
+    const t = bars.length ? bars[bars.length - 1].time : Date.now();
+    return drawing('hline', { anchors: [{ time: t, price: Number(price) }], style: { lineColor: (style && style.color) || BRASS, lineWidth: 1, lineStyle: (style && style.style) || 'dashed' } });
+  },
+  drawLabel(at, text, style) {
+    return drawing('pricelabel', { anchors: [{ time: at.time, price: Number(at.price) }], text: { content: String(text ?? '') },
+      style: { lineColor: (style && style.color) || BRASS, lineWidth: 1, lineStyle: 'solid', fillColor: 'rgba(185,154,91,0.14)' } });
+  },
+  drawMarker(at, glyph) {
+    return drawing(glyph === 'down' ? 'arrowmarkdown' : 'arrowmarkup', { anchors: [{ time: at.time, price: Number(at.price) }] });
+  },
+});
+</script>
+</body>
+</html>

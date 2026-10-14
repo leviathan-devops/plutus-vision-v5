@@ -1,19 +1,20 @@
 # CANON MANIFEST — PLUTUS VISION
-Generated: 2026-10-02 03:50 UTC
-Indicator sha256: 0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1
+Generated: 2026-10-02 03:50 UTC  ·  refreshed 2026-10-14 (the layout + backtest ship cycle; every doc re-measured by wc -l)
+Indicator sha256: 125c94f86e6a2f1d3009a75c778e02ad16c48e4f3772e8d0d8d95c50af162400  (v2, re-measured 2026-10-14)
+V1 seal (HARD STOP H1): 0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1
 Generator: scripts/gen_canon.py (re-run after every milestone)
 Docs:
-- POST-COMPACTION_PROMPT.md (69 lines) — overwrite
-- CURRENT_STATE.md (203 lines) — overwrite
-- NEXT_STEPS.md (73 lines) — overwrite
-- TASK_QUEUE.md (43 lines) — overwrite
-- BUILD_STATE.md (163 lines) — overwrite
-- CHANGELOG.md (22 lines) — append
-- COMPACTION_SURVIVAL.md (36 lines) — overwrite
-- EVIDENCE_STATE.md (54 lines) — overwrite
-- DECISION_CHAIN.md (34 lines) — overwrite
-- RUNNING_BUILD_LOG.md (23 lines) — append
-- RUNNING_DEBUG_LOG.md (29 lines) — append
+- POST-COMPACTION_PROMPT.md (218 lines) — overwrite
+- CURRENT_STATE.md (211 lines) — overwrite
+- NEXT_STEPS.md (213 lines) — overwrite
+- TASK_QUEUE.md (202 lines) — overwrite
+- BUILD_STATE.md (220 lines) — overwrite + append SHA
+- CHANGELOG.md (379 lines) — append
+- COMPACTION_SURVIVAL.md (206 lines) — overwrite
+- EVIDENCE_STATE.md (416 lines) — append + overwrite summary
+- DECISION_CHAIN.md (374 lines) — append
+- RUNNING_BUILD_LOG.md (1040 lines) — append
+- RUNNING_DEBUG_LOG.md (963 lines) — append
 
 
 ---

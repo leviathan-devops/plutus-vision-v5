@@ -352,3 +352,28 @@ formula vs mine's degree-band).
 - e2-render.pine: E2 path/tags/ghost to xloc.bar_time; the day-tag gold background fixed (color(na) -> color.new(black,100)).
 - e2_engine.py: pair-relative path amplitude floor (the absolute 0.07 spiked on EURUSD).
 - v2 = ecfc5051 (1797 lines); v1 seal 0d20e831 UNTOUCHED. Battery green (e1_st_19 11/0, e2_render_tests 18/0, e1_render_tests 24/0).
+
+## 2026-10-14 — THE PINE IDE LAYOUT + THE BACKTEST RESURRECTION (the ship cycle)
+**Accomplished:** the operator's collapsible-layout order shipped end to end — the chart now
+covers the full height with nothing beneath it (`data-hide-foot="1"` default), the editor is at
+34% (was 46%), and EDITOR/FACE/VERDICT/FOCUS toggles + a pointer-drag splitter make the panes
+collapsible and resizable exactly like the backtest tab. Two blocking faults were cleared: the
+BACKTEST pane failed to mount at all (an unguarded `Date#toISOString` on a NaN time aborted the
+render chain), and the Pine chart was pinned to `tv:DXY` while the `:9448` feed was dead. All six
+ship docs refreshed and **GATE S1-S7 PASSED**; the package was assembled from them.
+**Decisions (verbatim):** the collapse mechanism is PORTED from `backtest.js:1084-1132`, never
+reinvented — the only addition is the drag splitter. The toolbar lives ABOVE both columns so a
+control can never sit inside the panel it controls. A BLOCKED audit is wired in AS BLOCKED and
+never upgraded to PASS. The port guardian is disarmed and the port is reported UNLOCKED.
+**Failures + root cause:** EN-133 (NaN time → throw → component outage), EN-134 (a silent
+`if (!shell) return;` plus a STALE BROWSER CACHE — `mount.toString()` proved the executed copy
+was old), EN-136 (`/proc/<pid>/fd` unreadable in the ORCA scope → the guardian killed by cgroup
+membership and hit a bystander), F-141 (the audit lane: 8/8 `403 FreeTierError`, duration
+1.986s ⇒ invalid verdict).
+**Evidence:** live DOM on display `:5` `{"shellPresent":true,"hide":"left=0 face=0 foot=1",
+"footDisplay":"none / none","editorPct":"34%","toggles":4,"splitter":true}` `ERRORS: none`;
+backtest `bar 941/941 · visible 941 / 941`; chart `DXY · FIXTURE · 1h · 508 bars`. Diff
+5 files +241/-6. v2 `125c94f86e6a2f1d…`, v1 seal `0d20e831…` untouched.
+**Honest disclosures:** NO code-review PASS exists this cycle (F-141). `tv-feed` cannot start
+(`ERR_MODULE_NOT_FOUND`), so every `tv:` market stays dead. The port is NOT locked. The layout
+was verified only on the operator's own display, never headless.
