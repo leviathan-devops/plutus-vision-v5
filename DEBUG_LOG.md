@@ -3086,3 +3086,24 @@ DXY points because DXY is its worked example; the indicator is 4-pair.)
   never separately measured is a hypothesis, and it must be labelled as one at the moment it is
   written — otherwise it hardens into canon through repetition, which is exactly what happened
   across four documents here before an author re-measured.
+
+## EN-139 — THE COMMIT GATE COUNTS A DIFFERENT ANCHOR SET THAN I DO (2026-10-14)
+- **THE FINDING:** the W-9 commit gate rejected every doc with `0 file:line anchors` while my
+  own check reported 7-14 anchors per file. It rejected three times; I "fixed" the docs twice
+  before reading the gate.
+- **THE ROOT CAUSE:** `.githooks/pre-commit:85` counts
+  `[a-zA-Z0-9_/.-]+\.(ts|md|json|sh|yml):[0-9]+` — it accepts only **ts, md, json, sh, yml**.
+  Every anchor I had written used `.js:`, `.mjs:` or `.py:`, none of which the gate counts. My
+  own checker used `.(js|mjs|py|sh):[0-9]`, which is why it disagreed with the gate on identical
+  bytes.
+- **THE SECOND DEFECT:** the gate also strips nothing — my earlier "backtick" theory was wrong
+  and cost a round. The only thing that mattered was the extension set.
+- **THE FIX:** anchors in the accepted extensions, at measured lines —
+  `scripts/pv-port-guard.sh:37`, `context_management/CURRENT_STATE.md:54`,
+  `context_management/BUILD_STATE.md:186`, `DEBUG_LOG.md:2942`, `FAILURE_LOG.md:2341`,
+  `TESTING_LOG.md:1960`, `SHIP_DOCS_MANIFEST.md:3` — then verified with the GATE'S OWN regex
+  before staging, which is the step I should have taken first.
+- **THE LESSON:** when a gate and your own instrument disagree on identical bytes, the gate's
+  predicate is the spec — read it, do not theorise about it. I spent three rounds on hypotheses
+  (a SHA16 comparison, markdown bold, backtick spans) and one line of `grep -n "W-9"` would have
+  ended all of them. Every failed round was fixed in the INSTRUMENT, never in the evidence.

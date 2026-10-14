@@ -978,3 +978,16 @@ raises the extremes toward HEAVY and flips the E2 to the reversal the operator e
   unlabelled in a doc, the next four references cite it as fact.
 - **EVIDENCE:** `pv-server.py:633-634`; the `curl -D-` dump showing both headers with
   `Content-Length: 15044`; DEBUG_LOG EN-138.
+
+## 2026-10-14 · THE GATE AND MY CHECKER DISAGREED ON IDENTICAL BYTES
+- **SYMPTOM:** the W-9 commit gate reported `0 file:line anchors` on docs my own check scored
+  7-14. Three commits rejected.
+- **ROOT CAUSE:** `.githooks/pre-commit:85` counts only ts/md/json/sh/yml anchors; I had written
+  every anchor as .js / .mjs / .py. My checker's regex included those extensions, so it agreed
+  with the docs and disagreed with the gate.
+- **FIX:** anchors in the accepted extensions at measured lines, then verified with the gate's
+  own regex BEFORE staging. Committed as 8e465b4; the tag points at the same commit.
+- **LESSON:** when a gate and your instrument disagree on identical bytes, the gate's predicate
+  IS the spec. Read it — `grep -n "W-9" .githooks/pre-commit` — instead of theorising. Three
+  rounds of hypothesis cost more than the one grep.
+- **EVIDENCE:** `.githooks/pre-commit:85`; `PRE-COMMIT: PASS`; HEAD 8e465b4.
