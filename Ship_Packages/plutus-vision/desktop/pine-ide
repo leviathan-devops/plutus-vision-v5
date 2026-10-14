@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+# pine-ide — ONE COMMAND launcher: the Plutus Vision Pine IDE as a NATIVE desktop
+# app on the OPERATOR's real session (Wayland/GNOME), never the nested weston :3
+# and never the agent xvfb :99.
+#
+#   pine-ide                 launch detached (returns immediately); reuses servers
+#   pine-ide --fg            launch in foreground (attach logs to this terminal)
+#   pine-ide --servers-only  start/reuse the backend servers and exit
+#   pine-ide --status        backend + display + shell footprint report
+#   pine-ide --stop          stop the desktop shell (servers keep running)
+#   pine-ide --help
+#
+# Backend (started/reused, ports unchanged):
+#   :9741 pine-station · :9754 VIL rail · :9851 renderer (pine.html)
+# Shell: the Tauri binary (desktop/tauri/target/release/plutus-vision) when built,
+# else the GTK+WebKit2 fallback (desktop/pine-ide-webview.py). Both use the SYSTEM
+# libwebkit2gtk-4.1 engine — no bundled browser, no multi-process Chromium.
+#
+# Works from ANY cwd: the repo root is resolved from this script's own location
+# (follows the ~/.local/bin/pine-ide symlink via readlink -f).
+set -uo pipefail
+
+SELF="$(readlink -f "$0")"
+ROOT="$(cd "$(dirname "$SELF")/.." && pwd)"
+[ -d "$ROOT/desktop" ] || { [ -n "${PV_REPO:-}" ] && ROOT="$PV_REPO"; }
+UI_PORT=9851
+URL="${PV_URL:-http://127.0.0.1:$UI_PORT/pine.html}"
+TITLE="${PV_TITLE:-Plutus Vision}"
+LOG=/tmp/pv-desktop-app.log
+ROUTE_F=/tmp/pv-desktop-app.route
+TAURI_BIN="$ROOT/desktop/tauri/target/release/plutus-vision"
+PY_SHELL="$ROOT/desktop/pine-ide-webview.py"
+
+say() { printf '%s\n' "$*"; }
+die() { printf 'pine-ide: %s\n' "$*" >&2; exit 1; }
+
+# ---------- operator display (NEVER :3 nested weston, NEVER :99 agent xvfb) ----------
+detect_route() {
+  local uid; uid="$(id -u)"
+  if [ -n "${PV_FORCE_ROUTE:-}" ]; then printf '%s\n' "$PV_FORCE_ROUTE"; return 0; fi
+  if [ -S "/run/user/$uid/wayland-0" ]; then printf 'wayland\n'; return 0; fi
+  local d
+  for d in 1 0 2; do
+    [ -S "/tmp/.X11-unix/X$d" ] && { printf 'x11:%s\n' "$d"; return 0; }
+  done
+  return 1
+}
+
+apply_route() {
+  local route="$1" uid; uid="$(id -u)"
+  case "$route" in
+    wayland)
+      unset DISPLAY GDK_BACKEND || true
+      export XDG_RUNTIME_DIR="/run/user/$uid"
+      export WAYLAND_DISPLAY="wayland-0"
+      export GDK_BACKEND="wayland" ;;
+    x11:*)
+      unset WAYLAND_DISPLAY GDK_BACKEND || true
+      export DISPLAY=":${route#x11:}"
+      local xa; xa="$(ls /run/user/$uid/.mutter-Xwaylandauth.* 2>/dev/null | head -1)"
+      [ -n "$xa" ] && export XAUTHORITY="$xa"
+      export GDK_BACKEND="x11" ;;
+    *) die "unrecognised route '$route'" ;;
+  esac
+  # NVIDIA + Wayland + WebKitGTK: the dmabuf renderer is the known black-window
+  # cause. Disable by default; override with PV_WEBKIT_DMABUF=1.
+  [ "${PV_WEBKIT_DMABUF:-0}" = "1" ] || export WEBKIT_DISABLE_DMABUF_RENDERER=1
+}
+
+pick_shell() {
+  case "${PV_SHELL:-auto}" in
+    tauri)  [ -x "$TAURI_BIN" ] && { printf 'tauri\n'; return 0; }; die "PV_SHELL=tauri but $TAURI_BIN missing" ;;
+    python) [ -f "$PY_SHELL" ] && command -v python3 >/dev/null 2>&1 && { printf 'python\n'; return 0; }; die "PV_SHELL=python but $PY_SHELL missing" ;;
+  esac
+  if [ -x "$TAURI_BIN" ]; then printf 'tauri\n'; return 0; fi
+  [ -f "$PY_SHELL" ] && command -v python3 >/dev/null 2>&1 && { printf 'python\n'; return 0; }
+  return 1
+}
+
+servers_up() {
+  curl -s -m 2 -o /dev/null "http://127.0.0.1:$UI_PORT/pine.html" \
+    && curl -s -m 2 -o /dev/null "http://127.0.0.1:9741/catalog" \
+    && curl -s -m 2 -o /dev/null "http://127.0.0.1:9754/"
+}
+
+bring_up_servers() {
+  if servers_up; then say "servers: reusing :9741 :9754 :9851"; return 0; fi
+  say "servers: starting (desktop/pv-servers.sh)"
+  bash "$ROOT/desktop/pv-servers.sh" || die "backend failed to start"
+}
+
+shell_pids() {
+  pgrep -f "desktop/tauri/target/release/plutus-vision" 2>/dev/null
+  pgrep -f "desktop/pine-ide-webview.py" 2>/dev/null
+}
+
+launch() {
+  local fg="$1" route shell
+  route="$(detect_route)" || die "no operator session display found (looked for /run/user/$(id -u)/wayland-0 and /tmp/.X11-unix/X1)"
+  shell="$(pick_shell)" || die "no shell available (build $TAURI_BIN or restore $PY_SHELL)"
+  [ -z "$(shell_pids)" ] || { say "already running (pid $(shell_pids | tr '\n' ' ')) — bringing to front"; }
+
+  bring_up_servers
+  apply_route "$route"
+  printf '%s\n' "$route" > "$ROUTE_F"
+  export PV_URL="$URL" PV_TITLE="$TITLE"
+
+  say "display: $route   shell: $shell   url: $URL"
+  if [ "$shell" = tauri ]; then
+    local cmd=("$TAURI_BIN")
+  else
+    local cmd=(python3 "$PY_SHELL")
+  fi
+  # Kill any prior shell so a relaunch is a clean singleton.
+  for p in $(shell_pids); do kill "$p" 2>/dev/null; done
+  sleep 0.3
+
+  if [ "$fg" = "1" ]; then
+    say "foreground: $LOG"
+    env PV_URL="$URL" PV_TITLE="$TITLE" "${cmd[@]}" 2>&1 | tee "$LOG"
+  else
+    setsid -f env PV_URL="$URL" PV_TITLE="$TITLE" "${cmd[@]}" > "$LOG" 2>&1 < /dev/null
+    sleep 1.2
+    local pids; pids="$(shell_pids)"
+    [ -n "$pids" ] || die "shell did not stay up — see $LOG"
+    say "launched pid $(echo "$pids" | tr '\n' ' ') on $route (:9851 renderer)"
+  fi
+}
+
+status() {
+  local uid; uid="$(id -u)"
+  say "== backend =="
+  for u in "http://127.0.0.1:$UI_PORT/pine.html" "http://127.0.0.1:9741/catalog" "http://127.0.0.1:9754/"; do
+    printf '  %-42s %s\n' "$u" "$(curl -s -o /dev/null -w '%{http_code}' -m 3 "$u")"
+  done
+  say "== operator display =="
+  say "  route: $([ -f "$ROUTE_F" ] && cat "$ROUTE_F" || echo '(not launched)')  (wayland-0 present: $([ -S /run/user/$uid/wayland-0 ] && echo yes || echo no))"
+  say "== desktop shell =="
+  local pids; pids="$(shell_pids)"
+  if [ -z "$pids" ]; then say "  down"; else
+    for p in $pids; do
+      printf '  pid %s  %s  rss %s MB  %s\n' "$p" \
+        "$(ps -o comm= -p "$p" 2>/dev/null)" \
+        "$(awk '/VmRSS/{printf "%.1f", $2/1024}' "/proc/$p/status" 2>/dev/null)" \
+        "$(tr '\0' ' ' <"/proc/$p/cmdline" 2>/dev/null | cut -c1-70)"
+    done
+  fi
+  say "== legacy full-Chrome path =="
+  local cpid; cpid="$(pgrep -f 'user-data-dir=/tmp/pv-ide-chrome' | head -1)"
+  if [ -n "$cpid" ]; then
+    say "  RUNNING (pid $cpid) — retire it: pkill -f user-data-dir=/tmp/pv-ide-chrome"
+  else say "  not running"; fi
+}
+
+case "${1:-}" in
+  --help|-h) sed -n '2,20p' "$SELF"; exit 0 ;;
+  --status) status; exit 0 ;;
+  --stop)
+    local_pids="$(shell_pids)"
+    [ -n "$local_pids" ] && kill $local_pids 2>/dev/null
+    say "stopped desktop shell (servers left running)"; exit 0 ;;
+  --servers-only) bring_up_servers; exit 0 ;;
+  --fg) launch 1 ;;
+  "") launch 0 ;;
+  *) die "unknown argument '$1' (try --help)" ;;
+esac

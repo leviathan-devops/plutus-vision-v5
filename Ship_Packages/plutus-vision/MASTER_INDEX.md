@@ -13,8 +13,8 @@ with `find` / `wc -l` / `du` at generation time — none of it is carried from a
 | ship-docs gate | **S1-S7 PASSED** |
 | canon gate | **U1-U4 PASSED** |
 | code-audit gate | **BLOCKED** — 8/8 `403 FreeTierError`, 1.986s; no PASS exists this cycle |
-| **TOTAL FILES** | **1342** (self-inclusive; recomputed after this file was written) |
-| **TOTAL SIZE** | **60M** |
+| **TOTAL FILES** | **1358** (self-inclusive; SHIPPED content only — installed node_modules excluded; recomputed after this file was written) |
+| **TOTAL SIZE** | **48M** |
 
 ## 1 · THE DOC SET (line counts read from these files)
 | doc | lines |

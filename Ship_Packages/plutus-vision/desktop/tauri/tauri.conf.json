@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Plutus Vision",
+  "version": "1.0.0",
+  "identifier": "ai.plutus.vision.ide",
+  "build": {
+    "frontendDist": "../assets"
+  },
+  "app": {
+    "windows": [],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": false
+  }
+}

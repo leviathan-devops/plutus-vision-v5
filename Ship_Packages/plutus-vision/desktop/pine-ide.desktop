@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Plutus Vision
+GenericName=Pine IDE
+Comment=Plutus Vision Pine IDE — native desktop shell (Tauri + WebKitGTK)
+Exec=/home/leviathan/.local/bin/pine-ide
+Icon=plutus-vision
+Terminal=false
+Categories=Development;
+Keywords=pinescript;trading;charts;plutus;vision;
+StartupNotify=true
+StartupWMClass=plutus-vision
