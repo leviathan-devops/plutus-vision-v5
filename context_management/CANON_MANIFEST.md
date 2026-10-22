@@ -46,7 +46,7 @@ Docs:
 - EVIDENCE_STATE.md (487 lines) — append + overwrite summary
 - DECISION_CHAIN.md (462 lines) — append
 - RUNNING_BUILD_LOG.md (1535 lines) — append
-- RUNNING_DEBUG_LOG.md (1216 lines) — append
+- RUNNING_DEBUG_LOG.md (1232 lines) — append
 - CANON_MANIFEST.md (153 lines) — index
 - ENGINE_BLUEPRINT.md (186 lines) — reference
 - NEXT_STEPS_BLUEPRINT.md (116 lines) — reference
