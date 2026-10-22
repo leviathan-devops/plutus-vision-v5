@@ -1,5 +1,21 @@
 # ENGINE 1 + ENGINE 2 — THE BLUEPRINT (the authoritative build plan)
 
+> ⛔ **SUPERSEDED 2026-10-22 — DO NOT BUILD FROM THIS DOCUMENT.**
+>
+> This is the build plan as it stood on **2026-10-06**. It has been replaced by the two authority
+> documents:
+> ```
+> design/DESIGN_BLUEPRINT_v1.2_AUTHORITATIVE.md   WHAT the machine is
+> design/BUILD_WORKFLOW_v2.md                     HOW it gets built
+> ```
+> It is retained as HISTORY (what was believed before the constraint analysis). A session that
+> follows it will build the wrong architecture — in particular it predates the finding that
+> **Pine cannot fetch**, which is what produced the Class A / Class B split, the card, and the
+> sidecar. Read `context_management/CURRENT_STATE.md` for the present truth.
+
+---
+
+
 **AUTHORITY:** `Original_Canon_Data/Trident_System_Prompt_v5.3.3_DOWNLOAD_ME.md` (the prompt) +
 `Original_Canon_Data/Pine Scripts/trident_v8.pine` (the SAME prompt, rendered as an indicator).
 These two are the VERBATIM authority. The build package (`packages/plutus-vision-e1-automatic/`)

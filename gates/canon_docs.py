@@ -17,7 +17,8 @@ import pathlib
 import re
 import sys
 
-ROOT = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else ".")
+ROOT = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("--") else ".")
+SYNC = "--sync" in sys.argv
 CM = ROOT / "context_management"
 SEAL_FILE = ROOT / "plutus-vision-v1.pine"
 
@@ -34,12 +35,42 @@ EVIDENCE_DOCS = {"BUILD_STATE", "EVIDENCE_STATE"}
 REF_RE = re.compile(r"\.(md|py|pine|json|sh|yaml):[0-9]")
 SHA_RE = re.compile(r"[a-f0-9]{40,64}")
 
+
+def sync_manifest():
+    """Rewrite every "(N lines)" claim in CANON_MANIFEST.md from the disk.
+
+    The manifest is an INDEX — an index maintained by hand drifts on the first edit, and the
+    self-count is unfixable by hand (writing the count changes the count). Generated, it cannot.
+    Iterated to a fixpoint because the manifest's own length is one of the claims.
+    """
+    mf = CM / "CANON_MANIFEST.md"
+    s = mf.read_text()
+    for _ in range(6):
+        new = s
+        for m in re.finditer(r"^- ([\w_-]+)\.md \((\d+) lines\)", s, re.M):
+            name = m.group(1)
+            real = nlines(CM / f"{name}.md")
+            if real < 0 or real == 0:
+                continue
+            new = new.replace(f"- {name}.md ({m.group(2)} lines)", f"- {name}.md ({real} lines)", 1)
+        if new == s:
+            break
+        s = new
+        mf.write_text(s)
+        s = mf.read_text()
+    print(f"  manifest synced: {sum(1 for _ in open(mf))} lines")
+
+
+
 fails, rows = 0, []
 
 
 def nlines(p):
     return sum(1 for _ in open(p, errors="ignore")) if p.exists() else 0
 
+
+if SYNC:
+    sync_manifest()
 
 # ── U1 ────────────────────────────────────────────────────────────────────────
 for name in STANDARD:

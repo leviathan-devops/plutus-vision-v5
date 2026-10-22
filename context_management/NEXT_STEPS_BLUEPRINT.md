@@ -1,5 +1,21 @@
 # NEXT STEPS BLUEPRINT — finishing Engine 1 + Engine 2 per the prompt (2026-10-06)
 
+> ⛔ **SUPERSEDED 2026-10-22 — DO NOT BUILD FROM THIS DOCUMENT.**
+>
+> This is the build plan as it stood on **2026-10-06**. It has been replaced by the two authority
+> documents:
+> ```
+> design/DESIGN_BLUEPRINT_v1.2_AUTHORITATIVE.md   WHAT the machine is
+> design/BUILD_WORKFLOW_v2.md                     HOW it gets built
+> ```
+> It is retained as HISTORY (what was believed before the constraint analysis). A session that
+> follows it will build the wrong architecture — in particular it predates the finding that
+> **Pine cannot fetch**, which is what produced the Class A / Class B split, the card, and the
+> sidecar. Read `context_management/CURRENT_STATE.md` for the present truth.
+
+---
+
+
 **STATUS: BLOCKED-OPEN.** The build renders a *plausible* engine 1; the prompt defines the
 *actual* one. The work is to **transcribe**, not author.
 

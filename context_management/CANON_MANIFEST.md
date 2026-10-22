@@ -40,16 +40,16 @@ Docs:
 - CURRENT_STATE.md (260 lines) — overwrite
 - NEXT_STEPS.md (235 lines) — overwrite
 - TASK_QUEUE.md (324 lines) — overwrite
-- BUILD_STATE.md (288 lines) — overwrite + append SHA
+- BUILD_STATE.md (305 lines) — overwrite + append SHA
 - CHANGELOG.md (422 lines) — append
 - COMPACTION_SURVIVAL.md (366 lines) — overwrite
 - EVIDENCE_STATE.md (487 lines) — append + overwrite summary
 - DECISION_CHAIN.md (462 lines) — append
-- RUNNING_BUILD_LOG.md (1518 lines) — append
+- RUNNING_BUILD_LOG.md (1535 lines) — append
 - RUNNING_DEBUG_LOG.md (1216 lines) — append
-- CANON_MANIFEST.md (147 lines) — index
-- ENGINE_BLUEPRINT.md (170 lines) — reference
-- NEXT_STEPS_BLUEPRINT.md (100 lines) — reference
+- CANON_MANIFEST.md (153 lines) — index
+- ENGINE_BLUEPRINT.md (186 lines) — reference
+- NEXT_STEPS_BLUEPRINT.md (116 lines) — reference
 
 
 ---

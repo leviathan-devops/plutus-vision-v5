@@ -1214,3 +1214,19 @@ raises the extremes toward HEAVY and flips the E2 to the reversal the operator e
 - LESSON 3: a gate's SCOPE is part of its definition. `rglob('*')` over a tree that contains sibling
   agent checkouts measures the siblings.
 - EVIDENCE: /tmp/p1..p4.txt (the four proofs); /tmp/base.txt (the measured baseline).
+
+## [2026-10-22T03:43:17Z] — THE MANIFEST SELF-COUNT IS STRUCTURALLY UNFIXABLE BY HAND → GENERATED
+- SYMPTOM: after every doc edit the gate failed U4 — "CANON_MANIFEST says 288, disk has 305".
+  And the manifest's claim about ITSELF was always wrong by exactly the amount the edit added.
+- ROOT CAUSE: **writing the count changes the count.** A hand-maintained index cannot be correct
+  about its own length, and drifts on every other doc the moment one line is added. This is the
+  MASTER_INDEX self-count trap in its pure form — it is not carelessness, it is arithmetic.
+- FIX: `canon_docs.py --sync` rewrites every "(N lines)" claim from the disk, iterated to a
+  FIXPOINT (the manifest's own length is one of the claims, so one pass is not enough).
+  **THE INDEX IS GENERATED, NEVER HAND-EDITED.**
+- PROOF: run 3x, the manifest sha is stable (`15d0c710…` unchanged) — idempotent.
+- ALSO THIS TURN: `ENGINE_BLUEPRINT.md` and `NEXT_STEPS_BLUEPRINT.md` (both 2026-10-06) stamped
+  **SUPERSEDED** with a pointer to the two authority documents. They predate the Pine-cannot-fetch
+  finding and would send a resumed session to build the wrong architecture. Retained as history.
+- LESSON: **an index is a GENERATED artefact.** Every hand-maintained count in a documentation set
+  is a future lie with a known fix.
