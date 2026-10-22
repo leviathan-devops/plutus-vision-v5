@@ -1038,3 +1038,498 @@ not from disk — the render showed stale values until the computed pine was loa
 - **NEXT:** the code-audit lane is BLOCKED (F-141) — restore the `:4097/:4098` fingerprint path
   or repoint to a keyed provider, then re-run. `tv-feed` still needs `npm install`. The port is
   still UNLOCKED (F-140); the sound lock is binding it, which is an open item, not a delivery.
+
+## [2026-10-14T17:22:42Z] — WAVE 0 / takeover + spec mint (the PV MIMO seat inherits the build)
+- WHAT: Full context takeover of mimocode session `ses_ffe5ec9949559ffeO6SGpdmB7a` ("PV MIMO"), then the
+  ZFP fabrication kill, then the arsumbris master-context knowledge graph, then the DPL1 package + goal pin.
+- WHY: the prior station died on `APIError / ECONNRESET` (opencode-go / mimo-v2.6-flash, 2026-10-13 21:41:53)
+  with two operator complaints unanswered. Operator ruling: the manual 3-step loop (prompt -> PDF -> hand-pasted
+  Pine) is five months stale and must become a self-contained workflow inside the indicator.
+- HOW:
+  (a) absorbed 5 stores (checkpoint + transcript rn1-86 + project memory + workspace + disk) and corrected 3
+      false checkpoint claims: frontier was Macro sheet_06 not 03; 38 sheets remain not 41; notes.md was header-only.
+  (b) read DIRECTLY, no subagents: Toolset 8 files / 10,930 L; 9 training PDFs / 2,660 L; all 207 embedded
+      images across 55 montage sheets.
+  (c) ZFP kill: `Original_Canon_Data/Pine Scripts/trident_v8.pine` and the `Toolset/` copy now carry
+      `dxy_zZfp = array.from(15, 25, 20, 30, 12)` (report-sourced); `calcZFP()` DELETED; EU/GU/AU print
+      `ZFP n/a`. Applied to the copy the IDE actually loads (sha 6663e478).
+  (d) arsumbris KG "Plutus Vision Master Context": 34 cards + 12 hubs + 10 types; daemon live on socket
+      3533896ff2f68389.sock; scope:own driven 36 -> 0; 78 pv instances / 246 wikilinks.
+  (e) minted spec/PLUTUS_VISION_DYNAMIC_INDICATOR_DPL1_SPEC.md (855 L) + spec/WAVE_PLAN.md (WAVES: 5)
+      + spec/BLUEPRINT.md; package spec-manager returned 21/21 APPROVED; the pin validator PASSed.
+- EVIDENCE:
+  sha256sum plutus-vision-v2.pine -> 125c94f86e6a2f1d3009a75c778e02ad16c48e4f3772e8d0d8d95c50af162400
+  sha256sum plutus-vision-v1.pine -> 0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1
+  sha256sum Pine Scripts/trident_v8.pine -> 6663e478ecddae86c192555c19104605b6f7def9aa5781e5c01b51ec20ea70fc
+  IDE COMPILED line, opened screenshot on display :3 -> 11 boxes / 7 lines / 12 labels / bars 508
+  arsumbris {"read":"diagnostics","scope":"own"} -> total=0 errors=0
+  pin validator -> PASS (182 lines, 7/7 slots, no placeholders)
+- FINDING: live `plutus-vision-v1.pine` == RULE-D's pinned 0d20e831 (HARD STOP baseline, unchanged), but live
+  `plutus-vision-v2.pine` == 125c94f8, NOT RULE-C's pinned 282517ac. The live v2 has moved off the pinned SHA.
+- NEXT: W1 (fabrication-kill desk) on `plutus-vision-lqz/e1-render.pine` — the DEAD `f_e1CalcZFP` at :153
+  must be deleted; W2-W5 per spec/WAVE_PLAN.md.
+
+
+## [2026-10-14T17:38:38Z] — W1 FABRICATION-KILL (complete, gate PASS)
+- WHAT: removed the dead width-derived ZFP helper and its supporting pair detection from the E1
+  render SOURCE, rebuilt both dist artifacts, deployed to the served location.
+- WHY: the helper computed `zone width / pair weekly range * 100` and printed it under the ZFP
+  name. It had no live call site, but a banned function left DEFINED is re-wirable — the exact
+  class that produced the original F-55 fabrication.
+- HOW: mapped first with ripwire (grep f_e1CalcZFP, 335 hits) — which CORRECTED the spec's
+  target set. The forensic ledger claimed it was "LIVE in the charts copy"; measurement showed
+  **1 definition, 0 call sites in all three active pines** (root dist, IDE dist, source).
+  Deleted three symbols: the helper plus `_e1Ticker` / `_e1Pair`, which existed only to feed its
+  reference range. Rebuilt via `scripts/lqz_vision_v2_build.py`. Deployed the built dist to
+  `pine-ide/ide/renderer/` by COPY (the builder writes root only).
+- EVIDENCE:
+  `grep -c f_e1CalcZFP` -> 0 in plutus-vision-v2.pine, pine-ide/ide/renderer/plutus-vision-v2.pine,
+    plutus-vision-lqz/e1-render.pine  (was 1/1/1)
+  `grep -c refRange` -> 0 in all three ; `grep -c _e1Pair` -> 0 in all three
+  build output -> "wrote plutus-vision-v2.pine 1854 lines (v1 verified untouched)" EXIT=0
+  sha256 plutus-vision-v2.pine == sha256 pine-ide/ide/renderer/plutus-vision-v2.pine
+    -> dc5dbe884ac65c1e
+  old dist sha was 125c94f86e6a2f1d
+  `grep -c e1PayloadZfp <deployed>` -> 3  (the label reads the INJECTED payload)
+  `sha256sum plutus-vision-v1.pine` -> 0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1
+    (RULE-D HARD-STOP baseline — unchanged, and the builder asserts it)
+- SECOND VERIFIED (W1's other file): `scripts/e1_category.py:30` and `:103` already carry the
+  2026-10-08 fix — REF_RANGE deleted, `zfp_label: None`, routed to `scripts/e1_zfp.py`. NOT re-fixed.
+  The three remaining `width` hits in `scripts/e1_extract.py` (:826, :1075, :1077) are a bug
+  comment and a clustering band, not ZFP.
+- NEXT: W2 (merge-faces) is now unblocked — it reads the same source file W1 just cleaned.
+
+
+## [2026-10-14T17:50:31Z] — W2 MERGE-FACES (window half complete, gate PASS)
+- WHAT: unified the three Engine 1 layers onto ONE window — the IP pressure zones, the LSZ
+  bands and the option strikes now share a single declared span.
+- WHY: the two faces of Engine 1 disagreed about what "this week" means. The IP layer drew
+  `anchor-2wk..+3wk` inside `f_e1Render()`, while the LSZ box and the option lines hard-coded
+  the SAME 2/3 literals separately — one window repeated three times, free to drift. Worse, the
+  operator CORRECTED that width on 2026-10-14 ("we don't need it forward by one week … two
+  weeks wide … extend backwards by one week") and the code still drew 5 weeks forward-heavy.
+- HOW: declared `e1WinL / e1WinR / e1WinMid` ONCE at global scope with the operator's corrected
+  span (L = anchor-7d, R = anchor+5d, MID = anchor-1d) and repointed all three layers at it.
+  The option-strike label moved from the stale `anchor+3.5d` to the true midpoint.
+- EVIDENCE:
+  build -> "wrote plutus-vision-v2.pine 1874 lines (v1 verified untouched)" EXIT=0
+  old literals `- 2 * 604800000` / `+ 3 * 604800000` -> 0 in source + root dist + served dist
+  e1WinL at source :220 (IP), :273 (LSZ box), :290 (option line) ; e1WinMid at :295
+  span arithmetic -> L-anchor 7d ; R-anchor 5d (NOT 21d) ; span 12d ; mid -1d
+  sha256 plutus-vision-v2.pine == sha256 pine-ide/ide/renderer/... -> a7b159cef629c52c (110128 B)
+  sha256 plutus-vision-v1.pine -> 0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1
+  W1 re-check (no regression) -> f_e1CalcZFP 0 , refRange 0
+- NEXT: W2's TS half (`src/e1_merged.ts`, the data-side merger) is NOT yet written — the render
+  side is unified, the payload side still comes from two independent builders. W3 (E2) and W4
+  (week scope + emitter + sidecar) remain.
+
+
+## [2026-10-14T18:00:08Z] — W3 E2-DESK (gate PASS) — E2 default ON + the chain DERIVED from the zone table
+- WHAT: E2 now ships enabled, and a new pure module derives the shape chain mechanically from
+  the Engine 1 zone table instead of trusting the report's transcription.
+- WHY: the operator's ruling — "its engine two was theatrical bullshit because its engine one
+  had ZFP fabrication … It's not supposed to be disabled" and "we can forward predict how the
+  shape chain is going to happen simply by reading the pressure map from the engine one zones."
+  The disablement was a SYMPTOM of the fabricated E1, not a design decision.
+- HOW:
+  `plutus-vision-lqz/e2-render.pine:24` — e2Enabled input.bool(false -> true), with the
+    ruling recorded in the comment at :18-23.
+  `src/e2_chain.ts` (NEW, 8742 B) — pure functions, zero imports:
+    classifyDeparture(zone, previous) -> HOLDS | PIERCED | CONSOLIDATES with a Shape,
+      a confidence and an EVIDENCE LIST (so a wrong call names its own witness).
+    deriveChain(zones) -> Chain (departures, path, alternative).
+    Thresholds are NAMED constants: ZFP_HOLDS_MAX=20, ZFP_PIERCES_MIN=30, gap=5, and a
+      HEAVY/EXTREME zone earns one band wider hold; LIGHT/MINIMAL one band wider pierce.
+    THE FABRICATION LAW IS ENFORCED IN CODE: zfp === null never becomes a number — it degrades
+      to a degree-only call at confidence 0.40-0.45 with "zfp-absent" in the evidence.
+- EVIDENCE:
+  bun spec/tests/st_e2_derive_from_pressure.ts -> RESULT PASS 7 passed / 0 failed  EXIT=0
+    A1_null_zfp_never_fabricated        token="zfp-absent" conf=0.4
+    A2_pierced_adds_no_vertex           vertices=1 path=BS
+    A3_boundaries_exact                 holds@20 pierces@30 consolidates between
+    A4_every_zone_classified            zones=6 departures=6
+    H1_authoritative_week               path=BS->SS->BS->R
+    H2_boundary_zone_holds              EQ zfp=20 MODERATE_HEAVY -> HOLDS
+    H3_confidence_monotonic_in_pressure heavy=0.9 moderate=0.75
+  build -> wrote plutus-vision-v2.pine 1880 lines (v1 verified untouched) EXIT=0
+  served dist e2Enabled -> input.bool(true) at :1795
+  literal chain strings in the emitter -> 0   (gate test_e2_no_literal_chain)
+  no-regression: f_e1CalcZFP=0 refRange=0 ; old-window literals=0
+  sha256 pine-ide/ide/renderer/plutus-vision-v2.pine -> 48199681bbb9c29b (1880 L)
+  plutus-vision-v1.pine -> 0d20e8314ce992fc... (RULE-D intact)
+- FINDING (recorded, not asserted as a contract): on the AUTHORITATIVE week's own zone table
+  the DERIVED chain is BS->SS->BS->R while the report's transcribed chain was SS->BS->R->WL.
+  The disagreement is at EQUILIBRIUM: ZFP 20 on MODERATE_HEAVY HOLDS, but the report predicted
+  a downside failure. That matches the price action measured earlier this session (price
+  rallied UP through Equilibrium into Upper Resistance, then rejected at the ceiling).
+- NEXT: W2's TS half (`src/e1_merged.ts`) still open; then W4 (week scope + emitter +
+  sidecar) and W5 (the 10-week replay test).
+
+
+## [2026-10-14T18:06:21Z] — W2 MERGE-FACES (complete, gate PASS) + an L0 catch
+- WHAT: closed W2 with the data-side merger `src/e1_merged.ts`, its gate test, and a real L0 fix.
+- WHY: the render side already shared one window (W2's first half); what was missing was one
+  ORDERED zone list — a single emitter cannot draw two faces unless something has decided the
+  draw order, the priority and the provenance of each zone.
+- HOW: `src/e1_merged.ts` — mergeFaces(pressure, sdLiq) -> one ordered list, priority
+  IP=1 / SUPPLY,DEMAND=2 / LSZ,LIQUIDITY=3 (the v8 layering), sorted (priority asc, top desc).
+  Three invariants are CHECKED, not assumed: no face dropped; face-B zfp is ALWAYS null (no
+  cross-face inheritance — the fabrication law carried across the merge); degenerate bands are
+  normalised rather than dropped. `missingZones()` and `fabricatedFaceB()` are the receipts.
+- EVIDENCE:
+  bun spec/tests/st_merged_faces_render.ts -> RESULT PASS 7 passed / 0 failed  EXIT=0
+    A1_faceB_never_inherits_zfp  token="fabricated_face_b_empty" offenders=[]
+    A2_no_face_dropped           pressure=2 sdliq=2 total=4 missing=[]
+    A3_degenerate_normalised     top=97.97 bottom=97.63
+    A4_draw_order                order=IP->LSZ
+    H1_authoritative_merge       zones=9 faces=6+3 faceB_zfp_violations=0
+    H2_layering_preserved        priority=111112233
+    H3_provenance_carried        pressure=6 sd_liq=3
+  tsc --noEmit --strict --allowImportingTsExtensions -> exit=0
+  battery: st_merged_faces_render 7/7 ; st_e2_derive_from_pressure 7/7
+- NEXT: W4 (week_scope + emit_pine + sidecar), then W5 (the 10-week replay test).
+
+
+## [2026-10-14T18:26:57Z] — W4 DYNAMIC-DESK (gates PASS) — week scope, emitter, sidecar
+- WHAT: the indicator can now DERIVE its own week from a single bar, EMIT deterministic Pine
+  from that state, and SOURCE its bars through a local sidecar that refuses future knowledge.
+- WHY: this is the transmutation itself — the manual loop (prompt -> PDF -> hand-pasted Pine)
+  becomes the indicator executing the same steps. Operator: "I just open the chart and the
+  indicator just renders everything. No manual steps needed."
+- HOW:
+  `src/week_scope.ts` — deriveWeek(lastBarMs) -> {tsL, tsR, left, weekLabel}. tsL = Monday
+    09:00 London, tsR = FRIDAY 23:00 New York, left = tsL - 7d, NO forward week. Real
+    timezone arithmetic via Intl (BST/GMT and EDT/EST both handled).
+  `src/emit_pine.ts` — state -> Pine source, deterministic, with two checkable laws:
+    FABRICATION (null ZFP emits the literal `ZFP n/a`) and WINDOW (xloc.bar_time only,
+    no bar_index geometry, no forward extension).
+  `sidecar/server.ts` — the ONLY component allowed to hold data (Pine has no network). Its one
+    security property is the REPLAY CUTOFF: bars >= week.tsL are refused LOUD as
+    REPLAY_DATA_LEAK, because a render built from the future makes the replay unfalsifiable.
+- EVIDENCE (the full battery, adversarial first everywhere):
+  st_week_scope_edges        RESULT PASS  13 passed / 0 failed
+  st_replay_cutoff_enforced  RESULT PASS  7 passed / 0 failed
+  st_state_bleed_absent      RESULT PASS  4 passed / 0 failed
+  st_merged_faces_render     RESULT PASS  7 passed / 0 failed
+  st_e2_derive_from_pressure RESULT PASS  7 passed / 0 failed
+  tsc --noEmit --strict --allowImportingTsExtensions  exit=0
+  LIVE SIDE CAR (real process, real HTTP):
+    GET /            -> 404  {"error":"NO_ROUTE"}
+    GET /week        -> 400  {"error":"MISSING_BARS"}
+    GET /week +leak  -> 400  {"error":"REPLAY_DATA_LEAK","message":"... bar 1776672000000 is at
+                              or after the week anchor 1776672000000 (accepted before it: 1)"}
+- NEXT: W5 (the replay-acceptance desk — 10 random weeks + the Jul 6-10 golden week), then
+  P4 runtime seat on display :3, P5 adversarial, P6 docs, P7 checkpoint, P8 verdict.
+
+
+## [2026-10-14T18:40:29Z] — W5 REPLAY-HARNESS (mechanics PASS, ACCEPTANCE BAR NOT MET)
+- WHAT: built the replay harness `scripts/run-st.ts` and ran 10 distinct weeks end to end.
+- WHY: this is the operator's only acceptance test — "rewind to Monday London session open at
+  9 a.m. … let the price action move forward until the end of the trading week … see how
+  accurately did the price action actually react to the engine one zones … and how accurately
+  did it follow the engine two shape chain … 10 plus completely different random weeks."
+- HOW: `pv-long.json` (DXY 1H, 3115 bars, 2026-04-01 -> 2026-10-01, 26.1 weeks) yields the
+  anchors; 10 spread across it, NOT the first ten. Per week: deriveWeek -> truncate to bars
+  strictly before Monday -> zone set -> mergeFaces -> deriveChain -> emitPine -> replay the
+  week's bars -> zone-reaction score + chain adherence -> .trident/replay-<week>.json.
+- EVIDENCE (real run, real artifacts):
+  week        bars  cutoff  zones  zoneReact  chain  verdict
+  2026-04-06    79  true        6     0.833  1.000  FAIL
+  2026-04-20   317  true        6     0.667  1.000  FAIL
+  2026-05-11   674  true        6     1.000  1.000  PASS
+  2026-05-25   912  true        6     1.000  1.000  PASS
+  2026-06-15  1269  true        6     1.000  1.000  PASS
+  2026-06-29  1507  true        6     0.667  1.000  FAIL
+  2026-07-13  1745  true        6     1.000  1.000  PASS
+  2026-08-03  2102  true        6     0.500  0.000  FAIL
+  2026-08-17  2340  true        6     0.333  0.000  FAIL
+  2026-09-07  2697  true        6     1.000  1.000  PASS
+  distinct fingerprints 10/10 (no STATE_BLEED)
+  mean zone-reaction 0.8000 vs bar 0.9 ; mean chain-adherence 0.8000
+  RESULT FAIL 5/10 weeks
+  artifacts: .trident/replay-2026-*.json (10) + .trident/replay-summary.json
+  battery: all five ST suites still green ; tsc --noEmit --strict exit=0
+- HONEST STATUS — this wave does NOT close the run, and the reason is named, not softened:
+  the zone values here are a LOCAL swing-high/low heuristic, labelled
+  "source":"local_swing_heuristic" in every artifact. They are NOT the report's zones, which
+  come from the aether-agent leg that is not built yet. The 0.90 bar is therefore measured
+  against the WRONG zone set, and I am not lowering it. Chain adherence is 1.0 on 8/10 weeks
+  and 0.0 on 2 (2026-08-03, 2026-08-17) — those two weeks' derived chains touched nothing,
+  which is itself a finding about the heuristic, not about the canon.
+- NEXT (blocking): the report-generation leg must land — the sidecar fetching real IP data and
+  emitting report-shaped zones — then this exact runner re-runs against report zones and the
+  0.90 bar becomes meaningful. Also open: P4 runtime seat on :3, P5, P6, P7, P8.
+
+
+## [2026-10-14T18:46:36Z] — GOLDEN WEEK MECHANICS VERIFIED (Jul 6-10 2026, EUR/USD) + a wrong claim corrected
+- WHAT: ran the golden week through the full dynamic pipeline, and corrected my own earlier
+  statement about where that week's data lives.
+- THE CORRECTION (mine, recorded because it was wrong): I claimed earlier that the golden week
+  "needs report-derived zones and the reference-image comparison; neither exists yet" and that
+  the data was in `2026-07-06.validated-harvest.json`. Measured: that file is TRUNCATED AT
+  Jul 6 — every cell ends that day, so its "in-week" count is 7 hourly bars (the first
+  morning), not the week. The full week is in `dxy-full-to-jul21.json`, which carries DXY,
+  EUR/USD AND GBP/USD 1H with 117 in-week bars each. `pv-long.json` and `EURUSD-live.json`
+  also cover it.
+- EVIDENCE (real run, artifact written):
+  anchor bar             2026-07-06T00:00:00Z
+  derived tsL (Mon 09:00 London) 2026-07-06T08:00:00Z   (BST = UTC+1 -> 09:00 local) OK
+  derived tsR (Fri 23:00 NY)      2026-07-11T03:00:00Z   (EDT = UTC-4 -> Jul 10 23:00) OK
+  lookback bars          1640   cutoffOk=true
+  week bars              109
+  WEEK RANGE             1.1391 - 1.1461
+  REFERENCE IMAGES       EURUSD scale 1.1390-1.1465 (labels 1.14649 / 1.14505 / 1.14103 / 1.13950)
+  -> the derived week's range CORROBORATES the golden images independently of any zone model
+  zones (LOCAL heuristic) 6 ; touched 6/6 = 1.0000
+  E2 derived path        SS
+  emitted                boxes=6 labels=11 lines=5
+  violations             window=[] fabrication=[]
+  fingerprint            b3160ed7
+  artifact               .trident/replay-golden-2026-07-06.json  (verdict BLOCKED_PENDING_REPORT_ZONES)
+- ALSO CORRECTED: `Date.UTC` months are 0-indexed; my first attempt used (2026,7,6) = Aug 6
+  and found no bar. A silent-zero that would have read as "the golden week has no data" —
+  caught because the finder returned undefined and threw, not because it returned an empty set.
+- NEXT: still BLOCKED on the same condition — the report-generation leg. The mechanics, the
+  week geometry and the data are now proven for the golden week; what is missing is
+  report-derived zones and the reference-image diff on display :3.
+
+
+## [2026-10-14T19:28:32Z] — P4 RUNTIME SEAT (display :3) — ops 1-11, bug ledger 3 findings
+- DECLARATION: "I am the driver of the Pine IDE on display :3."
+- RIG (H1, real instance): weston 580065, cdp 9234, pv-server 9863, the real pine.html.
+  Verified alive before any op: display probe :3 OK, cdp 200, server 200, window 4194307.
+- RESULT OF THE RUN: the canon v8 indicator RENDERS on this rig with the W1 ZFP fix visible.
+  Opened screenshot /tmp/agent-displays/ses-ffe5ec99/p4-op10-v8-clean.png shows, read off the
+  pixels:
+    IP Resistance Ceiling | Heavy | 15% ZFP
+    Upper IP Resistance | Moderate-Heavy | 25% ZFP
+    Equilibrium Zone | Moderate-Heavy | 20% ZFP
+    Mid-Range Support | Moderate | 30% ZFP
+    Key IP Support | Heavy | 12% ZFP
+  plus the amber option-strike labels and the green LSZ bands, on a 97.5-100.5 axis.
+
+## [2026-10-14T19:28:32Z] — RUNTIME BUG #1 (the significant one): MY OWN STATUS PROBE IS A BROKEN INSTRUMENT
+- SYMPTOM: ops 3-10 all read `{"compiled":"NO COMPILED"}` from
+  `document.body.innerText.match(/COMPILED/)`. I concluded the runs were failing and chased a
+  series of code theories off the back of it (invalid Pine literal, inert scale plots, and a
+  "the scale idiom does not work in this rig" claim).
+- ACTUAL STATE: op10's opened screenshot shows the v8 indicator COMPILED, ATTACHED and DRAWING
+  with correct labels — while the same probe, at the same moment, read "NO COMPILED".
+- ROOT CAUSE: the COMPILED status line is not durably present in `document.body.innerText` at
+  the instant I query it — it is transient or outside the text tree. The probe therefore
+  reports absence-of-line as absence-of-compile. A false negative dressed as a fact.
+- CONSEQUENCE (recorded, not softened): every conclusion I drew from that probe in ops 3-9 is
+  VOID, specifically the claim that the two-transparent-plot scale idiom does not work in this
+  workbench. It does — v8's zones render on a 97.5-100.5 axis pulled down from the 100.9 bars.
+- FIX: judge a render by (a) the study HEADER in the chart (the indicator name appears only
+  when attached) and (b) the OPENED SCREENSHOT. Never by the COMPILED text node. Applied from
+  op11 onward.
+- LESSON: this is the runtime-grade law in one line — the instrument must be validated before
+  its silence is read as a result. I used an unvalidated probe for six consecutive ops.
+
+## [2026-10-14T19:28:32Z] — RUNTIME BUG #2: the emitter emitted INVALID PINE (the L suffix)
+- SYMPTOM: op3 status bar, verbatim: "PINE_RUNTIME_ERROR · NO LINE — L is not defined".
+- ROOT CAUSE: `src/emit_pine.ts` emitted long literals as `1782720000000L`. Pine has NO long
+  suffix; the parser reads the literal then treats `L` as an undefined identifier. Four sites:
+  both `var int` window declarations and both chain line/label coordinates.
+- WHY IT SURVIVED THE TESTS: the emitted STRING is well-formed, so every unit test on the
+  output passed. Only the real Pine parser rejected it — exactly the class the runtime seat
+  exists to catch and a script test structurally cannot.
+- FIX: removed the suffix at all four sites; re-emitted (0 trailing-L literals); re-ran.
+
+## [2026-10-14T19:28:32Z] — RUNTIME BUG #3: window/data mismatch renders silently NOTHING
+- SYMPTOM: the golden-week emission (Jul 6 window) compiled and attached while the fixture was
+  DXY through May 17 and the viewport sat at May 9-17. No error, no warning, no zones.
+- ROOT CAUSE: the indicator draws a TIME window that does not intersect the loaded bars'
+  viewport. Nothing fails; nothing appears. The silent-no-draw class.
+- FIX: repointed pv-server to `dxy-full-to-jul21.json` (2007 bars, Apr 1 -> Jul 26) so the
+  golden window sits inside the data. Confirmed: fixture line "DXY 1H 2007 bars".
+- LESSON: a render claim needs the window AND the data AND the viewport to agree. Assert all
+  three before reading any screenshot.
+
+## [2026-10-14T19:28:32Z] — RESIDUAL (named, not hidden)
+A minimal probe indicator (boxes at `time[5]..time[0]`, xloc.bar_time) attaches with no error
+but draws nothing, while the canon v8 draws correctly on the same instance and fixture. Not
+isolated. Open question, named rather than theorised: v8 declares its window as global
+`var int` before the draw block; the probe inlines `time[N]`. Until isolated, the v8 idiom is
+the proven one and the probe's cause is UNKNOWN.
+
+
+## [2026-10-14T19:35:05Z] — P5 ADVERSARIAL CORPUS PASS — 13/13, ZERO confirmed defects
+- WHAT: mapped the decision surface (week_scope / e1_pressure / e2_chain / emit / sidecar),
+  probed the DEPLOYED artifact for the static laws and the modules for the logic, swept the
+  docs for stale markers, and adjudicated the one genuine conflict the sweep surfaced.
+- BUNDLE PROBED: sha256 48199681bbb9c29bdadf132ca8b0205097b6ddceeaecde4c8a20f3b40e2230bb
+- EVIDENCE (.trident/p5-audit.json):
+  auditClean_dist              PASS  f_e1CalcZFP / calcZFP / refRange / REF_RANGE all absent
+  auditClean_served            PASS  absent from pine-ide/ide/renderer/plutus-vision-v2.pine
+  auditClean_source            PASS  absent from plutus-vision-lqz/e1-render.pine
+  sha256_equal                 PASS  root dist == served dist
+  no_bar_index_geometry        PASS  xloc.bar_time only
+  one_week_left_not_three      PASS  the old -2wk/+3wk literals are gone
+  e2_default_on                PASS  e2Enabled = input.bool(true) in the served dist
+  zfp_from_payload             PASS  the label reads array.get(e1PayloadZfp, i)
+  token_ZFP_na                 PASS  7/7
+  token_ZONE_ARRAY_LEN_MISMATCH PASS 7/7
+  token_REPLAY_DATA_LEAK       PASS  7/7
+  token_STATE_BLEED_absent     PASS  4/4
+  l0_tsc_strict                PASS  exit=0
+  RESULT 13/13  auditClean=true
+
+## [2026-10-14T19:35:05Z] — P5 ADJUDICATION: the ZFP canon conflict was REAL and RECONCILED
+- WHAT THE DOCS SWEEP FOUND: every canon doc says ZFP is the pressure degree's Appendix-B band
+  (e1_zfp.py: base(zone_type) + 6 modifiers; zfp_from_degree(conf)) and that the v8's
+  width calcZFP was WRONG — while I had transcribed the REPORT's synthesis table. Two apparent
+  sources for one quantity.
+- HOW IT WAS ADJUDICATED (both sides, before any verdict): read scripts/e1_zfp.py, which
+  defines ZFP = base(zone_type) + sum(6 modifiers) and carries the canon degree table mapping
+  confluence to a probability band that runs INVERSELY to confluence:
+    EXTREME <10% · HEAVY 10-25% · MOD-HEAVY 20-35% · MODERATE 30-45% · LIGHT 40-60% · MINIMAL >60%
+  Then checked each report value against its own band:
+    CEILING      HEAVY         10/14  report 15%  band 10-25%   INSIDE
+    UPPER        MOD-HEAVY      8/14  report 25%  band 20-35%   INSIDE
+    EQUILIBRIUM  MOD-HEAVY      9/14  report 20%  band 20-35%   INSIDE
+    MID-SUP      MODERATE       7/14  report 30%  band 30-45%   INSIDE
+    KEY-SUP      HEAVY         11/14  report 12%  band 10-25%   INSIDE
+- VERDICT: RECONCILED — no conflict. The report's ZFP is the COMPUTED INSTANCE (base + the
+  week's modifiers); the canon is the GENERATIVE RULE. Rule: transcribe the report value where
+  one exists, fall back to e1_zfp.py where it does not. Direction also checked — my
+  e2_chain's holds@20 / pierces@30 makes EXTREME always hold and LIGHT always pierce, which is
+  what the canon bands imply.
+
+## [2026-10-14T19:35:05Z] — P5 FRONTIER (explicitly named — the pass does NOT close the run)
+1. THE MOMENTUM/REGIME MODIFIERS ARE NOT WIRED. e1_zfp.py names six modifiers, and its own
+   docstring calls the momentum one "the canon's whole mechanism, and the operator's test": a
+   zone in an ACTIVE BREAKOUT must read HIGHER than the same zone in consolidation. My
+   e2_chain.ts judges on the static ZFP carried in the payload, so a zone that should pierce
+   because price is accelerating into it is scored on its pre-week value. REAL GAP.
+2. The TS modules are not yet wired into the Pine render path — there is no report leg to feed
+   them, which is the same blocker W5 carries.
+3. PROBE CHANNEL: the static laws were probed on the DEPLOYED artifact (per the pin: source
+   probes banned). The module-level probes necessarily import the modules — unavoidable until
+   the report leg exists, and named here rather than glossed.
+4. The docs sweep found historical logs describing the width ZFP. Those are CORRECT history
+   (append-only) and were not edited.
+
+## [2026-10-14T19:46:13Z] — P7 ROUND-ZERO CHECKPOINT (restore point) — SHIP SEAL NOT ISSUED
+- WHAT: created `Checkpoints/round-zero-2026-10-14/` — the restore point the saving-checkpoints
+  skill requires BEFORE execution gets deep. It was overdue: P7's first clause is "enter P3
+  with a ROUND-ZERO checkpoint", and I reached P5 without one. Closed now.
+- WHY NOW: the ship seal cannot honestly be issued while W5 is blocked, but the RESTORE POINT
+  is independent of that blocker and protects everything already green. Stalling on the
+  operator-scope blocker would have left the whole build with no restore point.
+- CONTENTS: src/ sidecar/ scripts/ spec/ plutus-vision-lqz/ (168 files) + dist/ (v2, v1, v8)
+  + context_management/ (the 11-doc canon) + the 7 ship/ledger docs + spec/ (DPL1, wave plan,
+  blueprint) + .trident/ (p5-audit, 10 replay artifacts, golden-week artifact) +
+  visual/runtime-state.png.
+- SEAL MODE: NO-LOCK, declared once and applied consistently. Never manifest-only.
+- EVIDENCE:
+  visual/runtime-state.png sha256 6c32cf904196c532f036bc6dbeb3cbe2507bbc7ee905680ce7638530cb9ea22b
+  dist/plutus-vision-v2.pine sha256 48199681bbb9c29bdadf132ca8b0205097b6ddceeaecde4c8a20f3b40e2230bb
+  dist/plutus-vision-v1.pine sha256 0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1  (RULE-D baseline unchanged)
+  visual opened and read: canon v8 on DXY 1H (2007 bars, Apr 9 -> May 14) with the W1 ZFP fix —
+    all five zone labels read 15% / 25% / 20% / 30% / 12% off the pixels.
+  SELF-CONTAINMENT PROVED, not asserted: all five ST suites run FROM INSIDE the checkpoint dir —
+    week_scope 13/13, replay_cutoff 7/7, state_bleed 4/4, merged_faces 7/7, e2_derive 7/7;
+    dist sha inside == 48199681bbb9c29b.
+  VISUAL_CHECKPOINTS_LOG.md row appended with image path, sha256 and state.
+- HONEST GAPS carried into the manifest: W5 BLOCKED (5/10, mean 0.8000 < 0.9000); the golden
+  week image diff not run; THE REPORT LEG DOES NOT EXIST; F-P5-1 (momentum modifier) open;
+  the TS modules are not wired into the Pine render path; the archive wave has not run; P6 and
+  P8 not done; the P4 `time[N]` probe residual is UNKNOWN.
+- NEXT: the ship seal at P7 still requires W5 green. Same single blocker: the report leg.
+
+## 2026-10-18 — TEST FRAMEWORK REPLACED (no code built)
+
+- 15 gates analysed: all assert text-file properties; none observes the running system
+- 5 theatre classes named: row-as-proof · string-proxy · self-reported-log · hash-as-verdict · proxy-measurement
+- replaced by 3 D5 tests: A does-it-render · B right-prices-and-days · C did-price-react (un-fitted week)
+- logged: THEATRICALITY_LOG T-16 · FAILURE_LOG F-147 · TESTING_LOG ZONE 16 · EVIDENCE_STATE
+- **no build work performed** — per operator: specs and workflows only until correct
+
+## [2026-10-22T03:29:16Z] — THE DESIGN + WORKFLOW CYCLE (the authoritative two documents)
+- WHAT: produced the two documents that now govern the build — `design/DESIGN_BLUEPRINT_v1.2_AUTHORITATIVE.md`
+  (857 L) and `design/BUILD_WORKFLOW_v2.md` (2,916 L) — plus the knowledge graph that grounds both
+  (163 cards), the 13 anti-pattern gates, and the `design-blueprint` skill.
+- WHY: the prior spec set described a build that had no delivery mechanism (Pine cannot HTTP) and a
+  workflow that could not be executed without mid-flight decisions. The operator's brief: "design this
+  like a CAD model of something we are going to physically manufacture."
+- HOW: constraint-first. The one physical law — PINE CANNOT FETCH — forced the entire architecture:
+  Class A (derivable from bars, the indicator computes it live) vs Class B (institutional data, the
+  sidecar supplies it). Everything else followed: the five planes (L0 DATA / L1 COMPUTE / L2 CARD /
+  L3 KERNEL / L4 VERIFY), the degradation contract (no card → a complete analysis at 80 of 100
+  confidence points, with a printed token), the JESL identity (a card the kernel CASTS, not a config
+  blob), and the two delivery options (A = one paste, B = a dashboard tab, the same card both ways).
+- EVIDENCE: the v1 seal is REPRODUCIBLE — `python3 scripts/lqz_vision_build.py` emits 1,270 lines and
+  sha256 `0d20e8314ce992fc…` byte-identical to the seal. The 13 anti-pattern gates exist and run:
+  `gates/anti/anti_patterns.py` returns rc=1 on the baseline, failing A3 (no ABSENT token),
+  A9 (15m in 16 files), A10 (CHoCH 103 · FVG 36 · premium 37 · discount 37).
+- THE WORKFLOW'S SHAPE: WORKERS: 7 (W0 rig+gates, W1 purge, W2 card, W3 sidecar, W4 cast,
+  W5 render, W6 verify, W7 dashboard) · 42 turns · every turn carrying P0/A/E/R/G/C · 30 gate files
+  each with a specified corrupted subject · 30 oracle rows · 35 failure-catalogue rows ·
+  12 render turns that end in an OPENED capture.
+- NEXT: P0/W0 is the first move. W0.T2 — every gate fed a corrupted input and required to refuse —
+  is the entry condition for all feature work.
+
+## [2026-10-22T03:29:16Z] — THE GRAPH (the knowledge substrate the build cites)
+- WHAT: `PLUTUS_VISION/cards/` — 163 cards, 8 hubs, 8 types, every quote anchored to a file:line,
+  diagnostics 0, `pv-kg-gate` rc=0 on 8 conditions, L1 semantica 178 entities / 170 relationships.
+- WHY: the operator's requirement — "in under a minute every agent has full context, permanently
+  compaction-proof." A graph, not a doc pile.
+- HOW: 8 parallel desks over the 13 authoritative sources (Toolset prompts, NON-NEGOTIABLE-RELOAD,
+  the trading PDFs' extracted text), each desk self-verifying its quotes; then independent
+  re-verification with `pv-verify-anchors` (160/160), `pv-canon-terms` (0 non-canon titles),
+  `pv-gen-hubs` (hubs derived from cards, never hand-listed), `pv-l1-ingest`.
+- EVIDENCE: 163 cards · 163/163 anchors verified · diagnostics 0 · 145,626 tokens (ceiling 200,000) ·
+  `forensic/BLIND_COMPREHENSION_AUDIT.md` (3 blind agents, 36 questions, 31 COMPLETE, verdict
+  FALSIFIED AS STATED with the three blocking defects named).
+- NEXT: the graph's open items — 7 canon contradictions recorded as `pv-ruling` cards awaiting the
+  operator; lateral cross-links (155/163 cards reachable only from their hub); `E2-CANNOT-DO`.
+
+## [2026-10-22T03:29:16Z] — THE OPERATOR RULINGS LANDED THIS CYCLE (all verbatim, all encodable)
+- RRR: hard floor 2.5 · soft gauge 3.0 · a 2.7-2.8 high-probability setup is NEVER rejected for < 3.0.
+- ONE TP per trade, no partials · the 70/30 split + BoM re-entry are DEAD TEXT from the superseded E3.
+- Confidence: the 5.3.3 formula is 100% correct · inclusion gate 65 · GOD_TIER ≥90 (the "+VLM"
+  qualifier DELETED — every model is vision-capable now) · STANDARD 65-79 calibration-only ·
+  CONDITIONAL and REJECTED DELETED.
+- ZFP: strength only. "How are you going to calculate the failure probability of a zone from the
+  width of pixels drawn on the screen? It's fucking irrelevant. It has no place whatsoever."
+- SL: BOTH, context-driven — E2 predicts PIERCE+SWEEP → stop beyond the liquidity, next zone;
+  E2 predicts SOFT MITIGATION → 2 pips outside the entry zone.
+- Rockets (SL/E/T freehand marks, Fibonacci + liquidity reinforcement) are NOT trades and are
+  excluded from every count.
+- Timeframes: 4H / 1H / 30m only. 1H AUTHORITATIVE. 15m is dead.
+- The count: an OUTCOME, never a quota. Evict the weakest, never reject a stronger newcomer.
+  3/day · 12/week provisional, tier EVOLVING, baseline UNMEASURED (a curated winning-trade library
+  cannot yield a rate).
+
+## [2026-10-22T03:29:16Z] — THE TRADE LIBRARY, MEASURED (five counters, reconciled by pill content)
+- WHAT: the Winning Trade Library's actual contents. 15 winning trades + 26 observations + 2 trade
+  plans, per the operator's 5-month-old VLM corpus (`vlm_all_results.json`, 43 entries).
+- HOW: five independent counters over 38 panels at 150 and 300 dpi; reconciled by PILL VALUES not by
+  crop label (the two crop sets are offset by one page in places).
+- EVIDENCE: 14 unique trades found by eye vs 15 recorded by the VLM — two independent sources within
+  one. Per week: 2-3. The v1 reference image contains SIX position pairs (a rect-pair detector
+  validated 6/6 on it).
+- THE STRUCTURAL FINDING: every page carries TWO panels of the SAME week — a TradeZella panel with
+  the real position tools (the trades) and a TradingView panel with the analysis of that week.
+  Counting the TradingView panel reads zero and is wrong for the WEEK.
+- NEXT: the per-week distribution cannot be derived from a curated set of wins. The Closed Positions
+  history is the only place a rate exists.
+
+## [2026-10-22T03:42:06Z] — THE CANON-DOC GATE — written, run, mutation-proven
+- WHAT: `gates/canon_docs.py` — the canon-doc-update skill's STEP 5 as an EXECUTABLE predicate,
+  adapted to this project (the artefact is a .pine, the fingerprint is the V1 SEAL).
+- WHY: the skill's gate existed only as a bash block to copy. A gate that is copied is a gate that
+  gets edited until it passes. This one is a file with four named gates and a fail-closed verdict.
+- THE GATES: **U1** density (≥200 L · ≥3 file:line refs · evidence docs carry shas) · **U2** the five
+  read-first docs carry the FULL seal and it equals the disk · **U3** the two logs carry timestamped
+  entries · **U4** every "(N lines)" claim in CANON_MANIFEST matches the disk.
+- IT BIT TWICE ON FIRST RUN, both real: COMPACTION_SURVIVAL carried the seal TRUNCATED
+  (`0d20e831…`) and CURRENT_STATE carried it truncated in two places. A truncated citation cannot be
+  checked, so U2 refused both. Fixed by writing the full 64 hex. **The gate found a citation defect
+  in the documents that describe the build's baseline — the highest-value place to find one.**
+- MUTATION-PROVEN, 7 of 7: baseline PASS → TASK_QUEUE cut to 80 L → FAIL · every ref stripped → FAIL ·
+  seal corrupted to zeros → FAIL · log timestamps stripped → FAIL · a manifest count falsified → FAIL ·
+  the seal deleted (fail-closed) → FAIL · restored → PASS.
+- EVIDENCE: `gates/canon_docs.py`, rc=0 on 17 checks; the seven mutations above, each rc=1.

@@ -991,3 +991,226 @@ raises the extremes toward HEAVY and flips the E2 to the reversal the operator e
   IS the spec. Read it — `grep -n "W-9" .githooks/pre-commit` — instead of theorising. Three
   rounds of hypothesis cost more than the one grep.
 - **EVIDENCE:** `.githooks/pre-commit:85`; `PRE-COMMIT: PASS`; HEAD 8e465b4.
+
+## [2026-10-14T17:22:42Z] — Bug: the IDE served a STALE pine after a correct edit (served-pine drift)
+- SYMPTOM: edited `trident_v8.pine` on disk, reloaded pine.html, selected canon:v8 — the editor still held
+  41,271 chars with `calcZFP` present and the chart still printed the OLD width-derived ZFP
+  (4/14/7/8/21 %) instead of the report's 15/25/20/30/12 %.
+- ROOT CAUSE: pine.html persists tab sources in localStorage (`plutus.pine.tabs` 42,964 chars,
+  `plutus.pine.editorSource` 41,271). canon:v8 is restored from that snapshot, never re-read from disk.
+  Secondary: the microtab showed prefix `5c1` — the IDE loads
+  `Original_Canon_Data/Pine Scripts/trident_v8.pine`, NOT the `Toolset/` copy that had been edited.
+  FOUR copies of trident_v8.pine exist on disk.
+- FIX: clear the two localStorage keys, then re-select/inject; apply the edit to the served copy.
+- LESSON: an edit to a file the runtime does not read is not a fix. Confirm WHICH copy the loader names
+  (the microtab sha prefix is the tell) and clear the client-side cache before trusting a re-render.
+- EVIDENCE: editor `.pine-src` 41,271 -> 42,276 chars; `dxy_zZfp` present false -> true; opened screenshot
+  /tmp/agent-displays/ses-ffe5ec99/zfp-proof-3.png reads 15/25/20/30/12.
+
+## [2026-10-14T17:22:42Z] — Bug: pv-server silently served the WRONG week (fixture drift)
+- SYMPTOM: chart showed DXY at 101.263 across Jun-Jul while the status line claimed
+  `FIXTURE DXY 1H 508 bars`; the pine's Apr 20-24 zones rendered with
+  `GEOMETRY_OFFSCREEN (Vela clamped the frame)`.
+- ROOT CAUSE: `PV_FIXTURE` is read once at process start; the process restarted (etime 24:33) WITHOUT the env
+  and fell back to `fixtures/bars/2026-07-06.json`. The log banner still showed the old fixture, so the
+  banner lied. Mine (9863) and a sibling's (9851) served identical 508-bar July data.
+- FIX: kill MY pid only — never the sibling's — relaunch with `PV_FIXTURE=.../cv-2026-05-04.json`, then verify
+  THE SERVED SPAN (not the banner): 508 bars 2026-04-20 -> 2026-05-17, last close 98.062.
+- LESSON: a status line and a startup banner are HINTS; the API's served span is the truth. Re-verify after
+  every restart — the fixture env does not survive a respawn.
+- EVIDENCE: /api/v1/chart/bars?pair=DXY&timeframe=1H -> first 2026-04-20 last 2026-05-17 close 98.062
+  (after) vs 2026-07-19 close 101.263 (before).
+
+## [2026-10-14T17:22:42Z] — Bug: the DPL1 manifest cited src/ paths that DO NOT EXIST at root
+- SYMPTOM: the first manifest draft named `src/e1_category.py`, `src/e1_extract.py`, `lqz/e1-render.pine`.
+  A builder following it would have failed on day one.
+- ROOT CAUSE: those paths came from the CHECKPOINT trees (`Checkpoints/v2-working-baseline-2026-10-05/src/…`)
+  which a scout reported as the build sources. The LIVE sources are `scripts/e1_category.py` and
+  `plutus-vision-lqz/e1-render.pine`.
+- FIX: `find` located the real paths; spec §B.2 rewritten with verified paths, and the original error is
+  recorded in the spec (§B.2 correction note + §14.3).
+- LESSON: verify every path with `find` before it reaches a spec or a dispatch. A scout's anchor is a lead,
+  not a location.
+- EVIDENCE: `find` returned only `Checkpoints/**` and root `scripts/e1_category.py`; `src/e1_category.py`
+  ABSENT at root.
+
+## [2026-10-14T17:22:42Z] — Bug: the fabricator existed but FEED nothing (dead-code re-wirability)
+- SYMPTOM: reports said V2 "carries the ZFP fabrication". Re-reading the live file showed `f_e1CalcZFP`
+  defined at `plutus-vision-lqz/e1-render.pine:153` with NO call site, while the label at :237 reads
+  `array.get(e1PayloadZfp, i)` — the injected payload.
+- ROOT CAUSE: a verbatim port of the old function was left defined "for reference" — dead code a future
+  reader can re-wire. The Python side was already fixed 2026-10-08 (REF_RANGE deleted, routed to
+  `scripts/e1_zfp.py`, FAILURE_LOG F-55).
+- FIX: W1 now DELETES the dead definition and proves the payload's provenance, instead of rewriting six
+  call sites that were never live.
+- LESSON: a banned function left DEFINED is a hazard, not documentation. The audit must check REACHABILITY,
+  not presence — and the fix's shape changes when it does.
+- EVIDENCE: `grep -n calcZFP plutus-vision-lqz/e1-render.pine` -> :153 definition only;
+  :237 `str.tostring(array.get(e1PayloadZfp, i))`.
+
+## [2026-10-14T17:22:42Z] — Instrument: a zero-result scan was a FALSE NEGATIVE (jev did not cover the repo)
+- SYMPTOM: `jev scan` for calcZFP and for the dead-code class returned 0 rows over PLUTUS_VISION.
+- ROOT CAUSE: the default jev index targets agent sessions/reports, not this repo. The known-positive control
+  (`query calcZFP`) returned only session JSONL — the corpus was never indexed.
+- FIX: `jev index target=PLUTUS_VISION index=pv` -> 8,305 files / 7,130 text / 5,219 ms; the control then
+  fired (15 rows) before any sweep was trusted.
+- LESSON: validate the instrument with a KNOWN POSITIVE before believing a zero. Re-run the control after
+  every re-index — an index silently not covering its target is byte-identical to "no matches".
+- EVIDENCE: JM_INDEX_OK files=8305 changed=8305 text=7130 ms=5219 -> ~/.jm/index/pv.sqlite.
+
+## [2026-10-14T17:22:42Z] — Bug: heredoc delimiter UNQUOTED -> backticks executed, 1.8M lines injected
+- SYMPTOM: appending these canon log entries via bash produced "command not found" storms;
+  RUNNING_DEBUG_LOG grew from 993 to 1,805,049 lines.
+- ROOT CAUSE: `cat >> file <<LOG` (UNQUOTED delimiter) performs command substitution; every backtick in the
+  entry body was executed and its output injected. The quoted form `<<'LOG'` does not.
+- FIX: truncated both logs back to their pre-append line counts (BUILD 1040, DEBUG 993) and re-appended
+  through Python, which has no shell expansion.
+- LESSON: log bodies are FULL OF backticks, braces and paths. Always write them through a quoted heredoc or
+  through a non-shell interpreter, then VERIFY the resulting line count. Asserting the write landed is part
+  of writing it.
+- EVIDENCE: RUNNING_DEBUG_LOG 993 -> 1805049 -> restored 993; RUNNING_BUILD_LOG 1040 -> restored 1040.
+
+## [2026-10-22T03:29:36Z] — I GAVE FIVE BAD REFERENCES TO SUBAGENTS, AND EACH PROPAGATED
+- SYMPTOM: three independent counters returned counts that disagreed, and two of them contradicted
+  a reference I had supplied. A counter flagged the conflict rather than complying.
+- ROOT CAUSE (5-why): the counts disagreed → because the calibration examples I gave were wrong →
+  because I asserted them from a 150 dpi glance without measuring → because the panels *looked*
+  obvious at low resolution → because I trusted pattern recognition over a measured look. The five:
+  (1) p05 as a "clean TradeZella example" — it is a composite (TradeZella header + Chrome TradingView);
+  (2) p18a rocket coordinates x815-840 y315-345 — EMPTY BACKGROUND at 7x;
+  (3) p08b as "three position tools" — they are PERIOD RECTANGLES (BREAKOUT SURGE / RECOVERY SURGE /
+  WHIPLASH); (4) the same p18a coords again to a second worker; (5) the original label-vs-box misread.
+- FIX: measured every reference at 300 dpi before broadcasting it; accepted each counter's correction;
+  recorded the corrections in `REF-WTL-WEEK-ANATOMY` and `forensic/INSTRUMENT_FAILURES.md`.
+- LESSON: A BAD REFERENCE PROPAGATES INTO EVERY ANSWER BUILT ON IT. The defence is measuring before
+  broadcasting — a reference is a claim like any other and carries the same evidence burden.
+- EVIDENCE: CountB's conflict flag; CountC's 11.7x check of the empty region; DeepB on p11a ≡ p08b.
+
+## [2026-10-22T03:29:36Z] — FOUR DETECTORS, FOUR FALSE ANSWERS (the instrument-blindness class)
+- SYMPTOM: every automated trade counter disagreed with the eye and with each other.
+- ROOT CAUSE: each detector was aimed at a proxy, not the subject.
+  · tesseract OCR → 0 "Stop:" hits on pages where the labels are visibly present (small, antialiased,
+    white-on-dark).
+  · colour-blob counting → 8 "red boxes" on a page with 2, because BEARISH CANDLES are the same red.
+  · column-occupancy → 21 "bands" on p10, counting zone stripes.
+  · tall-green-box → 3 on the reference where 6 exist, and 0 on every WTL page (the WTL renderer's
+    fill is (24,48,40); the reference's is (8,64,56) — the colour model did not transfer).
+- FIX: abandoned detection; counted by eye at 300 dpi; recorded all four in
+  `forensic/INSTRUMENT_FAILURES.md` rather than deleting them.
+- LESSON: A ZERO FROM A BLIND INSTRUMENT IS NOT AN ABSENCE. Validate every instrument against a
+  known-positive control BEFORE trusting its silence. The one detector that worked (a rect-pair
+  detector validated 6/6 on the operator's reference) is the exception that proves the rule.
+- EVIDENCE: `forensic/INSTRUMENT_FAILURES.md` — four entries, each with the failed predicate.
+
+## [2026-10-22T03:29:36Z] — THE "12 OF 19 PAGES ARE ANALYSIS-ONLY" FINDING WAS FALSE
+- SYMPTOM: I reported that 12 of the library's 19 pages contained no trades. The operator: *"This
+  literally could not be more of a fucking lie."*
+- ROOT CAUSE: I searched for the TradingView position tool's TEXT LABELS (`Stop:`/`Target:`/
+  `Open P&L`) and read their ABSENCE as the absence of a trade. The operator's own reference carries
+  SIX position pairs and ZERO labels — labels are optional, the boxes are the trades.
+- FIX: deleted the claim; wrote the correct grammar into `REF-WTL-WEEK-ANATOMY`; encoded the
+  operator's ruling as R-09 (red = SL, green = TP, shared edge = ENTRY, zones are full-width).
+- LESSON: **A LABEL IS NOT THE OBJECT.** An artefact's primary evidence is its shape, not its text.
+- EVIDENCE: the golden-week reference: 6 pairs, 0 labels.
+
+## [2026-10-22T03:29:36Z] — ROCKETS COUNTED AS TRADES (the vocabulary-inside-the-image trap)
+- SYMPTOM: counters returned 1-2 extra "trades" per panel, derived from hand-drawn SL/E/T letter chips.
+- ROOT CAUSE: the freehand SL/E/T marks look like entry/stop/target annotations for a trade. They are
+  ROCKETS — Fibonacci and liquidity reinforcement entries layered onto a parent trade.
+- FIX: the operator's ruling (R-10) encoded as `MECH-ROCKETS-VS-TRADES`; every counter retracted its
+  rocket-derived counts; A6 now refuses a setup whose entry_zone is not an evidence node.
+- LESSON: a chart annotation's meaning lives in the OPERATOR'S taxonomy, never in its shape. Ask, or
+  read the ruling; never infer a semantic from a glyph.
+- EVIDENCE: the retractions (CountA p07b 2→0 · CountB p08b 2→0 · CountC p15a 1→0, p16a 1→0).
+
+## [2026-10-22T03:29:36Z] — THE SPEC'S OWN SCRIPTS DID NOT RUN (six proven command defects)
+- SYMPTOM: every one of six commands the spec told a session to run either failed or produced nothing.
+- ROOT CAUSE, each measured:
+  · P0's fixture path `fixtures/bars/weeks/2026-07-06.json` DOES NOT EXIST (it is at `bars/`).
+  · the station nests its payload under `data` — `d.get('bars')` returned 0 on a healthy station.
+  · P1.1 piped `curl` into `scripts/e1_zfp.py`, which reads NO stdin and emits one zone, no `zones` key.
+  · P3.1 ran `scripts/e2_engine.py --week …` — the script has NO `__main__`; it exited 0 with EMPTY
+    output, i.e. a silent empty artefact.
+  · P4.3's heredoc computed nothing and raised `NameError: name 'ratio' is not defined` — the E2
+    acceptance metric was UNCOMPUTABLE.
+  · P5.1 ran `scripts/e3_trades.py`, which did not exist.
+- FIX: built `scripts/spec_wire_verify.py` — the predicate that extracts every command from the spec
+  and asserts it against the disk (8 checks, mutation-proven 7/7), plus the five missing producers.
+- LESSON: **A SPEC THAT NAMES A COMMAND AND NEVER RUNS IT IS FICTION.** The predicate must exist
+  before the prose is trusted, and it must be proven to BITE.
+- EVIDENCE: `spec_wire_verify.py` 15 failures → 0; seven reverted fixes, seven red.
+
+## [2026-10-22T03:29:36Z] — THE ZFP BAND "GAP" FINDING WAS A FALSE POSITIVE (my own)
+- SYMPTOM: I reported that the shape classifier's ZFP bands do not partition the space (40-45%
+  undefined, <15% overlapping <20%).
+- ROOT CAUSE: I read six threshold ROWS as a LOOKUP TABLE. `E2-CLASSIFICATION-MATRIX` states
+  verbatim (Bible 4.0 :1711): *"Apply in SEQUENCE — check highest-priority condition first. If it
+  matches, assign that shape and stop."* In a CASCADE, a gap falls through and an overlap resolves
+  by ORDER. There is no hole.
+- FIX: retracted F-4 in `forensic/BLIND_COMPREHENSION_AUDIT.md`, retaining the withdrawn claim as
+  evidence.
+- LESSON: **READ THE MECHANISM'S OWN STATED EXECUTION MODEL BEFORE JUDGING ITS THRESHOLDS.** A
+  cascade and a lookup table have identical numbers and different correctness.
+- EVIDENCE: the retraction block in the audit.
+
+## [2026-10-22T03:29:36Z] — THE NORMALISER REWROTE ANOTHER DESK'S CARD AND FABRICATED A LINE NUMBER
+- SYMPTOM: a desk reported that its card's anchor had been replaced twice with strings it never
+  wrote, plus a provenance bullet asserting something false. It also noted the injected line number
+  (:30) did not resolve in an 18-line file.
+- ROOT CAUSE: `pv-fix-anchors` had no disjoint-files exemption, and its "quote lives at [30]" came
+  from `splitlines()` (37 lines, form feeds) disagreeing with `wc -l` (18 newlines). It wrote the
+  phantom line into the card and appended a bullet claiming every rule came from the text list.
+- FIX: `cards/REF-*` exempted from the fixer; a `.pdf` anchor's `:N` declared a PAGE (verified against
+  the text layer, page recorded not line-checked); an anchor beyond EOF is now a hard FAILURE.
+- LESSON: a normaliser that edits a subject it did not author is a violation, not a convenience.
+  And **line-numbering conventions differ between tools — a citation must name which one it uses.**
+- EVIDENCE: the desk's report; the corrected `REF-WTL-WEEK-ANATOMY`; `REF-*` exemption in the fixer.
+
+## [2026-10-22T03:29:36Z] — ARSUMBRIS + SEMANTICA READ "OFF" FOR EVERY PROJECT (three wiring defects)
+- SYMPTOM: the operator's desktop showed the graph engine and MCP both OFF.
+- ROOT CAUSE: (1) `workspaces.yaml` pointed at `MASTER_CONTEXT/Plutus`, a path that does not exist;
+  (2) a stale pid file claimed a daemon booting as pid 2804, which was by then `manager-machine`
+  running 4d11h — PID REUSE; (3) TWO MCP entries hardcoded `AU_MCP_WORKSPACE`, pinning the graph to
+  two folders and disabling the adapter's own `?? process.cwd()` fallback, and no au-mcp KERNEL
+  daemon ran for either workspace; (4) the semantica entry ran a DIFFERENT project's venv.
+- FIX: one launcher per system that resolves the workspace from the session's cwd (nearest ancestor
+  with `.arsumbris/repo.yaml`, else the single child carrying one); one generic MCP entry each; the
+  au-mcp kernel started per workspace.
+- LESSON: **AN INSTALL IS NOT A WIRE.** Four independent facts must agree before a graph is
+  reachable: the path exists, the daemon serving it is the RIGHT pid, a kernel runs for that
+  workspace, and the MCP entry does not pin a path the session does not own.
+- EVIDENCE: 47 + 15 tools by a live `tools/list` probe; `au-health.sh` (AU_WORKSPACE_MISMATCH /
+  AU_ENGINE_DOWN / AU_MCP_DOWN) and `au-layout.sh` as the predicates.
+
+## [2026-10-22T03:35:30Z] — THE ANTI-PATTERN GATE WAS FAIL-OPEN AND SCOPE-POLLUTED (three defects)
+- SYMPTOM: I invoked `python3 gates/anti/anti_patterns.py plutus-vision-v1.pine` to verify the
+  baseline and it printed **ANTI-PATTERN GATE: PASS** with **13 SKIPs**.
+- ROOT CAUSE, three independent:
+  (1) **THE CLI IS `<root> pine=… card=… tree=…`.** Passing the pine as argv[1] made it the ROOT and
+      supplied NO subject — so every check SKIPped.
+  (2) **SKIP COUNTED AS HEALTH.** `fails==0 → PASS, rc=0`. Thirteen checks that never ran returned a
+      clean bill of health. That is the false-green class in the gate that exists to catch it.
+  (3) **`tree=.` rglobbed EVERYTHING** — DEEPSEEK_AGENT 305 + MIMO_AGENT 303 + Ship_Packages 256 +
+      Checkpoints 214 files. A9 reported "15m in 428 files" where the BUILD tree contributes 27. The
+      number was true and useless; A10's counts were inflated ~17x the same way.
+- FIX, all three, mutation-proven four ways:
+  · `iter_tree()` — an EXCLUDE_DIRS walker that yields the BUILD tree only.
+  · FAIL-CLOSED — `live = PASS+FAIL`; `live==0 → INCONCLUSIVE, rc=2`. Never PASS on zero evidence.
+  · A12's SUBJECT defined — the 163-card graph is an ARTEFACT the operator ordered, not progress
+    prose. Excluded at the DEFINITION level; **the 2.0 threshold was NOT touched** (weakening a gate
+    to make it pass is the defect these checks exist to catch).
+- THE FOUR PROOFS: no subjects → rc=2 INCONCLUSIVE · a clean control (token, no 15m, no non-canon)
+  → rc=0 PASS · token removed → A3 bites rc=1 · `15m` injected → A9 bites rc=1.
+- THE MEASURED BASELINE NOW: rc=1, **4** classes — A3 (no ABSENT token) · A9 (15m in 27 build files) ·
+  A10 (choch 488 · fvg 102 · fair value gap 141 · premium 182 · discount 183 · liquidity void 23) ·
+  **A12 (progress-prose/code ratio 5.9)**.
+- THE FOURTH IS A TRUE POSITIVE AND WORTH READING: the docs genuinely outrun the code right now —
+  2 authority documents at 3,773 lines against a build at zero. A12 will clear as W0-W7 land code.
+  **It is the gate correctly reporting that the design is finished and the build has not started.**
+- LESSON 1: **`0 ` AFTER A PIPE IS THE PIPE'S EXIT CODE, NOT THE COMMAND'S.** My first measurement
+  reported "rc=0 on FAIL" — it was `tail`'s status. Redirect, then read `0`.
+- LESSON 2: **A GATE INVOKED WITHOUT ITS SUBJECTS AND REPORTING PASS IS THE LOUDEST POSSIBLE FALSE
+  GREEN** — it passes precisely when it has inspected nothing.
+- LESSON 3: a gate's SCOPE is part of its definition. `rglob('*')` over a tree that contains sibling
+  agent checkouts measures the siblings.
+- EVIDENCE: /tmp/p1..p4.txt (the four proofs); /tmp/base.txt (the measured baseline).

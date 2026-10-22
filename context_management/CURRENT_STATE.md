@@ -1,249 +1,260 @@
-# CURRENT_STATE — PLUTUS VISION
-**Overwritten 2026-10-14 (the layout + backtest ship cycle).** This document describes NOW.
-Anything older than this header is history and belongs in CHANGELOG, not here.
+# CURRENT STATE — PLUTUS VISION
+**As of 2026-10-22** · overwrite semantics · this describes NOW, not history
 
-## 1 · WHAT THIS PROJECT IS
-PLUTUS VISION is the Pine IDE + backtest shell around the Vision indicator: a self-hosted chart
-terminal where a Pine study is compiled, rendered on a live navigable chart, captured to PNG with
-a sha256, and gated into a VIL verdict ledger. The indicator itself is the deliverable; the IDE
-is the instrument that proves it renders.
+---
 
-Two surfaces ship in one page (`pine.html`):
-- **PINE IDE** — micro-tabs + a Pine editor + a toolbar (RUN / CAPTURE / GATE) + the VIL verdict
-  rows + THE AGENT'S FACE (agent cards + an Orca terminal mirror) on the left; the Vela chart on
-  the right.
-- **BACKTEST** — the TradeZella room: a replay of the bundled bars with an order ticket, a
-  journal, and the E1 zones overlaid.
+## 1 · THE ONE-PARAGRAPH STATE
 
-## 2 · THE SERVED DEPLOYMENT (measured 2026-10-14)
-```
-pine-ide/ide/renderer/plutus-vision-v2.pine   sha256 125c94f86e6a2f1d3009a75c778e02ad16c48e4f3772e8d0d8d95c50af162400
-pine-ide/ide/renderer/plutus-vision-v1.pine   sha256 0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1   HARD STOP H1 — never touch
-pine-ide/charts/workbench.bundle.js           sha256 7ff93dcf5b2c9e77d0fbba310a7e9c2c04073e6521c233c664b140d888a61aec
-```
-Git: branch `step_agent`, HEAD `c058e3e`, 34 dirty paths at the time of writing.
+The **design layer is complete and is now authority**: two documents — `design/DESIGN_BLUEPRINT_v1.2_AUTHORITATIVE.md`
+(857 L) and `design/BUILD_WORKFLOW_v2.md` (2,916 L) — govern the build, and the knowledge graph behind them
+(163 cards, diagnostics 0) is the substrate both cite. **The build itself has not started.** No sidecar exists.
+The card schema is specified, not implemented. The cast layer is specified, not implemented. The V1 seal
+(`0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1`, 1,270 L) is the P1 baseline and it is **reproducible from its five modules**, which is the single
+most important mechanical fact for the work ahead. **W0 — the rig and the gate harness — is the first move**, and
+its second turn requires every one of the 30 gates to be watched refusing a corrupted input before any feature
+work begins.
 
-## 3 · THE PROCESS TOPOLOGY
-The rig is four processes plus a browser. Each is started separately and each has a port.
-```
-pv-server.py    :9851   static renderer root + the face/agent proxy (+45 lines of loop guards)
-pv-server.py    :9863   the SECOND renderer root (/tmp/agent-displays/<instance>/renderer)
-pine-station    :9741   the Pine compiler/runner (compiles the editor buffer, returns plots+boxes)
-vil-rail        :9754   the VIL ledger + the PNG writer (writes evidence/shell/*.png)
-tv-feed         :9448   the TradingView data feed   *** NOT RUNNING — see §7 ***
-workbench       bundled charts/workbench.bundle.js, mounted by the kernel
-```
-The renderer root for a session is a directory of SYMLINKS into
-`pine-ide/ide/renderer/`, so an edit to the source is picked up on the next reload — subject to
-the browser cache (§7).
+---
 
-## 4 · THE CODE MAP (the paths that matter)
-```
-pine-ide/ide/renderer/pine.html            the two-tab mini-dashboard; the pane switcher
-pine-ide/ide/renderer/tabs/pineshell.html  the PINE IDE fragment (toolbar + .pine-cols)
-pine-ide/ide/renderer/tabs/pineshell.css   the layout: shell/columns/toolbar/collapse/splitter
-pine-ide/ide/renderer/tabs/pineshell.js    loadFragment → importKernel → mount → wireLayout
-pine-ide/ide/renderer/tabs/_shell.js       PlutusShell: registerTab, loadFragment, ensureTokens
-pine-ide/ide/renderer/tabs/backtest.js     the TradeZella room + the collapse pattern it owns
-pine-ide/pine-ide/pine-ide.mjs             THE KERNEL: mountWorkbench, loadBars, the face, the gate
-pine-ide/pine-ide/pine-persist.mjs         the localStorage mirror (4 keys) + its validators
-pine-ide/charts/workbench.bundle.js        the Vela chart (2 MB)
-pine-ide/tv-feed/server.mjs                the :9448 feed (deps NOT installed)
-```
+## 2 · THE TWO AUTHORITY DOCUMENTS
 
-## 5 · THE LAYOUT AS IT STANDS (the 2026-10-14 change)
-`.pine-shell` is a COLUMN: a layout toolbar over a `.pine-cols` row holding
-`[.pine-left | .pine-split | .pine-right]`.
-- `.pine-left` — `flex: 0 0 var(--pine-left-w, 34%)`, `min-width: 300px`. Was `flex: 1 1 46%`.
-- `.pine-right` — `flex: 1 1 auto`, so it absorbs whatever the left column releases.
-- `.pine-split` — an 8px `col-resize` handle; pointer-drag writes `--pine-left-w` on the shell.
-- Collapse is attribute-driven, ported 1:1 from the backtest room:
-  `[data-hide-left]` hides `.pine-left` + `.pine-split`;
-  `[data-hide-face]` hides `.pine-chat` (THE AGENT'S FACE);
-  `[data-hide-foot]` hides `.pine-status` + `.pine-verdict`.
-- **The default is `foot=1`** — the chart host is `.pine-right`'s only child, so the chart runs
-  full height top-to-bottom, which is the operator's standing order.
-- State persists at `plutus.pine.layout` (`{left,face,foot,w}`). `w` is clamped to [0.18, 0.70].
-- Every mutation drives `chart.resize()` on a rAF plus a 120ms re-measure, and also dispatches a
-  window `resize` event as a fallback — the workbench binds its own reflow listeners.
-- `aria-pressed` on the toggles means the panel is SHOWN (the backtest convention, so both tabs
-  read identically).
-
-Verified live on display `:5`:
-`{"shellPresent":true,"hide":"left=0 face=0 foot=1","footDisplay":"none / none","editorPct":"34%","toggles":4,"splitter":true}`, `ERRORS: none`.
-
-## 6 · THE DATA PATH (why the chart has bars at all)
-The kernel picks a market from `localStorage["plutus.pine.market"]` =
-`{provider,ticker,timeframe}` and calls `loadBars({symbol:"<provider>:<ticker>",…})`.
-`pine-ide.mjs:96` records the rule: **DXY comes from the `fixture:` feed; every other market
-comes from the `tv:` feed.** The fixture carries DXY at 15m/30m/1H/4H and renders 508 bars on the
-IDE's Jul window.
-The current working market is `{"provider":"fixture","ticker":"DXY","timeframe":"60"}` →
-`FIXTURE · DXY · 1H · 508 bars · rail :9754 · station UP`.
-
-## 7 · THE KNOWN-BROKEN THINGS (open, never assumed fixed)
-1. **`tv-feed` (:9448) cannot start** — `ERR_MODULE_NOT_FOUND`; `pine-ide/tv-feed/` has no
-   `node_modules`. Consequence: EVERY `tv:` market is dead and reports
-   `FEED_UNREACHABLE: http://127.0.0.1:9448/bars`. Fix = `npm install` in that directory.
-2. **A source edit can appear not to take effect** — CORRECTED 2026-10-14 (EN-138). The server
-   DOES send `Cache-Control: no-store, no-cache, must-revalidate` (`scripts/pv-server.py:633`,
-   plus `Pragma: no-cache` at `:634`), confirmed by a live header dump from `:9863`. The
-   served-vs-executed mismatch that started this was real, but the MECHANISM is UNRESOLVED (ESM
-   module cache, a keypress that never reached the window, or a fragment torn down by the pane
-   switch). The surviving advice is the INSTRUMENT: compare the served bytes against
-   `mount.toString()` through CDP before debugging a change that "did nothing" — that comparison
-   is header-agnostic and is what actually settled it.
-3. **The port is NOT locked** — the guardian is disarmed (EN-136 / F-140). `/proc/<pid>/fd` is
-   unreadable in the ORCA scope, so the socket holder cannot be identified. The sound lock is
-   BINDING the port (EADDRINUSE for everyone else); nothing implements that yet.
-4. **The code-audit lane is BLOCKED** — `403 FreeTierError` on the `:4097/:4098` chain, 8/8
-   LLM failures, 1.986s. No audit PASS exists for this cycle (F-141 / V-43).
-
-## 8 · THE OPERATING LAWS THIS PROJECT HAS LEARNED
-- **Two sources of truth for the editor buffer.** With the `:9430` face backend down the IDE
-  restores from localStorage, NOT from disk — editing the renderer file does not update the IDE.
-  Assert `buffer-sha == file-sha` before binding any screenshot to a claim.
-- **Verify on EVERY feed the IDE can show.** A render proven on the station's live Oct data is a
-  hypothesis on the IDE's padded Jul fixture (EN-131).
-- **The chart needs an explicit resize after a flex change.** The workbench's own observer is not
-  reliable; the backtest room already knew this.
-- **A throw in a render chain is a component outage**, never a bad cell (EN-133).
-- **Prove which copy the browser ran** before debugging logic: `fn.toString()` vs the served
-  bytes (EN-134).
-
-## 9 · HOW TO VERIFY A CHANGE (the instrument set)
-```bash
-# syntax
-node --check pine-ide/ide/renderer/tabs/pineshell.js
-# the live DOM, through CDP on the display's own browser (never a source read)
-node ~/.local/state/agent-probe/final2.js      # → the layout JSON above
-# the window, scoped to the agent's display only
-AGENT_DISPLAY_ID=pine-layout5 agent-display.sh shot 4194307 /tmp/x.png
-```
-The browser on the agent's display carries `--remote-debugging-port=9444`; drive it with CDP and
-ALWAYS read the rendered pixels back — a DOM read proves the attributes, the pixels prove the
-chart.
-
-## 10 · WHERE THE RECORD LIVES
-- Ship docs (evidence) at the project root: BUILD_REPORT, DEBUG_LOG, FAILURE_LOG,
-  SPEC_VIOLATION_LOG, TESTING_LOG, THEATRICALITY_LOG + SHIP_DOCS_MANIFEST.md.
-- Canon docs (state) in `context_management/` — this file is one of them.
-- Ship packages under `Ship_Packages/`; checkpoints under `Checkpoints/`.
-- The JEV gate: `JEV_GATE/run_gate.sh` is the ONLY success gate for a chunk; the fence
-  `SPEC.md:25` is the commit gate.
-
-## 11 · KEY FILES REFERENCE (the load-bearing anchors, measured 2026-10-14)
-Every line below was read this cycle; re-read before trusting it after any edit.
-
-| anchor | what it is | why it matters |
-|---|---|---|
-| `tabs/backtest.js:499` | `paint()` — the room's render chain | the ONLY caller of `renderControlsState` (ripwire `count=1`) |
-| `tabs/backtest.js:683-690` | the `isFinite` guard around the jump-to-input date | the fix that stopped the mount-killing `RangeError` |
-| `tabs/backtest.js:520` | `q(k)` = `S.root.querySelector('[data-bt="<k>"]')` | every room control is addressed by `data-bt`, never by id |
-| `tabs/backtest.js:1084-1132` | the collapse block (`LAYOUT_KEY`, `PANES`, `applyLayout`, `wireLayout`) | the pattern the pine shell PORTS |
-| `tabs/backtest.js:1165` / `:1170` | `step-fwd` → `POST /step`, `go-last` → `POST /jump {barIndex: timeline.max}` | the replay is server-driven against the room on `:9443` |
-| `tabs/pineshell.js:157` | `wireLayout(container)` inside `mount()` | runs after the kernel mount so `chart.resize()` is live |
-| `tabs/pineshell.js:213` | `wireLayout(container)` definition | the document-scoped lookup + the `console.warn` that can FAIL |
-| `pine-ide.mjs:96` | the feed rule: DXY → `fixture:`, everything else → `tv:` | the reason `tv:DXY` is an unsupported combination |
-| `pine-ide.mjs:208-209` | `symbol: persisted.market ? \`${provider}:${ticker}\` : marketSymbol(cfg.pair)` | the persisted market overrides the configured pair |
-| `pine-ide.mjs:252` | `chartHost.replaceChildren(box)` | the kernel owns the chart slot's children |
-| `pine-ide.mjs:821` | `const handle = { … get workbench() { return S.wb; } … }` | the surface a driver reaches for `chart.resize()` |
-| `pine-persist.mjs:36-41` | `PINE_KEYS` (`plutus.pine.editorSource|activeMicrotab|market|tabs`) | the four mirror keys the acceptance check reads |
-| `pine-persist.mjs:45-50` | `MARKET_RE` (`provider ∈ {tv,fixture}`) | the gate a persisted market must pass |
-
-## 12 · THE DATA FLOW (browser → kernel → station → chart)
-```
-pine.html
-  └─ PlutusShell.registerTab('pine-shell') → pineshell.mount(host)
-       ├─ loadFragment()  → fetch tabs/pineshell.html  → container.innerHTML = frag.html
-       ├─ importKernel()  → import('…/pine-ide.mjs')
-       ├─ kern.mod.mount(container, {apiBase, wsUrl, reader})
-       │     ├─ slot('chart') → mountWorkbench(chartHost, …)   [workbench.bundle.js]
-       │     ├─ persisted.market → loadBars({symbol:'<provider>:<ticker>'})
-       │     │        ├─ fixture: → the bundled bars (DXY 15m/30m/1H/4H)
-       │     │        └─ tv:      → http://127.0.0.1:9448/bars   *** DEAD ***
-       │     └─ the editor buffer → POST pine-station :9741 → plots+boxes → renderVision
-       └─ wireLayout(container)  → data-hide-* + --pine-left-w + chart.resize()
-```
-A failure at any node names itself on the chart (`FIXTURE_CELL_ABSENT`, `FEED_UNREACHABLE`,
-`PINESHELL_KERNEL_ABSENT`) — the design refuses to mask a dead feed.
-
-## 13 · THE FAILURE MODES THAT ARE ACTUALLY OPEN
-| # | symptom | mechanism | status |
+| path | lines | what it IS | line anchors |
 |---|---|---|---|
-| 1 | `FEED_UNREACHABLE: :9448/bars` | `tv-feed` has no `node_modules` (`ERR_MODULE_NOT_FOUND`) | OPEN |
-| 2 | a source edit "does nothing" in the browser | `pv-server.py` sends no `Cache-Control`; Chrome heuristically caches | OPEN (EN-134) |
-| 3 | a foreign process binds a protected port | no lock exists; the guardian is disarmed | OPEN (F-140) |
-| 4 | `RangeError: Invalid time value` on the room | fixed at `backtest.js:683`; sibling date sites NOT swept | FIXED at the site |
-| 5 | no independent code review | `403 FreeTierError` on `:4097/:4098`, 8/8 failures | BLOCKED (F-141) |
+| `design/DESIGN_BLUEPRINT_v1.2_AUTHORITATIVE.md` | 857 | WHAT the machine is: the constraint, the five planes, the card contract, the Pine kernel, the six decisions | `:1` header · `:30` §0 the constraint · `:180` §3 the sidecar · `:400` §6 the card |
+| `design/BUILD_WORKFLOW_v2.md` | 2,916 | HOW it gets built: 7 workers, 42 turns, 30 gates, 30 oracles, the vision contract | `:40` §0 laws · `:200` §1 worker plan · `:900` §5 turns · `:2100` §9 vision contract |
+| `design/DESIGN_BLUEPRINT_v1.0_AS_DESIGNED.md` | 449 | the design of record BEFORE operator feedback — retained for provenance | — |
 
-## 14 · THE TEST SURFACE (what can actually be driven)
-- **HOST (primary, and the only one used this cycle):** the page on the agent's own display,
-  driven by CDP on `--remote-debugging-port=9444`, with every verdict read from the rendered
-  pixels as well as the DOM.
-- **SCRIPT:** `node --check` on the two edited JS files; a div-balance check on the fragment.
-- **CONTAINER:** not used this cycle — the surface is a browser + four localhost servers, so the
-  rig is the display, not a container.
-- There is NO automated unit suite over `tabs/*.js`; the assertions this cycle were live-DOM
-  reads, and that gap is honest rather than hidden.
+**Everything else is a reference.** When a spec, a wave plan, or a prior workflow conflicts with these two, they win.
 
-## 15 · THE DEPLOY / RESTORE RECIPE
-```bash
-# 1. the four servers (each is independent; each names its own failure)
-cd PLUTUS_VISION
-env PV_FIXTURE=$PWD/fixtures/bars/2026-07-06.json setsid -f python3 scripts/pv-server.py 9851 $PWD/pine-ide/ide/renderer
-env PV_FIXTURE=$PWD/fixtures/bars/2026-07-06.json setsid -f python3 scripts/pv-server.py 9863 /tmp/agent-displays/<instance>/renderer
-setsid -f node pine-ide/pine-station/server.mjs        # :9741
-setsid -f node pine-ide/vil-rail.mjs                   # :9754
-# 2. the browser — MUST carry its own profile and a debugging port
-agent-display.sh app <chrome> --ozone-platform=x11 \
-  --user-data-dir=/tmp/agent-displays/<instance>/cp2 --remote-debugging-port=9444 \
-  http://127.0.0.1:9863/pine.html
-# 3. the market — fixture, never tv, while tv-feed is dead
-#    localStorage["plutus.pine.market"] = {"provider":"fixture","ticker":"DXY","timeframe":"60"}
+---
+
+## 3 · THE KNOWLEDGE GRAPH — the substrate both documents cite
+
 ```
-To restore the approved historical state instead: the dashboard's baseline is git tag
-`agents-overhaul-2026-10-05` (`7ce1d2a`, repo `leviathan-devops/PLUTUS-DASHBOARD`), and the
-vision tree's restore point is commit `caef1f9` ("RESTORE the V2 ship-approved checkpoint").
+cards/          163 typed cards · 8 hubs · 8 types
+sources/        8 hub files, every card's back-link derived (never hand-listed)
+type/           8 schemas: pv-engine · pv-law · pv-shape · pv-zone · pv-mechanic ·
+                pv-term · pv-ruling · pv-doc
+CHARTER.md      the operator-authored scope: the 13 authoritative sources and nothing else
+MASTER_CONTEXT/OPERATOR_RULINGS_PV.md   R-01 … R-11, the operator's words verbatim
+```
 
-## 16 · THE DISCIPLINE THIS PROJECT ENFORCES ON ITSELF
-- Every claim names its artifact: a SHA, a DOM JSON, a log excerpt, a session id.
-- A gate that cannot fail is documentation; the ship gates here are S1-S7 and U1-U4, both
-  mechanical.
-- An operator-caught theatrical act is logged in THEATRICALITY_LOG with the split kept visible
-  (running total: OPERATOR-CAUGHT 11 · SELF-CORRECTED 5).
-- Nothing is reported as delivered while its mechanism is unproven — the port lock is the
-  standing example (F-140).
+**Gate state:** `pv-kg-gate` rc=0 across 8 conditions — diagnostics 0 · 163/163 anchors verified ·
+0 non-canon titles · 10/10 shapes present · 145,626 tokens (ceiling 200,000) · L1 178 entities / 170 edges.
 
-## ANCHOR INDEX
+**The canonical cards a builder must read first:**
+```
+cards/FRAC-THREE-ENGINES.md:1          the E1/E2/E3 decomposition and why the direction is one-way
+cards/E1-NINE-PILLARS.md:1             the nine confluence dimensions
+cards/E1-CONFLUENCE-SCORE.md:1         the /12 base + the capped +2 bonus = 0..14
+cards/E1-ZFP-BASE.md:1                 the six zone classes and their base failure probabilities
+cards/E1-ZFP-RECEIPT.md:1              the receipt is MANDATORY; no receipt, no render
+cards/E2-CLASSIFICATION-MATRIX.md:1    the six-row CASCADE — first match stops (a cascade, NOT a lookup)
+cards/SHAPE-SS.md:1 … SHAPE-PRWL.md:1  the ten shapes, each with candle anatomy and the IP signature
+cards/E3-CONTRACT.md:1                 the mandatory setup field set
+cards/E3-RRR-FLOOR.md:1                the hard 2.5 floor vs the 3.0 gauge
+cards/MECH-ROCKETS-VS-TRADES.md:1      rockets are reinforcement, NEVER trades
+cards/LAW-TRADE-COUNT-CAP.md:1         eviction, never rejection
+cards/REF-WTL-WEEK-ANATOMY.md:1        the trade grammar: red=SL, green=TP, shared edge=ENTRY
+cards/REF-VLM-TRADE-CORPUS.md:1        43 entries; 4 carry fabricated levels — never cite a level from it
+```
 
-Plain-text file:line references, deliberately outside code spans: the commit gate
-W-9 measures anchors after stripping inline code, so a reference inside backticks
-does not count toward it. Every site below was read this cycle.
+---
 
-pine-ide/ide/renderer/tabs/pineshell.js:157 — the wireLayout(container) call site, after the kernel mount.
-pine-ide/ide/renderer/tabs/pineshell.js:213 — the wireLayout definition and its document-scoped fallback.
-pine-ide/ide/renderer/tabs/pineshell.css:45 — the .pine-left rule that sets the editor to 34 percent.
-pine-ide/ide/renderer/tabs/pineshell.css:76 — the data-hide collapse block that gives the chart full height.
-pine-ide/ide/renderer/tabs/backtest.js:683 — the isFinite date guard that stopped the mount kill.
-pine-ide/ide/renderer/tabs/backtest.js:499 — paint(), the render chain the throw used to escape into.
-pine-ide/pine-ide/pine-ide.mjs:96 — the feed rule that makes a tv:DXY market invalid.
-pine-ide/pine-ide/pine-persist.mjs:45 — MARKET_RE, the validator a persisted market must pass.
-scripts/pv-server.py:426 — the proxy loop guards added this cycle.
+## 4 · THE BASELINE — what EXISTS, measured
 
-## ANCHOR INDEX (plain text — the commit gate measures anchors only in ts/md/json/sh/yml)
+### 4.1 · The V1 seal is the P1 base, and it is reproducible
 
-scripts/pv-port-guard.sh:37 — the SQUAT_RE, narrowed to the interpreter's argv[1] after it killed a bystander.
-scripts/pv-port-guard.sh:27 — the PROTECT list: the five ports the (now disarmed) guardian watched.
-context_management/CURRENT_STATE.md:54 — THE LAYOUT AS IT STANDS, the section describing the shipped layout.
-context_management/BUILD_STATE.md:186 — THE ANCHOR LEDGER, every change at its exact site.
-context_management/NEXT_STEPS.md:18 — W-N2, the tv-feed work item that unblocks every non-fixture market.
-context_management/TASK_QUEUE.md:66 — A2, start tv-feed, with its done-when.
-context_management/COMPACTION_SURVIVAL.md:84 — THE FILE MAP, where each behaviour lives.
-context_management/POST-COMPACTION_PROMPT.md:77 — THE TASK CONTRACTS, self-contained for a fresh hand.
-DEBUG_LOG.md:2942 — EN-133, the unguarded date that killed the BACKTEST mount.
-FAILURE_LOG.md:2341 — F-141, the code-audit lane BLOCKED with its retry condition.
-TESTING_LOG.md:1960 — the code-audit gate plan entry, Status BLOCKED.
-SHIP_DOCS_MANIFEST.md:3 — the Dist artifact row naming the served v2 pine.
-Every line above was measured this cycle with grep -n; each names a real site in this tree, so a
-reviewer can re-run the reference and land on the same line.
+```
+plutus-vision-v1.pine        1,270 L    sha256 0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1
+GENERATED by  scripts/lqz_vision_build.py  from 5 modules:
+   plutus-vision-lqz/lqz-core.pine     305 L   ← the liquidity detection (A-minus / A grade)
+   plutus-vision-lqz/lqz-render.pine   125 L   ← the liquidity render (A-minus / A grade)
+   plutus-vision-lqz/e1-render.pine    314 L   ← the E1 render
+   plutus-vision-lqz/e2-render.pine    102 L   ← the E2 path render
+   plutus-vision-lqz/f17probe.pine      51 L   ← a probe
+   + the SMC section, extracted VERBATIM from plutus-vision-v0.pine
+```
+
+**PROVEN: `python3 scripts/lqz_vision_build.py` emits 1,270 lines and the EXACT seal sha.** Any module
+change is therefore provable, and any edit to the GENERATED file is erased by the next build (its own
+line 3 says so: *"edit plutus-vision-lqz/*.pine, not this file"*).
+
+### 4.2 · The seal's internal composition
+
+```
+lines    1 -   12    header + the LQZ v1 stubs
+lines   13 -  864    THE SMC BLOCK — extracted verbatim from v0 (852 L)
+                       4  box.new    ← the supply/demand ZONE DRAWS          KEEP
+                       7  line.new   ← BOS/CHoCH structure lines            PURGE
+                       9  label.new  ← the label trash                       PURGE
+                       8  inputs     ← showInternals/showSwing/…             PURGE
+lines  865 - 1270    THE LQZ CORE + FULL-WIDTH RENDER (406 L)              KEEP UNTOUCHED
+```
+
+### 4.3 · What the baseline FAILS today — the 13 anti-pattern gates, rc=1
+
+```
+$ python3 gates/anti/anti_patterns.py . pine=plutus-vision-v1.pine tree=.
+  PASS A1   baked levels                no decimal literals in draw calls
+  FAIL A3   silent fallback             no CARD:ABSENT / [JESL …] token
+  FAIL A9   15m creep                   15m in 27 build files
+  FAIL A10  market-standard vocab       choch 488 · fvg 102 · fair value gap 141 ·
+                                        premium 182 · discount 183 · liquidity void 23
+  PASS A11  stub wearing done           no stubs detected
+  FAIL A12  docs as progress            progress-prose/code 5.9 (graph 583 KB excluded)
+  → FAIL (4 classes, 6/13 evaluated), rc=1
+```
+
+**THE INVOCATION IS PART OF THE RESULT.** The CLI is `<root> pine=… card=… tree=…`; invoking it with
+the pine as the root supplies no subjects and it will report PASS with 13 SKIPs. That was fixed —
+`live==0` now returns INCONCLUSIVE, rc=2 — and the four behaviours are mutation-proven.
+
+**A12's 5.9 is a TRUE POSITIVE:** two authority documents at 3,773 lines against a build at zero. It
+clears as W0-W7 land code. It is the gate saying the design is done and the build has not started.
+
+**The mechanism:** the baseline is a fork of a generic Smart-Money-Concepts indicator (© LuxAlgo, line 16),
+so its internal-structure module speaks the market-standard dialect the operator's canon does not use.
+
+---
+
+## 5 · WHAT DOES NOT EXIST — stated plainly
+
+```
+sidecar/                     no code. W3 builds it from scratch.
+the card schema in Pine      specified in the blueprint; W2 implements it.
+the cast layer               specified; W4 implements it.
+the E2 two-phase render      specified; W5 implements it.
+the 30 gate files            specified with their corrupted subjects; W0 writes them.
+the ten held-out weeks       NOT NAMED — the operator supplies them; blocks W6.T2 only.
+the Protocol A source        NOT NAMED — the operator supplies it into sidecar/config.yml.
+the golden week at W5.T7     named in session as Jul 6-10 2026; must be written into
+                             .trident/goals/w5.md before W5.T7 runs.
+```
+
+**THAT IS THE CORRECT STATE BEFORE A BUILD.** The design layer is done; the execution layer is at zero.
+
+---
+
+## 6 · THE OPERATOR RULINGS IN FORCE — R-01 … R-11
+
+Every one is verbatim in `MASTER_CONTEXT/OPERATOR_RULINGS_PV.md`. The ones a builder will hit first:
+
+```
+R-01  the PDF report step is REMOVED — done entirely by code in real time (the sidecar)
+R-02  ONE JSON per week · the sidecar agent is vision-capable · do not port anything in
+R-03  E2 is TWO PHASES: the BOXES, then the LINE
+R-04  E1 → E2 → E3, one direction, each building on the last
+R-05  canon-only vocabulary: "do not loop in any random terms that are market standard"
+R-06  the graph's purpose: full context in under a minute, compaction-proof
+R-07  the trade count reality + the confidence gate at 65
+R-08  the target state: "I just open my computer, see the trades, and yeet 50 million"
+R-09  the annotation grammar: red=SL, green=TP, the shared edge=ENTRY; zones are full-width
+R-10  rockets (SL/E/T freehand) are NOT trades
+R-11  the VLM corpus is the trade inventory (15 WT + 26 OBS + 2 TP)
+```
+
+**And the specific numeric rulings, which supersede anything in the canon that disagrees:**
+```
+RRR            hard floor 2.5 · soft gauge 3.0 · a 2.7-2.8 high-probability setup is NEVER
+               rejected for being under 3.0
+TP             ONE per trade · no partials · the 70/30 split + BoM re-entry are DEAD TEXT
+confidence     gate 65 · GOD_TIER ≥90 · HIGH ≥80 · STANDARD 65-79 calibration-only ·
+               CONDITIONAL and REJECTED DELETED
+ZFP            strength only — NEVER width. A width-derived failure probability is a defect.
+SL             BOTH, context-driven: E2 predicts PIERCE+SWEEP → beyond the liquidity, next zone;
+               E2 predicts SOFT MITIGATION → 2 pips outside the entry zone
+timeframes     4H / 1H / 30m · 1H AUTHORITATIVE · 15m dead
+count          an outcome, never a quota · evict the weakest, never reject a stronger newcomer ·
+               3/day · 12/week provisional · baseline UNMEASURED
+```
+
+---
+
+## 7 · THE TRADE LIBRARY — what it actually contains, measured
+
+```
+15 winning trades + 26 chart observations + 2 trade plans   (vlm_all_results.json, 43 entries)
+14 unique trades found by eye across 38 panels              (five counters, reconciled)
+2 to 3 trades per week                                      (per week, not per page)
+6 position pairs in the operator's reference image          (a rect-pair detector validated 6/6)
+```
+
+**THE STRUCTURAL FACT a counter must know:** every library page carries TWO panels of the SAME week —
+a **TradeZella** panel with the real position tools (the trades) and a **TradingView** panel with that
+week's analysis. Counting the TradingView panel reads zero and is wrong for the WEEK.
+
+**THE VLM CORPUS HAS TWO DEFECTS, both recorded:**
+```
+· 4 entries carry IMPOSSIBLE levels (OBS_21 EURUSD at 1.73; OBS_37/40 GBPUSD at 1.78; WT_11 at 1.618)
+· its risk:reward is a GENERIC GUESS — WT_01 says "1:1" where the position tools read 9.47, 11.43,
+  11.06, 3.9. RULE: RRR comes from the tool label OR NOWHERE.
+```
+
+---
+
+## 8 · THE INSTRUMENTS THAT EXIST (and the ones that lied)
+
+```
+gates/anti/anti_patterns.py    13 checks · PROVEN · rc=1 on the baseline
+pv-kg-gate                     8 conditions on the graph · rc=0
+pv-verify-anchors              163/163 · every quote at its cited line
+pv-canon-terms                 0 non-canon titles
+pv-gen-hubs                    hubs DERIVED from the cards
+pv-l1-ingest                   the semantica layer
+au-health.sh                   AU_WORKSPACE_MISMATCH / AU_ENGINE_DOWN / AU_MCP_DOWN
+au-layout.sh                   AU_SIBLING_MISSING / AU_SIBLING_FOREIGN / AU_ENGINE_UNBUILT
+```
+
+**The ones that returned false answers, recorded rather than deleted** (`forensic/INSTRUMENT_FAILURES.md`):
+```
+tesseract OCR    0 hits on visible labels
+colour-blob      8 boxes on a page with 2 (bearish candles are the same red)
+column-occupancy 21 bands on p10 (zone stripes)
+tall-green-box   0 on every page (the fill colour differs between renderers)
+```
+
+---
+
+## 9 · THE PLATFORM CONSTRAINT THAT SHAPES EVERYTHING
+
+```
+PINE SCRIPT CANNOT MAKE AN HTTP REQUEST.
+  request.security()   another symbol / timeframe on TradingView
+  request.economic()   TradingView's economic calendar
+  request.financial()  fundamentals, equities only
+  input.*              whatever the user typed
+```
+
+**THEREFORE the build splits along one line:**
+```
+CLASS A — DERIVABLE FROM BARS         CLASS B — NOT DERIVABLE
+  supply/demand · liquidity            OTC option expiry walls
+  order blocks 4H→1H                   strike notionals
+  sweeps · closes-through              open interest · NY cut times
+  the 10-shape chain                   the red-folder calendar (partly)
+  E3 entry/SL/TP/RRR
+  → the INDICATOR computes, live       → the SIDECAR supplies, one card per week
+```
+
+**AND the indicator is NOT dependent on the sidecar:** with no card it renders a complete analysis at
+80 of the 100 confidence points and prints `CARD: ABSENT — FACE A OMITTED`. It never invents an IP zone.
+
+---
+
+## 10 · THE HONEST GAPS — what a resumed session must not assume
+
+```
+1  THE BUILD HAS NOT STARTED. No worker has run. W0 is the first move.
+2  THE 30 GATE FILES DO NOT EXIST. Only the 13 anti-pattern checks exist.
+3  THE TEN HELD-OUT WEEKS ARE NOT NAMED — blocks W6.T2 only.
+4  THE PROTOCOL A SOURCE IS NOT NAMED — blocks W3.T3 onward.
+5  THE GOLDEN WEEK IS NAMED IN SESSION BUT NOT ON DISK — write it into .trident/goals/w5.md.
+6  SEVEN CANON CONTRADICTIONS remain recorded as pv-ruling cards; four are now RESOLVED by the
+   operator's rulings (RRR, TP, SL, confidence). Three remain open: the 6-vs-7 confluence floor,
+   the 6-shapes-vs-10 taxonomy, and the SL offset ladder.
+7  THE BLIND-AGENT TEST HAS NEVER RUN in any form. It is W6.T4, and it is the only test that
+   measures whether the graph can be USED rather than merely read.
+8  THE GRAPH IS A HUB-AND-SPOKE: 155 of 163 cards are reachable only from their hub. Lateral
+   cross-links are an open improvement.
+```

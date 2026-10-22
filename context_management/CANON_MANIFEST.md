@@ -1,20 +1,55 @@
 # CANON MANIFEST — PLUTUS VISION
-Generated: 2026-10-02 03:50 UTC  ·  refreshed 2026-10-14 (the layout + backtest ship cycle; every doc re-measured by wc -l)
-Indicator sha256: 125c94f86e6a2f1d3009a75c778e02ad16c48e4f3772e8d0d8d95c50af162400  (v2, re-measured 2026-10-14)
-V1 seal (HARD STOP H1): 0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1
-Generator: scripts/gen_canon.py (re-run after every milestone)
+Generated: 2026-10-02 03:50 UTC  ·  **refreshed 2026-10-22** by canon-doc-update (the design + workflow cycle;
+every doc re-measured with wc -l, every sha re-measured with sha256sum)
+
+**THE ARTEFACTS — measured this session, not quoted from a prior block**
+```
+plutus-vision-v1.pine   0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1
+                        1,270 L · 76,550 B · THE V1 SEAL · REPRODUCIBLE from its five modules
+plutus-vision-v2.pine   668e89d79a08e68e35d0bf5a8c15f565e6ab297287b4e14d8a193e47e9178cb9
+                        1,863 L · 108,826 B
+plutus-vision-v0.pine   605bff82d3539e9e5e258da30ba4ec80607a3df7749fb5deb5f4402350f95847
+                        1,520 L · 83,089 B · the SMC parent (the purge target)
+```
+
+⚠ **SUPERSEDED:** the prior header carried `125c94f8…` for v2 (107,317 B). The file on disk is
+`668e89d7…` (108,826 B). That value is retained only as history in the append-only logs.
+
+**THE AUTHORITY** — two documents, and nothing else outranks them:
+```
+design/DESIGN_BLUEPRINT_v1.2_AUTHORITATIVE.md   857 L   WHAT the machine is
+design/BUILD_WORKFLOW_v2.md                   2,916 L   HOW it gets built
+design/EVIDENCE_BASE.md                                 the anchors behind both
+design/DESIGN_BLUEPRINT_v1.0_AS_DESIGNED.md     449 L   the design of record (provenance)
+```
+
+**THE GRAPH** — 163 cards · 8 hubs · 8 type schemas · diagnostics 0 · every quote anchored.
+
+**THE GATE** — `python3 gates/anti/anti_patterns.py . pine=<f> card=<f> tree=<d> proofs=<d> report=<f>`
+→ rc 0 PASS (live only) · rc 1 FAIL · **rc 2 INCONCLUSIVE when `live==0`** (fail-closed; a gate that
+inspected nothing must not report PASS). Measured on the baseline: **rc=1, 4 classes, 6/13 evaluated.**
+
+**THE GATES — both executable, both mutation-proven**
+```
+gates/anti/anti_patterns.py   13 anti-pattern checks   rc 0 PASS · rc 1 FAIL · rc 2 INCONCLUSIVE
+gates/canon_docs.py           U1..U4 canon-doc gate     rc 0 PASS · rc 1 FAIL · rc 2 INCONCLUSIVE
+```
+
 Docs:
-- POST-COMPACTION_PROMPT.md (218 lines) — overwrite
-- CURRENT_STATE.md (211 lines) — overwrite
-- NEXT_STEPS.md (213 lines) — overwrite
-- TASK_QUEUE.md (202 lines) — overwrite
-- BUILD_STATE.md (220 lines) — overwrite + append SHA
-- CHANGELOG.md (379 lines) — append
-- COMPACTION_SURVIVAL.md (206 lines) — overwrite
-- EVIDENCE_STATE.md (416 lines) — append + overwrite summary
-- DECISION_CHAIN.md (374 lines) — append
-- RUNNING_BUILD_LOG.md (1040 lines) — append
-- RUNNING_DEBUG_LOG.md (963 lines) — append
+- POST-COMPACTION_PROMPT.md (259 lines) — overwrite
+- CURRENT_STATE.md (260 lines) — overwrite
+- NEXT_STEPS.md (235 lines) — overwrite
+- TASK_QUEUE.md (324 lines) — overwrite
+- BUILD_STATE.md (288 lines) — overwrite + append SHA
+- CHANGELOG.md (422 lines) — append
+- COMPACTION_SURVIVAL.md (366 lines) — overwrite
+- EVIDENCE_STATE.md (487 lines) — append + overwrite summary
+- DECISION_CHAIN.md (462 lines) — append
+- RUNNING_BUILD_LOG.md (1518 lines) — append
+- RUNNING_DEBUG_LOG.md (1216 lines) — append
+- CANON_MANIFEST.md (147 lines) — index
+- ENGINE_BLUEPRINT.md (170 lines) — reference
+- NEXT_STEPS_BLUEPRINT.md (100 lines) — reference
 
 
 ---

@@ -377,3 +377,46 @@ backtest `bar 941/941 · visible 941 / 941`; chart `DXY · FIXTURE · 1h · 508 
 **Honest disclosures:** NO code-review PASS exists this cycle (F-141). `tv-feed` cannot start
 (`ERR_MODULE_NOT_FOUND`), so every `tv:` market stays dead. The port is NOT locked. The layout
 was verified only on the operator's own display, never headless.
+
+## [2026-10-22T03:33:24Z] — THE DESIGN + WORKFLOW CYCLE — the build's authority established
+
+### Added
+- `design/DESIGN_BLUEPRINT_v1.2_AUTHORITATIVE.md` (857 L) — WHAT the machine is. Constraint-first:
+  Pine cannot fetch → Class A computed live / Class B supplied in a card → five planes → the card
+  as a JESL document → the four verify verdicts → the delivery options.
+- `design/BUILD_WORKFLOW_v2.md` (2,916 L) — HOW it gets built. 7 workers · 42 turns · 30 gates ·
+  30 oracle rows · 35 failure modes · the vision contract · the anti-pattern refusals.
+- `design/DESIGN_BLUEPRINT_v1.0_AS_DESIGNED.md` (449 L) — the design of record before operator
+  feedback; retained for provenance.
+- `design/EVIDENCE_BASE.md` — the anchors behind both documents.
+- `cards/` — the 163-card knowledge graph (8 hubs, 8 types, diagnostics 0, every quote anchored).
+- `gates/anti/anti_patterns.py` — 13 executable anti-pattern checks; rc=1 on the v1 baseline.
+- `managed-skills/design-blueprint/SKILL.md` (193 L) — the method, extracted so it is reusable.
+- `forensic/BLIND_COMPREHENSION_AUDIT.md` — 3 blind agents, 36 questions, verdict FALSIFIED AS STATED.
+- `forensic/INSTRUMENT_FAILURES.md` — four detectors that returned confident wrong answers.
+- `MASTER_CONTEXT/OPERATOR_RULINGS_PV.md` — R-01 … R-11, the operator's words verbatim.
+- `scripts/lqz_vision_build.py` — the generator whose output is byte-reproducible.
+- `au-health.sh` · `au-layout.sh` — the arsumbris/semantica predicates.
+
+### Changed
+- The build's authority moved from a wave plan to the two documents above. `DECISION_CHAIN` records
+  the reasons; `context_management/` records the state.
+- The knowledge graph became the CONTEXT layer rather than a reference (the operator's requirement:
+  full context in under a minute, compaction-proof).
+
+### Fixed
+- The arsumbris/semantica wiring: four independent facts failed at once (a nonexistent path, a
+  reused PID, two MCP entries pinning a workspace, a foreign venv).
+- The v1 seal's reproducibility, proven: `python3 scripts/lqz_vision_build.py` → 1,270 lines,
+  sha256 `0d20e831…`, byte-identical to the seal.
+
+### Measured
+- The trade library's actual contents: 15 winning trades + 26 observations + 2 trade plans;
+  14 unique trades found by eye across 38 panels; 2-3 trades per week; two panels per page.
+- The v1 baseline's three gate failures: A3 (no ABSENT token), A9 (15m in 16 files),
+  A10 (CHoCH 103 · FVG 36 · premium 37 · discount 37 · liquidity void 3).
+
+### Not done
+- The build. W0 is the first move and no worker has run.
+- The 30 workflow gates (only the 13 anti-pattern checks exist).
+- The sidecar, the card, the cast layer, the E2 line, the E3 render, the dashboard tab.

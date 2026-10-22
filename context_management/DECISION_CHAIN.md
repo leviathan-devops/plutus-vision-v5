@@ -372,3 +372,91 @@ loss on a host the operator had explicitly fenced.
 **Decision:** service stopped (`inactive`), regex narrowed to `argv[1]`, and the port-hygiene
 goal recorded as NOT MET. The sound lock is binding the port (EADDRINUSE for everyone else) —
 stated as an open item, never shipped as a delivered lock.
+
+## [2026-10-22T03:33:24Z] — THE DESIGN + WORKFLOW DECISIONS (D-20 … D-29)
+
+### D-20 · THE CONSTRAINT IS THE DESIGN'S FOUNDATION
+**Decision:** the build's architecture is derived from ONE physical law — Pine Script cannot make an
+HTTP request — rather than from a feature list.
+**Alternatives rejected:** (a) assume a future Pine HTTP capability (a design against a fictional
+platform); (b) have a human paste the data every week (the process the operator explicitly ordered
+removed); (c) build the indicator as a thin viewer that displays a pre-rendered analysis (loses live
+responsiveness — the operator's standard is "I open my computer and see the trades").
+**Why:** the operator's brief — *"design this like a CAD model of something we are going to physically
+manufacture."* A CAD model begins with the manufacturing process's real constraints.
+**Cost:** the Class A / Class B split, the sidecar, and the degradation contract all exist because
+of this. That is the design, not overhead.
+
+### D-21 · CLASS A vs CLASS B — the split line
+**Decision:** split every input by whether it is derivable from price bars. Class A (supply/demand,
+liquidity, sweeps, the shape chain, E3) is computed LIVE by the indicator. Class B (OTC expiry walls,
+strike notionals, open interest) is supplied in a weekly card.
+**Why not put everything in the card:** the indicator would then be a viewer of stale data — it would
+not react when the market moves intraday, which is the product's whole point.
+**Why not compute everything live:** it is impossible — the indicator cannot fetch. Stating that
+plainly is the design; pretending otherwise is the fiction the prior spec contained.
+
+### D-22 · THE CARD IS A JESL DOCUMENT, NOT A CONFIG BLOB
+**Decision:** the weekly payload is a typed, castable card — nodes with ids, kinds, edges, and
+suppressed entries — not a flat JSON of prices.
+**Why:** a config blob cannot express ancestry, cannot refuse partially, and cannot say *why* a node
+was suppressed. The card must carry enough structure for the kernel to CAST it, which is what makes
+the four verdicts possible.
+**The operator's question, answered:** *"a JESL card IS just structured JSON — what do you mean?"* —
+it is the DIFFERENCE between a JSON that describes and a JSON that can be VERIFIED. The card carries
+each node's evidence, its parent, and its own suppression reason; a flat JSON carries none of that.
+
+### D-23 · FOUR VERDICTS, NOT A BOOLEAN
+**Decision:** a cast returns PASS / FAIL / INCONCLUSIVE / READY_FALSE.
+**Alternatives rejected:** a boolean valid/invalid — it collapses "I cannot tell" (no receipt) into
+"it failed", which then gets retried forever or suppressed wrongly.
+**Why:** the operator's standard is that a blocked verification is reported as blocked. A boolean
+cannot express a block; it can only express a loss.
+
+### D-24 · THE DEGRADATION CONTRACT — 80 of 100 points
+**Decision:** with no card, the indicator renders a complete face-A analysis scored out of 80 and
+prints a token naming the absence.
+**Alternatives rejected:** (a) render nothing without a card — the indicator becomes useless on any
+week the sidecar did not run; (b) render anyway and pretend the face-A score is the full score — the
+false-success class the operator's law bans outright.
+**Why 80:** face A's nine pillars are 80% of the confluence weight. The number is the weight, not a
+gesture.
+
+### D-25 · W0 GATES EVERY WAVE
+**Decision:** no feature work starts until 30 gates exist and each has been watched REFUSING a
+corrupted subject.
+**Why:** the prior spec named commands that had never been run (six proven failures). A gate that has
+not been watched failing is a sentence with a return code. W0.T2 is the cheapest possible way to
+convert 30 sentences into 30 mechanisms.
+**Cost:** four turns of no visible progress. **Benefit:** every later turn's claim is checkable.
+
+### D-26 · THE VISION CONTRACT — an OPENED capture or it did not happen
+**Decision:** every render turn ends in a capture the agent OPENS and reads, plus a live probe.
+**Why:** the prior build reported a line that scored 0.18 on column coincidence. A count said it was
+drawn; the pixels said it was invisible. Only the second measurement was true.
+**The rule stated precisely:** the capture must be opened in the SAME turn, by a reader that is not
+the generator, against an expectation written BEFORE the render.
+
+### D-27 · W6 IS READ-ONLY AND RUNS ON UNSEEN WEEKS
+**Decision:** once W5 closes, the code is frozen; ten weeks the builder has not seen are rendered.
+**Why:** any test on a week the builder saw can be passed by fitting. The only anti-hardcoding test is
+data the builder never saw, with the code frozen so the test cannot be tuned to pass.
+**The corollary:** if W6.T4 (the blind agent) fails, the GRAPH is the finding — the prompt gets no
+retuning, because retuning the prompt optimises the test instead of the product.
+
+### D-28 · OPTION B IS PHASE 2, AND THE CARD IS THE FIXED POINT
+**Decision:** the dashboard tab (HTTP delivery) comes after the paste works, and it must render the
+SAME card.
+**Why:** the paste proves the card's contract with the smallest possible surface — one paste a week,
+no server, no network, no dashboard. Once the card is proven, replacing the paste with an HTTP read
+is a delivery change, not a design change. **The parity gate (W7.T3) is only meaningful because the
+card did not move.**
+
+### D-29 · THE GRAPH IS THE CONTEXT LAYER, NOT A REFERENCE
+**Decision:** the 163-card graph is the substrate every session reads, and it is graded by a BLIND
+agent that receives nothing else.
+**Why:** the operator's requirement — full context in under a minute, compaction-proof. A doc pile
+requires reading; a graph requires querying and can be graded for usability.
+**The honest result:** the blind audit returned FALSIFIED AS STATED — 31 of 36 questions COMPLETE,
+with three blocking defects (the SL contradiction, the regime-threshold mismatch, no E2-CANNOT-DO
+card). The graph is good and not yet sufficient. **That verdict is recorded rather than softened.**

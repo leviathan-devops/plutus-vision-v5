@@ -1,235 +1,324 @@
-# TASK_QUEUE — PLUTUS VISION
-**Overwritten 2026-10-14.** DONE items are kept for one cycle so the shape of the work is
-visible; everything ACTIVE or BACKLOG carries an owner-visible done-when.
+# TASK QUEUE — PLUTUS VISION
+**As of 2026-10-22** · overwrite semantics · every task, its gate, its status
 
-## ACTIVE (do these, in this order)
-| # | task | anchor | done-when |
-|---|---|---|---|
-| A1 | unblock the code-audit lane | `:4097`/`:4098` fingerprint path | a session with `files_reviewed>=1 AND duration>10` |
-| A2 | `npm install` + start tv-feed | `pine-ide/tv-feed/server.mjs:26` | `:9448` answers and a `tv:` market loads bars |
-| A3 | `Cache-Control: no-cache` for js/css | `scripts/pv-server.py` static handler | a plain reload runs new JS bytes |
-| A4 | bind the protected ports | a holder per port | a planted squatter gets `EADDRINUSE` |
-| A5 | sweep the remaining `toISOString` sites | `tabs/backtest.js` | the grep list is exhausted and each site is guarded |
+---
 
-## DONE THIS CYCLE (2026-10-14)
-| task | evidence |
-|---|---|
-| full-height chart, nothing underneath | DOM `footDisplay:"none / none"`, `hide:…foot=1` |
-| editor down to 30-40% | DOM `editorPct:"34%"` (was `flex:1 1 46%`) |
-| collapsible panes like the backtest tab | `toggles:4`, `splitter:true`, persisted at `plutus.pine.layout` |
-| the BACKTEST tab mounts again | pane `display:flex`, no `RangeError` in the stream |
-| the replay shows the full series | `bar 941/941 · visible 941 / 941` |
-| the chart feeds from a source that exists | `FIXTURE · DXY · 1H · 508 bars` |
-| the six ship docs current + gate green | GATE S1-S7 PASSED |
-| the port guardian precision defect | found, disarmed, recorded (F-140) |
+## STATUS LEGEND
 
-## BACKLOG (real, but not the next move)
-- **Pin the fixture sha** in `SHIP_DOCS_MANIFEST.md` and assert it in the gate — today nothing
-  stops a silent fixture edit from invalidating every zone claim.
-- **A unit suite over `tabs/*.js`** — there is none; every assertion this cycle was a live-DOM
-  read. The gap is honest, not hidden.
-- **Make the pane switch not tear down the fragment** — switching away and back re-mounts
-  (`PlutusShell` owns mount/unmount), which is why a synchronous DOM read immediately after a
-  switch returns empty and must be retried after the settle.
-- **A room-level guard for `:9443`** — the replay posts to it; if the room server is down the
-  controls fail silently in the UI.
-
-## BLOCKED (with the blocker named, never "pending")
-| task | blocker | the condition that clears it |
-|---|---|---|
-| the audit-gate milestone entry | `403 FreeTierError` ×8, 1.986s | A1 |
-| any `tv:`-market verification | `:9448` dead | A2 |
-| claiming the port is locked | the guardian is disarmed and imprecise | A4 |
-
-## THE INVENTORY THIS QUEUE ASSUMES YOU KNOW
-The rig is `pv-server :9851/:9863` + `pine-station :9741` + `vil-rail :9754` (+ the dead
-`tv-feed :9448`), driven from a browser on the agent's own display with a debugging port. The
-kernel is `pine-ide/pine-ide/pine-ide.mjs`; the served indicator is
-`pine-ide/ide/renderer/plutus-vision-v2.pine` at `125c94f86e6a2f1d…`; the v1 seal
-`0d20e831…` is HARD STOP H1.
-
-## THE RULE THIS QUEUE OBEYS
-A task leaves ACTIVE only when its done-when has been OBSERVED in a tool result — a DOM read, a
-pixel, a curl code, a sha. Moving a task to DONE because it was attempted is the failure mode
-this project's theatricality log exists to catch.
-
-## THE PER-TASK CONTRACTS (ACTIVE — each is self-contained for a fresh hand)
-### A1 · unblock the code-audit lane
-- **Owner surface:** `~/.opencodereview/` + the `:4097`/`:4098` chain.
-- **What to read first:** the last session jsonl — the census must show `llm_error`, and the
-  error body must be the `403 FreeTierError` before you touch anything. If the body differs,
-  the diagnosis is wrong and you restart at the probe.
-- **The wrong move:** retrying the scan until something prints PASS. The acceptance criterion is
-  `files_reviewed.length >= 1 AND duration_seconds > 10` in the session record.
-- **Closes:** F-141, V-43, and the BLOCKED status on the audit gate plan entry.
-
-### A2 · start tv-feed
-- **Owner surface:** `pine-ide/tv-feed/server.mjs:26` (`const PORT = … || 9448`).
-- **What to read first:** `pine-ide/pine-ide/pine-ide.mjs:96` — the feed rule that makes DXY a
-  fixture market and everything else a `tv:` market. That is WHY this matters.
-- **The wrong move:** pointing the IDE at `tv:` before the feed answers — the chart shows
-  `FEED_UNREACHABLE` and the operator reads it as a regression, which is exactly how this cycle
-  started.
-- **Closes:** every `tv:` market, and the "TV FEED · deep history" option in the room's DATA
-  selector, which today is advertising a service that cannot start.
-
-### A3 · resolve the stale-copy mechanism (CORRECTED — the header already exists)
-- **Owner surface:** `scripts/pv-server.py` static handler.
-- **What to read first:** DEBUG_LOG EN-134 — the full chain of how a stale copy cost a cycle.
-- **The wrong move:** `no-store` (kills caching of the 2 MB workbench bundle). Use `no-cache`
-  so the browser revalidates.
-- **Closes:** the whole stale-copy debugging class, including the silent-skip variant.
-
-### A4 · deliver the port lock
-- **Owner surface:** the five protected ports; a per-port holder.
-- **What to read first:** FAILURE_LOG F-140 and EN-136 — including the measurement that
-  `/proc/<pid>/fd` is unreadable, which is why the killer was the wrong shape.
-- **The wrong move:** rebuilding the killer with a better regex. The mechanism cannot be made
-  precise on this host; the fix is to BIND, not to police.
-- **Closes:** the operator's standing order to lock the port, which is still unmet.
-
-### A5 · sweep the remaining date sites
-- **Owner surface:** `pine-ide/ide/renderer/tabs/*.js`.
-- **What to read first:** `pine-ide/ide/renderer/tabs/backtest.js:683` — the one already
-  guarded, as the template.
-- **The wrong move:** a try/catch around the whole render chain, which would swallow the next
-  real failure too. Guard the FORMAT, per site.
-- **Closes:** the class that took the room down once.
-
-## THE EVIDENCE LEDGER FOR THE DONE ITEMS (one row per claim)
-| claim | the observation that closed it | where it is recorded |
-|---|---|---|
-| full-height chart | `footDisplay:"none / none"` from a CDP read | TESTING_LOG host result |
-| editor at 34% | `editorPct:"34%"` | TESTING_LOG host result |
-| collapsible | `toggles:4`, `splitter:true` | TESTING_LOG host result |
-| room mounts | pane `display:flex`, no `RangeError` | TESTING_LOG host result |
-| replay complete | `bar 941/941 · visible 941 / 941` | TESTING_LOG host result |
-| chart has data | `FIXTURE · DXY · 1H · 508 bars` | EVIDENCE_STATE |
-| docs current | GATE S1-S7 PASSED | the gate output, re-runnable |
-| guardian precision defect | its own kill log naming a bystander | F-140, EN-136 |
-
-## THE HYGIENE RULES THIS QUEUE ENFORCES
-1. Nothing moves to DONE without an observation in a tool result.
-2. A BLOCKED row names the blocker and the clearing condition; it never says "pending".
-3. A task that turns out to be the wrong task is closed as NOT-A-DO with the reason, not
-   silently dropped.
-4. The queue never carries a task whose done-when cannot fail — a done-when that cannot be
-   violated is not a criterion.
-5. When two rows collide on one file, the older row keeps the file and the newer one waits; no
-   concurrent writers to a single source of truth.
-
-## THE RECENTLY-CLOSED HISTORY (one cycle back, for shape)
-The previous cycle restored the V2 ship-approved checkpoint (`caef1f9`) after a W5 rewrite was
-backed up to `/tmp/w5-work-backup.pine`, and validated the engine transcription predicate by
-predicate against `scripts/e2_engine.py` (F-138). Before that, W5/W6 established the degree
-ladder and the computed E1/E2 render. This cycle did NOT touch the engine — it fixed the
-instrument the engine is looked at through.
-
-## THE BACKLOG, EXPANDED (each with its own done-when so it can be picked up cold)
-### B1 · pin the fixture the indicator is validated against
-- **Why it exists:** every zone/box claim in this project is validated against
-  `fixtures/bars/2026-07-06.json`, and nothing pins that file's bytes. A silent edit invalidates
-  the evidence behind the render while every gate stays green.
-- **The change:** record `sha256sum fixtures/bars/2026-07-06.json` in `SHIP_DOCS_MANIFEST.md`
-  beside the indicator sha; assert it in the S3 leg of the ship-docs gate.
-- **done-when:** mutating the fixture turns S3 red.
-
-### B2 · a unit suite over the renderer tabs
-- **Why it exists:** every assertion this cycle was a live-DOM read through CDP. That is the
-  right instrument for layout, but there is no cheap regression net for the pure logic —
-  `readLayout` clamping, `sanitizeTabs`, `MARKET_RE`, the hop budget.
-- **The change:** a `bun test` suite over `pine-ide/pine-ide/pine-persist.mjs` (already DOM-free
-  and localStorage-guarded by design) plus the pure helpers in `tabs/pineshell.js`.
-- **done-when:** `bun test` runs green from a clean checkout, and at least one test is shown to
-  FAIL when the corresponding logic is deliberately broken (a mutation check, not a green count).
-
-### B3 · stop the pane switch from tearing down the fragment
-- **Why it exists:** `PlutusShell` owns mount/unmount, so switching tabs destroys and rebuilds
-  the pine shell. That is why a synchronous DOM read immediately after a switch returns empty —
-  and why an unwary driver would conclude the layout broke.
-- **The change:** either keep the fragment mounted and toggle visibility, or expose a ready
-  promise so a driver can await the settle.
-- **done-when:** a DOM read immediately after a switch returns the populated shell, with no
-  retry sleep.
-
-### B4 · surface a room-health indicator for `:9443`
-- **Why it exists:** the replay posts to the room server; when it is down, the controls fail
-  quietly in the UI and the room looks merely "empty", which reads as a data bug.
-- **The change:** the same `paintService` treatment the room already gives its other services.
-- **done-when:** with `:9443` stopped, the room shows an explicit named failure rather than an
-  empty chart.
-
-## THE OWNERSHIP MAP (which surface each queue row touches)
-| row | touches | collides with |
-|---|---|---|
-| A1 | `~/.opencodereview/`, the `:4097/:4098` chain | nothing in this repo |
-| A2 | `pine-ide/tv-feed/` | nothing (a sibling process) |
-| A3 | `scripts/pv-server.py` | A4 only if a holder needs the same file |
-| A4 | the five ports + a systemd unit | A2/A3 at runtime, not in the file |
-| A5 | `tabs/*.js` | nothing this cycle |
-| B1 | `SHIP_DOCS_MANIFEST.md` | the ship-docs gate itself |
-| B2 | new test files | nothing |
-| B3 | `tabs/_shell.js` | the mount contract used by `tabs/pineshell.js:157` |
-| B4 | `tabs/backtest.js` | A5 (same file — sequence them) |
-
-## THE STOP CONDITIONS (when to escalate instead of continuing)
-- The audit lane cannot be made to pass after A1's diagnosis → escalate to the operator with the
-  exact error body and the two candidate repoints; do NOT keep retrying.
-- A holder for a protected port would break the service that legitimately owns it → stop and
-  report; the port list is a decision, not a constant.
-- Anything requires editing `plutus-vision-v1.pine` → HARD STOP, operator only.
-- Two rows want the same file → the older row keeps it; the newer waits. No concurrent writers.
-
-## THE QUEUE'S OWN FRESHNESS RULE
-This document is OVERWRITTEN at every milestone, not appended. When a row completes, it moves to
-the DONE table with its observation, and the ACTIVE table is re-ordered by what unblocks the most
-— not by what is easiest. A queue whose ACTIVE rows are all easy is a queue that is not moving
-the system.
-
-## THE QUEUE AS OF THE SHIP PASS (a snapshot the next overwrite will replace)
 ```
-ACTIVE   A1 audit lane      BLOCKED-ON-EXTERNAL  the fingerprint path
-ACTIVE   A2 tv-feed         READY                npm install + start
-ACTIVE   A3 no-cache        READY                one header in pv-server.py
-ACTIVE   A4 port bind       READY                per-port holders, not a killer
-ACTIVE   A5 date sweep      READY                grep + guard per site
-BACKLOG  B1 fixture pin     READY                one sha + one gate leg
-BACKLOG  B2 unit suite      READY                bun test over the DOM-free modules
-BACKLOG  B3 pane remount    READY                _shell.js mount contract
-BACKLOG  B4 room health     READY                paintService for :9443
+DONE        the gate landed and its evidence is on disk
+NEXT        the immediate work; its gate is specified
+QUEUED      specified, blocked on a dependency
+BLOCKED     blocked on an OPERATOR input (named)
+OPEN-DEC    blocked on an operator RULING (named)
 ```
-Five ACTIVE, four BACKLOG, three BLOCKED-on-named-conditions. Nothing is in the queue whose
-done-when cannot fail, and nothing is in the queue that this cycle already delivered.
 
-## ANCHOR INDEX
+---
 
-Plain-text file:line references, deliberately outside code spans: the commit gate
-W-9 measures anchors after stripping inline code, so a reference inside backticks
-does not count toward it. Every site below was read this cycle.
+## THE DESIGN LAYER — DONE
 
-pine-ide/ide/renderer/tabs/pineshell.js:157 — the wireLayout(container) call site, after the kernel mount.
-pine-ide/ide/renderer/tabs/pineshell.js:213 — the wireLayout definition and its document-scoped fallback.
-pine-ide/ide/renderer/tabs/pineshell.css:45 — the .pine-left rule that sets the editor to 34 percent.
-pine-ide/ide/renderer/tabs/pineshell.css:76 — the data-hide collapse block that gives the chart full height.
-pine-ide/ide/renderer/tabs/backtest.js:683 — the isFinite date guard that stopped the mount kill.
-pine-ide/ide/renderer/tabs/backtest.js:499 — paint(), the render chain the throw used to escape into.
-pine-ide/pine-ide/pine-ide.mjs:96 — the feed rule that makes a tv:DXY market invalid.
-pine-ide/pine-ide/pine-persist.mjs:45 — MARKET_RE, the validator a persisted market must pass.
-scripts/pv-server.py:426 — the proxy loop guards added this cycle.
+```
+DONE   the 163-card knowledge graph, diagnostics 0, 163/163 anchors
+DONE   design/DESIGN_BLUEPRINT_v1.0_AS_DESIGNED.md         449 L  (the design of record)
+DONE   design/DESIGN_BLUEPRINT_v1.2_AUTHORITATIVE.md       857 L  (WHAT the machine is)
+DONE   design/BUILD_WORKFLOW_v2.md                       2,916 L  (HOW it gets built)
+DONE   gates/anti/anti_patterns.py                          13 checks, rc=1 on the baseline
+DONE   managed-skills/design-blueprint/SKILL.md            193 L  (the method, extracted)
+DONE   the v1 seal's reproducibility PROVEN (generator → sha 0d20e831…)
+DONE   the trade library measured (15 WT + 26 OBS + 2 TP; 14 found by eye; 2-3 per week)
+DONE   the operator rulings R-01 … R-11 recorded verbatim
+```
 
-## ANCHOR INDEX (plain text — the commit gate measures anchors only in ts/md/json/sh/yml)
+---
 
-scripts/pv-port-guard.sh:37 — the SQUAT_RE, narrowed to the interpreter's argv[1] after it killed a bystander.
-scripts/pv-port-guard.sh:27 — the PROTECT list: the five ports the (now disarmed) guardian watched.
-context_management/CURRENT_STATE.md:54 — THE LAYOUT AS IT STANDS, the section describing the shipped layout.
-context_management/BUILD_STATE.md:186 — THE ANCHOR LEDGER, every change at its exact site.
-context_management/NEXT_STEPS.md:18 — W-N2, the tv-feed work item that unblocks every non-fixture market.
-context_management/TASK_QUEUE.md:66 — A2, start tv-feed, with its done-when.
-context_management/COMPACTION_SURVIVAL.md:84 — THE FILE MAP, where each behaviour lives.
-context_management/POST-COMPACTION_PROMPT.md:77 — THE TASK CONTRACTS, self-contained for a fresh hand.
-DEBUG_LOG.md:2942 — EN-133, the unguarded date that killed the BACKTEST mount.
-FAILURE_LOG.md:2341 — F-141, the code-audit lane BLOCKED with its retry condition.
-TESTING_LOG.md:1960 — the code-audit gate plan entry, Status BLOCKED.
-SHIP_DOCS_MANIFEST.md:3 — the Dist artifact row naming the served v2 pine.
-Every line above was measured this cycle with grep -n; each names a real site in this tree, so a
-reviewer can re-run the reference and land on the same line.
+## THE BUILD — 42 turns, all QUEUED
+
+```
+┌────────┬────────────────────────────────────────────────────────────┬──────────┬─────────────┐
+│ TURN   │ WHAT                                                       │ GATE     │ STATUS      │
+├────────┼────────────────────────────────────────────────────────────┼──────────┼─────────────┤
+│ W0.T1  │ worktree + display; prove it is NOT the operator's          │ W0.T1    │ NEXT        │
+│ W0.T2  │ the 30 gate stubs + 30 corruption fixtures                  │ W0.T2    │ NEXT        │
+│ W0.T3  │ the vision/rig/compare helpers vs controls                  │ W0.T3    │ NEXT        │
+│ W0.T4  │ the oracle harness (30 rows) + the audit table              │ W0.T4    │ NEXT        │
+├────────┼────────────────────────────────────────────────────────────┼──────────┼─────────────┤
+│ W1.T1  │ measure the trash (9/7/4/8 + the seal sha)                  │ W1.T1    │ QUEUED      │
+│ W1.T2  │ remove the 9 labels                                         │ W1.T2    │ QUEUED      │
+│ W1.T3  │ remove 7 lines + 8 inputs; detection intact                 │ W1.T3    │ QUEUED      │
+│ W1.T4  │ regenerate; the LQZ block byte-identical                    │ W1.T4    │ QUEUED      │
+│ W1.T5  │ THE PIXEL GATE — before/after, bands identical              │ W1.T5    │ QUEUED      │
+├────────┼────────────────────────────────────────────────────────────┼──────────┼─────────────┤
+│ W2.T1  │ card.pine: UDTs + field + the three-behaviour parser        │ W2.T1    │ QUEUED      │
+│ W2.T2  │ wire into the generator, before the renderers               │ W2.T2    │ QUEUED      │
+│ W2.T3  │ the ABSENT / PARSE-FAILED tokens on the chart               │ W2.T3    │ QUEUED      │
+│ W2.T4  │ THE PIXEL GATE — a pasted card renders                      │ W2.T4    │ QUEUED      │
+├────────┼────────────────────────────────────────────────────────────┼──────────┼─────────────┤
+│ W3.T1  │ harvest base + 4H (500 bars, no leakage)                    │ W3.T1    │ QUEUED      │
+│ W3.T2  │ 1H + 30m + DXY on one loader; no 15m                        │ W3.T2    │ QUEUED      │
+│ W3.T3  │ Protocol A → walls · the BILLIONS law · range check         │ W3.T3    │ BLOCKED (2) │
+│ W3.T4  │ E1 face A: 9 pillars · /12 confluence · 5 roles            │ W3.T4    │ QUEUED      │
+│ W3.T5  │ ZFP with a recomputable receipt; strength only              │ W3.T5    │ QUEUED      │
+│ W3.T6  │ the card emitter                                            │ W3.T6    │ QUEUED      │
+│ W3.T7  │ the card round-trips through Pine                           │ W3.T7    │ QUEUED      │
+│ W3.T8  │ the pipeline end to end                                     │ W3.T8    │ QUEUED      │
+├────────┼────────────────────────────────────────────────────────────┼──────────┼─────────────┤
+│ W4.T1  │ the four verdicts                                           │ W4.T1    │ QUEUED      │
+│ W4.T2  │ ancestry that NAMES the missing id                          │ W4.T2    │ QUEUED      │
+│ W4.T3  │ three refusal tokens                                        │ W4.T3    │ QUEUED      │
+│ W4.T4  │ READY_FALSE — table yes, chart no                           │ W4.T4    │ QUEUED      │
+│ W4.T5  │ THE PIXEL GATE — a broken node fails locally                │ W4.T5    │ QUEUED      │
+├────────┼────────────────────────────────────────────────────────────┼──────────┼─────────────┤
+│ W5.T1  │ face-B survives purge + card                                │ W5.T1    │ QUEUED      │
+│ W5.T2  │ E2 boxes, xloc.bar_time                                     │ W5.T2    │ QUEUED      │
+│ W5.T3  │ E2 line; ratio ≥0.900 FROM THE CAPTURE                      │ W5.T3    │ QUEUED      │
+│ W5.T4  │ E3: two-branch stop, one TP, 2.5 hard floor                 │ W5.T4    │ QUEUED      │
+│ W5.T5  │ the confidence gate + eviction                              │ W5.T5    │ QUEUED      │
+│ W5.T6  │ the six-layer drawing order                                 │ W5.T6    │ QUEUED      │
+│ W5.T7  │ THE PIXEL GATE — the whole analysis                         │ W5.T7    │ BLOCKED (3) │
+├────────┼────────────────────────────────────────────────────────────┼──────────┼─────────────┤
+│ W6.T1  │ the freeze                                                  │ W6.T1    │ QUEUED      │
+│ W6.T2  │ ten held-out weeks, rendered AND opened                     │ W6.T2    │ BLOCKED (1) │
+│ W6.T3  │ THE ANTI-HARDCODE GATE — the geometry varies                │ W6.T3    │ QUEUED      │
+│ W6.T4  │ THE BLIND AGENT                                             │ W6.T4    │ QUEUED      │
+│ W6.T5  │ the honest verdict + the ledger                             │ W6.T5    │ QUEUED      │
+├────────┼────────────────────────────────────────────────────────────┼──────────┼─────────────┤
+│ W7.T1  │ the control surface (card / render / cast)                  │ W7.T1    │ QUEUED      │
+│ W7.T2  │ the tab, self-contained                                     │ W7.T2    │ QUEUED      │
+│ W7.T3  │ THE PIXEL PARITY GATE — B == A                              │ W7.T3    │ QUEUED      │
+│ W7.T4  │ the delivery swap documented                                │ W7.T4    │ QUEUED      │
+└────────┴────────────────────────────────────────────────────────────┴──────────┴─────────────┘
+```
+
+---
+
+## THE THREE OPERATOR BLOCKERS
+
+```
+(1)  the ten held-out weeks          → .trident/goals/w6.md     blocks W6.T2
+(2)  the Protocol A source           → sidecar/config.yml       blocks W3.T3 onward
+(3)  the golden week, written down   → .trident/goals/w5.md     blocks W5.T7
+```
+
+**W0 — the immediate work — is blocked by NONE of them.**
+
+---
+
+## OPEN DECISIONS (the operator's rulings, still owed)
+
+```
+OPEN-DEC   the 6-vs-7 confluence floor — 6 is the enforceable admissibility floor per the E1 ruling;
+           the 7 in Engine Integration Phase 1 is the stricter candidate-generation filter.
+           Both readings are in the graph; the operator has not formally ruled which governs.
+OPEN-DEC   the 6-shapes-vs-10 taxonomy — the TTE doc names six; the corrected taxonomy has ten.
+           The graph carries all ten as pv-shape cards; the ruling is recorded SUPERSEDED.
+OPEN-DEC   the SL offset ladder — seven statements (1 / 1-2 / 2 / 2.5-3 / 1.5-for-5m-scalp /
+           half-pip-inside-next-zone / 1.5-2.5-inside-next-5m), resolved as an invariant
+           (outside the zone) plus a tunable ladder with a 1-pip minimum.
+```
+
+**None of the three blocks a turn.** They refine constants; they do not gate structure.
+
+---
+
+## THE IMPROVEMENT BACKLOG (not blocking, worth doing)
+
+```
+· lateral cross-links — 155 of 163 cards are reachable only from their hub
+· an E2-CANNOT-DO card (E1 has one; E2's limits are spread across five cards)
+· trigger + probability on the five variant shape transitions (the base 14 edges have both)
+· the seven planted contradictions in the graph: four RESOLVED by the operator's rulings,
+  three remain (above)
+· the Closed Positions history — the only source of a real per-week trade RATE
+```
+
+---
+
+## THE PER-TURN CONTRACTS — what each gate actually measures
+
+The table above is the INDEX. This is the CONTRACT, turn by turn. **The authority is
+`design/BUILD_WORKFLOW_v2.md:900` (§5); this section is the extract a builder works from.**
+
+### W0 · THE HARNESS
+
+```
+TURN    DELIVERABLE                    THE CORRUPTED SUBJECT IT MUST REFUSE          DONE-WHEN
+W0.T1   the worktree + the display     a capture taken from :0 — the gate must      a frame exists whose
+        proof of isolation            refuse it as "not the agent's display"        geometry differs from :0
+W0.T2   the 30 gate stubs              EVERY gate gets its own corrupted subject    30/30 refuse; 30/30 pass clean
+W0.T3   vision/rig/compare helpers     a control image against itself (delta 0)     a known-different pair reports >0
+W0.T4   the oracle harness             an empty oracle table                        the harness refuses to emit PASS
+```
+
+**Why W0.T2 is the whole wave:** `gates/anti/anti_patterns.py:1` is the only gate that exists today,
+and it was itself proven by reverting each of its 13 checks and watching it go red. Any new gate
+inherits that standard or it is a sentence.
+
+### W1 · THE PURGE — the four box calls survive
+
+```
+TURN    DELIVERABLE                    CORRUPTED SUBJECT                             DONE-WHEN
+W1.T1   the measurements                a claimed count that disagrees with grep     the table matches grep exactly
+W1.T2   the 9 labels removed            one label left behind                        grep finds zero label.new
+W1.T3   lines + inputs removed          a removed input still referenced             pine compiles
+W1.T4   the regeneration                a hand edit to the GENERATED file            the seal sha is unchanged
+W1.T5   the pixel comparison            a capture of the WRONG week                  bands differ → gate fires
+```
+
+**THE INVARIANT ACROSS ALL FIVE:** `box.new == 4`. The four box draws are the supply/demand detection
+and they are the product. Any turn that changes the count is a regression regardless of its other merits.
+
+### W2 · THE CARD — three behaviours, three proofs
+
+```
+TURN    DELIVERABLE                    CORRUPTED SUBJECT                             DONE-WHEN
+W2.T1   card.pine                      a card with an unknown kind                   parser refuses, names the kind
+W2.T2   the generator wiring            card.pine ordered AFTER the renderers         zones still render
+W2.T3   the two tokens                  a card truncated mid-JSON                     PARSE FAILED, no partial
+W2.T4   the pixel gate                  a card whose price is off-scale               no zone drawn, token printed
+```
+
+### W3 · THE SIDECAR — one command, ten stages
+
+```
+TURN    DELIVERABLE                    CORRUPTED SUBJECT                             DONE-WHEN
+W3.T1   harvest base + 4H               one bar from the target week                  the loader refuses
+W3.T2   1H + 30m + DXY                  a 15m frame in the bundle                     the emitter refuses
+W3.T3   the walls                       a strike below BILLIONS                      the wall is dropped, logged
+W3.T4   E1 face A                       a pillar datum absent                         marked ABSENT, not zeroed
+W3.T5   ZFP + receipt                   a receipt that does not recompute             zfp_suppressed, not emitted
+W3.T6   the emitter                     two nodes with the same id                    the emitter refuses
+W3.T7   the round trip                  a card the Pine parser rejects                the emitter's own gate fires
+W3.T8   the pipeline                      a missing stage in config                    named failure, no partial card
+```
+
+### W4 · THE CAST — four verdicts, never a boolean
+
+```
+TURN    DELIVERABLE                    CORRUPTED SUBJECT                             DONE-WHEN
+W4.T1   the four verdicts               a node with no receipt                        INCONCLUSIVE, not FAIL
+W4.T2   the ancestry                   a node whose parent is absent                 the missing id is NAMED
+W4.T3   the three tokens               each malformed card class                     each token fires
+W4.T4   READY_FALSE                     a 67-confidence setup                         table yes, chart no
+W4.T5   the pixel gate                  a broken entry_zone                           that node alone vanishes
+```
+
+### W5 · THE RENDER — the number this wave exists for
+
+```
+TURN    DELIVERABLE                    CORRUPTED SUBJECT                             DONE-WHEN
+W5.T1   face B + the merge             the card's zones over the inherited zones     no double-draw
+W5.T2   E2 phase 1 (the boxes)         a bar_index anchor on a shifted chart          boxes on the wrong bars
+W5.T3   E2 phase 2 (the line)          a line drawn only to the box's near edge       ratio < 0.900 → fires
+W5.T4   E3                             a stop on BOTH branches at once               the branches are exclusive
+W5.T5   the gate + eviction            four setups, one at 66, three at 95           the 66 is evicted
+W5.T6   the layer order                 two layers swapped                            the render order gate fires
+W5.T7   the whole analysis              the golden week drawn from memory             the capture disagrees
+```
+
+**THE MEASURED PRIOR:** the rejected line scored a column-coincidence ratio of **0.18**. The bar is
+**0.900**, measured from the capture — see `design/BUILD_WORKFLOW_v2.md:2100` (§9) for the
+measurement procedure, which counts columns where the line and the price path both have ink.
+
+### W6 · THE VERIFIER — code frozen, ten unseen weeks
+
+```
+TURN    DELIVERABLE                    CORRUPTED SUBJECT                             DONE-WHEN
+W6.T1   the freeze                      an edit to a frozen file                      the sha changes → fires
+W6.T2   ten held-out weeks              one week rendered without being opened        the marker mtime is before the png
+W6.T3   the anti-hardcode gate          identical geometry on two different weeks     the gate fires
+W6.T4   the blind agent                 a card built from the answer key              the grader flags it
+W6.T5   the verdict                      a PASS with an unopened capture               the ledger refuses
+```
+
+**W6.T3's logic:** if the geometry is identical across ten different weeks, the code is not analysing
+the market — it is drawing a constant, or it is fitted to the fixture. The gate compares the emitted
+node sets and requires them to differ.
+
+**W6.T4's logic:** one week of BARS and the graph, no task prompt beyond "build the card for this
+week", then a graded comparison against the authoritative card. If the agent cannot, **the graph is
+the finding** — it is not a prompt to retune the tolerance.
+
+### W7 · THE DASHBOARD — the card is the fixed point
+
+```
+TURN    DELIVERABLE                    CORRUPTED SUBJECT                             DONE-WHEN
+W7.T1   the control surface              a week key that does not exist                named 404, no empty card
+W7.T2   the tab                          the tab mounting twice                        the canvas is one
+W7.T3   the parity                        a B capture from a different week             the delta is non-zero → fires
+W7.T4   the swap                           a card edited only in the dashboard           the paste still works
+```
+
+---
+
+## THE DEPENDENCY GRAPH
+
+```
+W0 ──────────────────────────────────────────────────────────► every wave (the harness)
+ └─ W1 ─┐
+    W2 ─┼─► W5 ─► W6
+    W4 ─┘        └─► W7 (Option B, after W5)
+    W3 ──────────────────► (feeds W2's fixture cards; independent of W1/W4)
+```
+
+**THE CRITICAL PATH: W0 → W1 → W2 → W5 → W6.** Everything else is parallel or downstream.
+
+**THE DISJOINT-FILE RULE that makes the parallel waves safe** (`design/BUILD_WORKFLOW_v2.md:200` §1):
+each worker owns a disjoint file set and a dedicated worktree. W1 owns `plutus-vision-v0.pine`;
+W2 owns `plutus-vision-lqz/card.pine` and the generator; W3 owns `sidecar/`; W4 owns the cast module.
+**No two workers ever write the same file** — which is why W1 and W2 can run concurrently and why W5
+must wait for both.
+
+---
+
+## THE GATE → EVIDENCE MAP
+
+Every gate writes one row. The row is the only thing a reviewer trusts.
+
+```
+gate id      what the row carries                                    where it lands
+W0.T2        30 gate names, 30 refusals, 30 clean passes             EVIDENCE_STATE.md
+W1.T5        2 capture shas, the band-delta count, the label count   EVIDENCE_STATE.md
+W2.T4        the card JSON, the zone count, the capture sha          EVIDENCE_STATE.md
+W3.T8        the card sha, the stage count, the round-trip result    EVIDENCE_STATE.md
+W4.T5        the failing node id, the capture sha, the survivors     EVIDENCE_STATE.md
+W5.T7        the golden week, the capture sha, the ratio             EVIDENCE_STATE.md
+W6.T2/T3     10 week shas, the geometry variance, the marker mtimes  EVIDENCE_STATE.md
+W6.T4        the blind agent's card, the graded delta, the verdict   EVIDENCE_STATE.md
+W7.T3        the A capture sha, the B capture sha, the delta          EVIDENCE_STATE.md
+```
+
+**A gate with no row did not run.** `design/BUILD_WORKFLOW_v2.md:2100` (§9) makes the row the
+deliverable: the capture is evidence only once it has been OPENED, and the row records that it was.
+
+---
+
+## THE THINGS A BUILDER MUST NEVER DO (the 13 gates, in prose)
+
+`gates/anti/anti_patterns.py:1` encodes these mechanically; the prose is here so a builder can
+recognise the temptation before the gate fires.
+
+**THE GATE'S INVOCATION (getting this wrong produces a false green):**
+
+```
+python3 gates/anti/anti_patterns.py <root> pine=<f> card=<f> tree=<dir> proofs=<d> report=<f>
+   → rc 0 PASS (live checks only)  ·  rc 1 FAIL  ·  rc 2 INCONCLUSIVE (zero subjects)
+```
+
+`sinks: `SKIP` means the gate could not look. `live == 0 → INCONCLUSIVE rc=2`, never PASS.
+Measured baseline: **rc=1, 4 classes** — A3 · A9 (27 build files) · A10 · A12 (5.9).
+
+```
+ 1  never edit the GENERATED plutus-vision-v1.pine — the generator erases it
+ 2  never edit the LQZ block — it is the product and it is byte-stable
+ 3  never emit a zone without a receipt
+ 4  never print a wall or a price as a supply zone
+ 5  never let a label define a visual boundary
+ 6  never count a box as eleven
+ 7  never draw a line merely because a box exists
+ 8  never let the ABSENT case render silently
+ 9  never speak a market-standard term the canon does not use
+10  never let the object set default to the union of every variable
+11  never anchor with bar_index — use xloc.bar_time
+12  never claim a verification with a capture that was not opened
+13  never report a BLOCKED gate as green
+```
