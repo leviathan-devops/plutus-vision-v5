@@ -17,18 +17,22 @@ const fail = (code, msg) => { console.error(`${code}: ${msg}`); process.exit(1);
 // The retry's failure reason is RECORDED, not swallowed: an empty catch here made a dead
 // CDP endpoint look identical to an IDE that had not started yet, and the 30-second loop
 // hid which of the two it was. gates/anti-theatrical is right about this shape.
+// The IDE this loads into: PV_CDP_PORT / PV_SERVER_PORT name an instance (PINEBOX derives both
+// from its id); unset, they are the canonical :9222 / :9851 this script always used.
+const CDP_PORT = process.env.PV_CDP_PORT || "9222";
+const SERVER_PORT = process.env.PV_SERVER_PORT || "9851";
 let page, lastErr = "no attempt";
 for (let i = 0; i < 30 && !page; i++) {
   try {
-    const list = await (await fetch("http://127.0.0.1:9222/json/list")).json();
-    page = list.find((t) => t.type === "page" && t.url.includes(":9851/pine.html"));
+    const list = await (await fetch(`http://127.0.0.1:${CDP_PORT}/json/list`)).json();
+    page = list.find((t) => t.type === "page" && t.url.includes(`:${SERVER_PORT}/pine.html`));
     lastErr = page ? "" : "CDP reachable but no pine.html tab";
   } catch (e) {
-    lastErr = `CDP :9222 unreachable — ${String(e.message || e).slice(0, 70)}`;
+    lastErr = `CDP :${CDP_PORT} unreachable — ${String(e.message || e).slice(0, 70)}`;
   }
   if (!page) await Bun.sleep(1000);
 }
-if (!page) fail("NO_PAGE", `no pine.html tab on CDP :9222 — ${lastErr} — run pv-ide.sh first`);
+if (!page) fail("NO_PAGE", `no pine.html tab on CDP :${CDP_PORT} — ${lastErr} — run pv-ide.sh first`);
 
 const ws = new WebSocket(page.webSocketDebuggerUrl);
 await new Promise((ok, no) => { ws.onopen = ok; ws.onerror = no; });

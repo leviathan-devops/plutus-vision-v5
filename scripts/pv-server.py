@@ -48,6 +48,20 @@ import urllib.request
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
+# ── PINEBOX: PER-INSTANCE CONFIG INJECTION (blueprint section 5) ─────────────────
+# When PINEBOX_PORTS holds an instance's port block (JSON), the page is served with its
+# `window.dashboardConfig` block rewritten to that instance's own ports. The page file on
+# disk is never touched. With no PINEBOX_PORTS the server behaves exactly as before.
+# A malformed block stops the server at startup: a half-configured instance would talk to
+# ANOTHER instance's ports, which is the contamination this exists to prevent.
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent / "pinebox"))
+import inject as _pinebox_inject
+_PINEBOX_RAW = os.environ.get("PINEBOX_PORTS", "")
+try:
+    PINEBOX_PORTS = json.loads(_PINEBOX_RAW) if _PINEBOX_RAW else None
+except ValueError:
+    sys.exit("REFUSED  PORTS_MALFORMED  —  PINEBOX_PORTS is not JSON: %r" % _PINEBOX_RAW[:80])
+
 # ── THE AGENT'S FACE PROXY (2026-10-07) ───────────────────────────────────────
 # THE PINE SHELL's AGENT'S FACE panel speaks the DASHBOARD's agent-workspace API —
 # `GET/POST/PATCH/DELETE /api/v1/workspaces…`, `GET /api/v1/commands/pending`, and
@@ -546,7 +560,28 @@ class Handler(SimpleHTTPRequestHandler):
         if u.path == "/api/v1/health":
             cells = load_cells()
             return self._json(200, {"success": True, "data": {"cells": len(cells or []), "fixture": FIXTURE}})
+        if PINEBOX_PORTS is not None and u.path in ("/", "/pine.html"):
+            return self._pinebox_page(u.path)
         return super().do_GET()
+
+    def _pinebox_page(self, path):
+        """Serve pine.html with the instance's port block injected (see inject.py)."""
+        fs_path = self.translate_path("/pine.html" if path == "/" else path)
+        try:
+            body = open(fs_path, "rb").read()
+            out, code = _pinebox_inject.inject_dashboard_config(body, PINEBOX_PORTS), 200
+        except _pinebox_inject.Refused as e:
+            sys.stderr.write("[pv-server] REFUSED %s: %s (%s)\n" % (e.token, e.detail, fs_path))
+            out, code = ("%s: %s" % (e.token, e.detail)).encode(), 500
+        except OSError as e:
+            sys.stderr.write("[pv-server] cannot read %s: %s\n" % (fs_path, e))
+            out, code = ("PAGE_UNREADABLE: %s" % e).encode(), 500
+        self.send_response(code)
+        self.send_header("Content-Type", "text/html; charset=utf-8" if code == 200 else "text/plain")
+        self.send_header("Content-Length", str(len(out)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(out)
 
     # ── THE AGENT'S FACE PROXY ──────────────────────────────────────────────
     # Forward the three face prefixes to the dashboard server VERBATIM: method,

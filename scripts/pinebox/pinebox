@@ -1,0 +1,321 @@
+#!/usr/bin/env bash
+# pinebox - the Pine IDE as a self-contained, multi-instance agent computer.
+#
+# PINEBOX is computer-use v2 (the shell, the terminal, the scoped store, the drive verbs)
+# with the Pine IDE as its default application layer. This file adds exactly one plane: the
+# application layer (station, rail, server, page) bound to a port block derived from --id
+# and to a serve-time rewrite of the config block the page already reads. It implements no
+# display, input or capture logic of its own: every such action is the core's.
+#
+#   pinebox ports   --id N                         the derived ports + a claim verdict
+#   pinebox up      --id N [--week W] [--pair P] [--tf T] [--pine F] [--adapter A]
+#   pinebox down    --id N | --all
+#   pinebox list                                    every instance
+#   pinebox status  --id N [--project K]            the record, the last 5 refusals, measured memory
+#   pinebox shot    --id N [--out F]                a CDP capture - never raises the window
+#   pinebox load    --id N --pine F [--pair P] [--tf T]
+#   pinebox drive   --id N --action VERB ...        the core's drive verbs, bound to this instance
+#   pinebox terminal --id N --send TEXT | --read
+#   pinebox state   --id N --get K | --put K V
+#   pinebox view    --id N                          THE ONLY VERB PERMITTED TO RAISE A WINDOW
+#
+# Exit: 0 ok (one JSON object on stdout) | 1 REFUSED (a named token on stderr) | 2 usage
+
+set -uo pipefail
+PB_HOME="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+PV_ROOT="$(cd "$PB_HOME/../.." && pwd)"
+# THE CORE IS computer-use v2 (blueprint section 1: PINEBOX inherits it whole). It is located by
+# CU_EXT (default: the OMP extension directory) - never by a symlink inside this repo, which
+# would be a machine-specific path that dangles in any other checkout.
+CU_EXT="${CU_EXT:-$HOME/.omp/agent/extensions/computer-use-v2}"
+CORE="$CU_EXT/core"
+[ -f "$CORE/lib.sh" ] || { printf 'REFUSED  CORE_ABSENT  —  the computer-use v2 core was not found at %s (set CU_EXT to its directory)\n' "$CORE" >&2; exit 1; }
+COMPUTER="$(dirname "$CORE")/computer"
+. "$CORE/lib.sh"
+. "$CORE/govern.sh"
+PB_ROOT="${PINEBOX_ROOT:-/tmp/pinebox}"
+mkdir -p "$PB_ROOT"
+
+# every refusal is recorded per instance too: { token, verb, at }
+eval "$(declare -f ledger_row | sed '1s/ledger_row/cu_ledger_row/')"
+PB_VERB=""
+ledger_row() {
+  cu_ledger_row "$@"
+  [ -n "${CU_CTX_ID:-}" ] && [ -d "$PB_ROOT/i$CU_CTX_ID" ] && \
+    printf '{"token":"%s","verb":"%s","at":"%s"}\n' "$(jesc "$1")" "$PB_VERB" "$(date -Is)" >> "$PB_ROOT/i$CU_CTX_ID/refusals.jsonl"
+}
+
+. "$PB_HOME/ports.sh"
+. "$PB_HOME/stages/services.sh"
+. "$PB_HOME/stages/page.sh"
+. "$PB_HOME/stages/load.sh"
+need jq NO_JQ
+
+pb_dir() { printf '%s/i%s' "$PB_ROOT" "$1"; }
+
+# ── the instance record: JSON, updated under flock ───────────────────────────────────────
+pb_rec() {
+  local id="$1" filter="$2" d; d="$(pb_dir "$id")"; mkdir -p "$d"
+  ( flock -x 9
+    [ -s "$d/state.json" ] || echo '{}' > "$d/state.json"
+    jq "$filter" "$d/state.json" > "$d/state.json.tmp" && mv "$d/state.json.tmp" "$d/state.json"
+  ) 9>"$d/.rec.lock" || refuse RECORD_WRITE_FAILED "could not update $d/state.json with: $filter"
+}
+pb_rec_get() { jq -r "($2) // empty" "$(pb_dir "$1")/state.json" 2>/dev/null; }
+
+# re-raise a refusal the core printed, under its own token (so it stays structured)
+pb_forward_refusal() {
+  local f="$1" line tok
+  line="$(grep -m1 '^REFUSED' "$f" 2>/dev/null || tail -1 "$f")"
+  tok="$(printf '%s' "$line" | sed -nE 's/^REFUSED +([A-Za-z_:0-9]+) +—.*/\1/p')"
+  refuse "${tok:-STAGE_FAILED}" "$(printf '%s' "$line" | sed -E 's/^REFUSED +[A-Za-z_:0-9]+ +— +//')"
+}
+
+# C3 around a verb that acts on an instance: identity-based, same predicate as the core
+pb_c3() {
+  local label="$1"; shift
+  local before after out rc
+  before="$(c3_snapshot)"; out="$("$@")"; rc=$?; after="$(c3_snapshot)"
+  [ "$rc" -ne 0 ] && exit "$rc"
+  c3_check "$before" "$after" "$label"
+  printf '%s\n' "$out"
+}
+
+# ── teardown: by the RECORDED process group, never by a pattern ──────────────────────────
+pb_kill_recorded() {
+  local id="$1" k p killed=""
+  for k in station rail server; do
+    p="$(pb_rec_get "$id" ".pids.$k")"
+    if pid_alive "$p"; then kill_group "$p" && killed="$killed $p"; fi
+  done
+  printf '%s' "${killed# }"
+}
+
+pb_teardown() {
+  local id="$1" killed d; d="$(pb_dir "$id")"
+  killed="$(pb_kill_recorded "$id")"
+  "$COMPUTER" shell down --id "$id" >/dev/null 2>&1 || true   # compositor + the browser the core spawned
+  rm -rf "$d/chrome" "$d/state.json"
+  printf '%s' "$killed"
+}
+
+pb_instance_live() {   # the core still has a live compositor for this id
+  "$COMPUTER" shell list 2>/dev/null | jq -e --argjson i "$1" 'any(.instances[]; .id==$i)' >/dev/null 2>&1
+}
+
+# ── up: the five stages, in order, each verified, each refusing by name ─────────────────
+PB_UP_ID=""; PB_UP_OK=0
+pb_up_cleanup() {
+  [ -n "$PB_UP_ID" ] && [ "$PB_UP_OK" -eq 0 ] && { pb_teardown "$PB_UP_ID" >/dev/null; echo "  (the partly started instance $PB_UP_ID was torn down; logs kept in $(pb_dir "$PB_UP_ID"))" >&2; }
+}
+
+pb_up() {
+  require_id "$(flag id 0)"; local id="$ID"
+  pb_ports_json "$id" >/dev/null || exit $?
+  local week pair tf pine adapter d
+  week="$(flag week 2026-07-06)"; pair="$(flag pair DXY)"; tf="$(flag tf 1H)"; pine="$(flag pine)"; adapter="$(flag adapter)"
+  d="$(pb_dir "$id")"
+
+  if [ -s "$d/state.json" ]; then
+    if pb_instance_live "$id"; then refuse INSTANCE_LIVE "pinebox instance $id is already running - run: pinebox down --id $id"; fi
+    echo "  (reaping a stale record for instance $id)" >&2; pb_teardown "$id" >/dev/null
+  fi
+  exec 7>"$PB_ROOT/.up-$id.lock"; flock -n 7 || refuse INSTANCE_LIVE "an 'up' for pinebox instance $id is already in progress"
+  pb_preflight "$week"                              # FIXTURE_ABSENT / E1_ABSENT / ENGINE_ABSENT / CONFIG_BLOCK_ABSENT
+  pb_claim "$id"                                    # PORT_TAKEN:<port> - both before anything starts
+  mkdir -p "$d"
+  : > "$d/refusals.jsonl"
+  jq -n --argjson id "$id" --argjson ports "$(pb_ports_json "$id")" --arg week "$week" --arg pair "$pair" --arg tf "$tf" \
+     '{id:$id, ports:$ports, week:$week, pair:$pair, tf:$tf, pids:{}}' > "$d/state.json"
+  PB_UP_ID="$id"; trap pb_up_cleanup EXIT
+
+  local before; before="$(c3_snapshot)"
+  echo "pinebox up  instance $id" >&2
+
+  # STAGE 1 · THE SHELL - the computer-use core. A window on the operator's screen that
+  # STAYS IN THE BACKGROUND.
+  local out slot hw
+  out="$("$COMPUTER" shell up --id "$id" ${adapter:+--adapter "$adapter"} 2>"$d/shell.err")" || pb_forward_refusal "$d/shell.err"
+  slot="$(jq -r .x_slot <<<"$out")"
+  hw="$(jq -r '.instance.host_win // empty' <<<"$out")"
+  pb_rec "$id" ".slot = \"$slot\" | .adapter = $(jq -c .adapter <<<"$out") | .host_win = \"$hw\" | .up_at = \"$(date -Is)\""
+  printf '  shell     :%s (%s)%s\n' "$slot" "$(jq -r .adapter <<<"$out")" "${hw:+ host window $hw}" >&2
+
+  stage_services "$id" "$d" "$week"                 # STAGE 2
+  stage_page "$id" "$d"                             # STAGE 3
+  stage_frame "$id" "$d"                            # STAGE 4
+  [ -n "$pine" ] && stage_load "$id" "$d" "$pine" "$pair" "$tf"   # STAGE 5
+
+  # P7: the whole `up` - not just its first stage - must have left the operator's focus alone
+  local after; after="$(c3_snapshot)"
+  c3_check "$before" "$after" "pinebox up" "$hw"
+
+  PB_UP_OK=1
+  echo "  READY     instance $id  slot :$slot" >&2
+  jq -c '{ok:true, id, slot, adapter, ports, frame, load}' "$d/state.json"
+}
+
+pb_down() {
+  if [ "$(flag all)" = 1 ]; then
+    local d n=0
+    for d in "$PB_ROOT"/i*; do
+      [ -d "$d" ] || continue
+      pb_teardown "${d##*/i}" >/dev/null; n=$((n+1))
+    done
+    printf '{"ok":true,"down":"all","instances":%s}\n' "$n"
+  else
+    require_id "$(flag id 0)"
+    [ -s "$(pb_dir "$ID")/state.json" ] || refuse NOT_UP "pinebox instance $ID is not up"
+    local killed; killed="$(pb_teardown "$ID")"
+    printf '{"ok":true,"down":%s,"killed":"%s"}\n' "$ID" "$killed"
+  fi
+}
+
+# ── measured memory ──────────────────────────────────────────────────────────────────────
+# PSS summed over a process group, from /proc/<pid>/smaps_rollup. A process that hides its
+# rollup (non-dumpable: measured, the pv-server python gets "Permission denied" for the same
+# uid) is reported as UNREADABLE with its pid - never folded into the sum as 0, which would
+# read as "uses no memory". Output: "<kB> <unreadable-pid-list-or-->".
+pb_pss_group() {
+  local pid sum=0 v bad=""
+  for pid in $(pgrep -g "$1" 2>/dev/null); do
+    if v="$(awk '/^Pss:/ {print $2}' "/proc/$pid/smaps_rollup" 2>/dev/null)" && [ -n "$v" ]; then sum=$((sum + v))
+    else bad="${bad:+$bad,}$pid"; fi
+  done
+  printf '%s %s' "$sum" "${bad:--}"
+}
+
+pb_status() {
+  require_id "$(flag id 0)"; local id="$ID" d; d="$(pb_dir "$id")"
+  [ -s "$d/state.json" ] || refuse NOT_UP "pinebox instance $id is not up"
+  local k_ comp_ r kb bad name total=0 unread="" parts="" t
+  # name:leader-pid, one per recorded process group (the browser's pids are core tokens: pid:start)
+  local groups="station:$(pb_rec_get "$id" .pids.station) rail:$(pb_rec_get "$id" .pids.rail) server:$(pb_rec_get "$id" .pids.server) compositor:$(rec_get "$id" comp_pid 2>/dev/null || true)"
+  for t in $(rec_get "$id" app_pids 2>/dev/null || true); do groups="$groups browser:$(tok_pid "$t")"; done
+  local -A mb=() ; local entry
+  for entry in $groups; do
+    name="${entry%%:*}"; r="$(pb_pss_group "${entry#*:}")"; kb="${r%% *}"; bad="${r#* }"
+    mb[$name]=$(( ${mb[$name]:-0} + kb/1024 )); total=$((total + kb/1024))
+    [ "$bad" != "-" ] && unread="${unread:+$unread; }$name pid(s) $bad"
+  done
+  local k; k="$(flag project 7)"
+  jq --argjson st "${mb[station]:-0}" --argjson ra "${mb[rail]:-0}" --argjson sv "${mb[server]:-0}" \
+     --argjson co "${mb[compositor]:-0}" --argjson ch "${mb[browser]:-0}" --argjson one "$total" --argjson k "$k" \
+     --arg unread "$unread" \
+     --slurpfile tok <(tail -5 "$d/refusals.jsonl" 2>/dev/null | jq -c . 2>/dev/null || true) \
+     '. + {last_refusals: $tok, memory_mb: {station:$st, rail:$ra, server:$sv, compositor:$co, browser:$ch, instance:$one,
+        unreadable: (if $unread == "" then null else $unread end),
+        lower_bound: ($unread != ""),
+        projected_for: $k, projected_total: ($one * $k),
+        note: "MEASURED PSS summed over this instance'"'"'s recorded process groups; any process whose smaps_rollup is hidden is named in `unreadable` and NOT counted (so `instance` is then a lower bound); the projection assumes every instance costs the same"}}' \
+     "$d/state.json" | jq -c '{ok:true} + .'
+}
+
+pb_list() {
+  local d out="" id slot alive row
+  for d in "$PB_ROOT"/i*; do
+    [ -s "$d/state.json" ] || continue
+    id="${d##*/i}"
+    alive=false; pb_instance_live "$id" && alive=true
+    row="$(jq -c --argjson a "$alive" '{id, slot, adapter, ports, window:.chrome.window, colours:.frame.colours, pids, alive:$a}' "$d/state.json")"
+    out="${out:+$out,}$row"
+  done
+  printf '{"ok":true,"instances":[%s]}\n' "$out"
+}
+
+pb_shot() {
+  require_id "$(flag id 0)"; local id="$ID" d out; d="$(pb_dir "$id")"
+  [ -s "$d/state.json" ] || refuse NOT_UP "pinebox instance $id is not up"
+  out="$(flag out "$d/frame.png")"
+  pb_c3 "pinebox shot" "$COMPUTER" screenshot --id "$id" --out "$out"
+}
+
+pb_load() {
+  require_id "$(flag id 0)"; local id="$ID" d; d="$(pb_dir "$id")"
+  [ -s "$d/state.json" ] || refuse NOT_UP "pinebox instance $id is not up"
+  [ -n "$(flag pine)" ] || refuse BAD_ARGS "load needs --pine FILE"
+  local before after; before="$(c3_snapshot)"
+  stage_load "$id" "$d" "$(flag pine)" "$(flag pair "$(pb_rec_get "$id" .pair)")" "$(flag tf "$(pb_rec_get "$id" .tf)")"
+  after="$(c3_snapshot)"; c3_check "$before" "$after" "pinebox load"
+  jq -c '{ok:true, frame, load}' "$d/state.json"
+}
+
+# ── the core's verbs, bound to this instance ──────────────────────────────────────────────
+pb_drive() {   # drive --id N --action VERB [core flags...]
+  local id action rest=() a skip=0
+  id="$(flag id 0)"; action="$(flag action)"; [ -n "$action" ] || refuse BAD_ARGS "drive needs --action VERB"
+  while [ $# -gt 0 ]; do :; break; done
+  local args=("${PB_ARGS[@]}") i=0
+  while [ $i -lt ${#args[@]} ]; do
+    case "${args[$i]}" in --id|--action) i=$((i+2)) ;; *) rest+=("${args[$i]}"); i=$((i+1)) ;; esac
+  done
+  [ -s "$(pb_dir "$id")/state.json" ] || refuse NOT_UP "pinebox instance $id is not up"
+  "$COMPUTER" "$action" --id "$id" "${rest[@]}"
+}
+
+pb_terminal() {
+  require_id "$(flag id 0)"
+  [ -s "$(pb_dir "$ID")/state.json" ] || refuse NOT_UP "pinebox instance $ID is not up"
+  if [ -n "$(flag send)" ]; then "$COMPUTER" terminal send --id "$ID" --text "$(flag send)"
+  elif [ "$(flag read)" = 1 ]; then "$COMPUTER" terminal read --id "$ID" --lines "$(flag lines 50)"
+  else refuse BAD_ARGS "terminal needs --send TEXT or --read"; fi
+}
+
+pb_state() {
+  require_id "$(flag id 0)"
+  [ -s "$(pb_dir "$ID")/state.json" ] || refuse NOT_UP "pinebox instance $ID is not up"
+  if [ -n "$(flag get)" ]; then "$COMPUTER" state get --id "$ID" --key "$(flag get)"
+  elif [ -n "$(flag put)" ]; then "$COMPUTER" state put --id "$ID" --key "$(flag put)" --value "$(flag value)"
+  else refuse BAD_ARGS "state needs --get K or --put K V"; fi
+}
+
+pb_view() {
+  require_id "$(flag id 0)"
+  [ -s "$(pb_dir "$ID")/state.json" ] || refuse NOT_UP "pinebox instance $ID is not up"
+  # --confirm is the operator's "I asked to see it"; the core refuses the raise without it
+  "$COMPUTER" view --id "$ID" ${FLAG[confirm]:+--confirm}
+}
+
+pb_ports() {
+  require_id "$(flag id 0)"
+  local json; json="$(pb_ports_json "$ID")" || exit $?
+  local name port holder status="" rows=""
+  for name in station rail server cdp ws; do
+    port="$(pb_port "$ID" "$name")"; holder="$(pb_port_holder "$port")"
+    status="free"; [ -n "$holder" ] && status="held by pid ${holder%% *}"
+    rows="${rows:+$rows,}\"$name\":\"$status\""
+  done
+  local claimed=true; case "$rows" in *"held by"*) claimed=false ;; esac
+  printf '{"ok":true,"id":%s,"ports":%s,"state":{%s},"claimable":%s}\n' "$ID" "$json" "$rows" "$claimed"
+}
+
+usage() { sed -n '2,/^# Exit:/p' "$0" | sed 's/^# \{0,1\}//'; }
+
+PB_VERB="${1:-help}"; shift || true
+# `state --put K V` (blueprint 7B): the value is the word after the key. Rewritten to the flag
+# form the parser reads, so a value is never mistaken for a stray argument.
+_argv=(); _i=0; _a=("$@")
+while [ $_i -lt ${#_a[@]} ]; do
+  if [ "${_a[$_i]}" = "--put" ] && [ $((_i+2)) -lt ${#_a[@]} ] && [[ "${_a[$((_i+2))]}" != --* ]]; then
+    _argv+=(--put "${_a[$((_i+1))]}" --value "${_a[$((_i+2))]}"); _i=$((_i+3))
+  else _argv+=("${_a[$_i]}"); _i=$((_i+1)); fi
+done
+set -- "${_argv[@]}"
+PB_ARGS=("$@")
+case "$PB_VERB" in help|-h|--help) usage; exit 2 ;; esac
+parse_flags "$@"
+# a bare positional after --put K is the value; booleans the parser needs to know
+case "$PB_VERB" in
+  ports)    pb_ports ;;
+  up)       pb_up ;;
+  down)     pb_down ;;
+  list)     pb_list ;;
+  status)   pb_status ;;
+  shot)     pb_shot ;;
+  load)     pb_load ;;
+  drive)    pb_drive "$@" ;;
+  terminal) pb_terminal ;;
+  state)    pb_state ;;
+  view)     pb_view ;;
+  *) refuse BAD_VERB "unknown verb '$PB_VERB' - run: pinebox help" ;;
+esac
