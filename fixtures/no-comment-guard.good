@@ -1,0 +1,1 @@
+// enforcement: gates/ZFP.sh exits 1 on a tampered receipt

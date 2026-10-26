@@ -1,0 +1,1 @@
+// enforcement: gates/gate.sh G1 exits 1 on a tampered receipt

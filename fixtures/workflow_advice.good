@@ -1,0 +1,2 @@
+# P0
+- G  bash gates/gate.sh G0 rig.pid <sha> card-001   (rc=0 required)

@@ -1,0 +1,2 @@
+# paths this cleanup may delete (one per line; a directory covers its subtree)
+.scratch-probe/
