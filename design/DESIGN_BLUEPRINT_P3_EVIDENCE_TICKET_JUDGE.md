@@ -420,3 +420,83 @@ the disk, with the TTSR rule as the alarm that makes the absence visible.
 | the verb table `verify --judge` extends | `scripts/pinebox/actions.json:209` |
 | the blueprint gate every design must pass | `gates/blueprint-gate.sh:4` |
 | the chain the judge's detectors join | `scripts/pinebox/test/run.sh:28` |
+
+---
+
+# §15 · MEASURED — the calibration is DONE, and it changes three clauses
+
+**The measurement (2026-10-26, live `:8090/v1/systemone`, `POST multipart` with `image` + `request`):**
+
+```
+question (one claim, noul)
+  "Does this image show a price chart with candlestick bars and two overlaid coloured
+   moving-average lines?"
+POSITIVE control  (a drawn chart scene, 512x288)  ->  noul = 0.9470   >= 0.85  PASS
+NEGATIVE control  (a uniform blank,    512x288)  ->  noul = 0.0712   <= 0.15  PASS
+SEPARATION 0.876   |  image cost 1,173 input tokens  |  latency 1.24s / 0.81s
+modality reported by the judge: "image"  ·  model imajev-4b-Q6_K
+```
+
+**So the question in §14's CRIT row — "can a 4B judge separate a chart from a blank?" — is ANSWERED: yes,
+with a 0.876 gap, on the first control pair.** The instrument is not blind. `act` is therefore derivable
+(§5.4) rather than hoped for, and the 1,173-token image cost at 512×288 is the constant the §2 budget
+uses.
+
+### Correction C1 · NO CROP — capture the CHART ELEMENT (operator ruling)
+
+The operator's words: *"why would we crop anything? We don't crop shit… the screenshot should be specific
+just to the chart section of Pine IDE. We don't need the entire fucking dashboard."*
+
+`crop` and `element capture` are different acts and the design had the wrong one:
+
+| rejected | adopted |
+|---|---|
+| screenshot the dashboard, then cut a pixel rectangle out of it | **capture the chart pane ELEMENT** — `Page.captureScreenshot` with a `clip` set to the canvas element's `getBoundingClientRect()` |
+| the region is a fraction the caller guesses | the region is the element the page owns; nothing outside it is ever rendered into the image |
+| a lossy pixel cut that can hide an edge | the element's own box, so a clipped axis label at the boundary is still inside the image |
+
+**Compression, not amputation:** the image is sized so the whole chart pane fits the budget (measured
+1,173 tok at 512×288; a full pane at 1024×576 is measured once and recorded), and if it still exceeds the
+budget the tool compresses (quality, then scale) and RECORDS the factor in the ticket — it never drops
+part of the chart.
+
+### Correction C2 · TEMPORAL ANCHORING is a clause, not a hope
+
+The operator's words: *"I gave a specific week of July 6th through 10, and then the Pine IDE was rendering
+this active week and there was nothing visible… the July 6-10 week was rendered on this week's price
+action instead."*
+
+Three anchor defects, each now a judged clause with its own id:
+
+| id | the clause | the check |
+|---|---|---|
+| **A1** | the chart's visible time range must CONTAIN the requested week's bars | `chart --view` range ∩ the fixture's ISO week ≠ ∅ |
+| **A2** | the frame's week label must equal the bars' ISO week | `WEEK_MISMATCH` (already implemented) |
+| **A3** | the rendered price band must be consistent with the fixture's own range | the visible min/max price must lie within the fixture's [low, high] ± padding |
+
+A1 is the one that was missing: the chart can be labelled correctly and still be SCROLLED AWAY from the
+week, which is exactly the "nothing visible" failure. A1 is arithmetic (no model), so it is checked on
+every `run`, before any judge call.
+
+### Correction C3 · THE JUDGE HAS A NARRATIVE EPOCH (it is not stateless)
+
+The operator's words: *"the judge verification needs to have context continuity… a narrative epoch that is
+being built turn by turn with progressive memory… so the judge remembers what happened between the last
+call and this one."*
+
+The judge is 4B with 16K — it cannot remember anything by itself, so the **epoch is passed in as the
+`state` field**, assembled by the tool from the ticket ledger:
+
+```
+state = epoch_head        (2 lines: what this build is, what is being judged now)
+      + last K verdicts   (K<=5: clause id · pass/fail · defect class · the one-line delta)
+      + the repeat alarm  (the SAME clause has failed N times -> say so, and say what keeps recurring)
+      + the delta since last call (what changed in the artifact: sha changed? week changed? bars?)
+```
+
+Bounded by the measured `state_char_cap` (24,000 chars) and the §2 token budget. An epoch that overflows
+is COMPRESSED by rule — the oldest verdicts collapse to a count — never truncated mid-sentence.
+
+**The consequence for the ticket:** part 3 (`judgment.json`) records the epoch hash, so a verdict is
+reproducible *with the memory that produced it*. Two identical frames judged with different epochs are
+different judgements, and the ticket says which one it was.
