@@ -570,3 +570,43 @@ general-purpose pack is wanted later, the source to extract is the aether pair, 
 **What P3 adds beyond the existing epoch (the only new work):** the **repeat alarm** (same clause failing N
 times must be said out loud in `state`, because a 4B judge given a clean epoch will re-approve a defect it
 already rejected) and **the delta** (what changed in the artifact since the last call, from the frame shas).
+
+### §16.1 CORRECTION · aether v2 has the STORE and the READER, not the ADAPTER
+
+Asking "is it already built into aether v2?" and checking rather than recalling gives a three-part answer.
+The evidence, all measured:
+
+```
+BUILT — the store            scope-memory.ts:125  CREATE TABLE epochs (epoch, summary, created_at)
+                             scope-memory.ts:94,107,119,133  runs · findings · focus · branch_index
+                             scope-memory.ts:149  class ScopeMemory
+                             scope-memory.ts:507  openScopeMemory(projectId, branchToken, root)
+BUILT — the contract         aether-context-manager.ts:58  interface AetherMemoryLike {
+                                                            lastPrompts(n): AetherPromptRecord[];
+                                                            epochSummary(): string }
+BUILT — the reader/renderer  aether-context-manager.ts:377  buildContext(memory: AetherMemoryLike, …)
+                             aether-context-manager.ts:390  renderChain(sessionWindow, priorPrompts, epochSummary)
+ABSENT — the adapter         src/aether-memory.ts does not exist. The file's own comment
+                             (aether-context-manager.ts:45-46) says it is
+                             "implemented by aether-memory.ts in Wave 2".
+                             `grep -rn 'implements AetherMemoryLike' src/` → 0 hits.
+                             `epochSummary()` is declared in the interface and called once; nothing DEFINES it.
+```
+
+**So the answer is: the table, the entry point, the interface and the chain renderer are built — the ~2-method
+bridge from `ScopeMemory` to `AetherMemoryLike` is NOT.** That bridge is:
+
+```
+aether-memory.ts        lastPrompts(n) -> SELECT … FROM runs/findings ORDER BY seq DESC LIMIT n
+                        epochSummary() -> SELECT summary FROM epochs ORDER BY epoch DESC LIMIT 1
+```
+
+P3 therefore **supplies the adapter** (two queries over the table that already exists) instead of importing a
+finished memory. The alternative, if a self-contained implementation is preferred, is `Omni_Vision_v5.1.4/
+src/backend/memory.ts` (326 lines, `VisionMemory` + `resolveMemory`), which is complete but carries its own
+store rather than reusing the aether one.
+
+**Why this distinction is load-bearing for P3:** a build sequence that says "import the aether memory" would
+have produced a compile error at P3c and a session arguing about whose fault it was. The blueprint now says
+"write two queries" — and the exit criterion is that `epochSummary()` returns the newest epoch row through
+the interface the context manager already consumes.
