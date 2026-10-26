@@ -117,3 +117,14 @@ constant. Without the control, a scene read of `0` would be indistinguishable fr
 ## 2026-10-08 · indicator-engine1-e2-fixed-2026-10-08 (final)
 - image: Checkpoints/indicator-engine1-e2-fixed-2026-10-08/visual/runtime-state.png
 - state: the LIVE IDE render (EURUSD 1H) — the 5 E1 IP zones in the canon colors (RED Key IP Resistance Band + Upper IP Resistance, ORANGE #FF9800 Equilibrium Zone, TEAL Mid-Range Support + IP Support Floor), each labelled "<name> | <degree> | <zfp>% ZFP"; the 6 green LSZ strips; the option-strike layer (wired; empty when the harvest is DOWN); the full 2x17 info table (header / Chain RWL->SS / Days / ZONES + 5 rows / TRADES + 6 rows); and the E2 cyan forecast path (WL->RWL->SS: a drop to the support then a recovery into the range).
+
+## 2026-10-26 · computer-use-v2-focus-proven-2026-10-26
+- image: Checkpoints/computer-use-v2-focus-proven-2026-10-26/visual/runtime-state.png
+- state: the LIVE Pine IDE inside a computer-use v2 instance on a REPLICA display (:2xx): DXY 1H,
+  2026-W29, candles + EMA 20 (yellow) + EMA 50 (blue) + 4 green crossover triangles, status row
+  `FIXTURE · DXY · 1H · 508 bars · rail : 9764 · station UP` — the instance naming its OWN rail, and
+  the operator's stand-in window untouched above it.
+- sha256: (recorded in the checkpoint manifest)
+- note: the same load on the operator's real desktop (:1) produced the identical frame with
+  `active=0x0 top=0xa0000a` unchanged before/after — cited in TESTING_LOG T-34, not stored here
+  because it is the operator's screen content.

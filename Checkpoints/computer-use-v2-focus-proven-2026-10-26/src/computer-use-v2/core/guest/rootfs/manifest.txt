@@ -1,0 +1,24 @@
+# The guest image manifest (blueprint section 7A, guest/rootfs).
+#
+# The guest is COMPLETE: every binary the drive path needs is present, so no stub is ever
+# shipped. Build an Alpine (per Podroid) qcow2 containing exactly these packages plus this
+# tool at /opt/computer-use, with sshd enabled and CU_GUEST_KEY's public key in root's
+# authorized_keys. assert.sh below is the presence assertion: a missing binary is a
+# BUILD-TIME failure of the image, detected at image build - never at first use.
+#
+# format:  <binary on PATH>   <alpine package that provides it>
+weston        weston
+Xwayland      xwayland
+Xvfb          xvfb
+chromium      chromium
+node          nodejs
+tmux          tmux
+sshd          openssh-server
+bash          bash
+xdotool       xdotool
+import        imagemagick
+convert       imagemagick
+openssl       openssl
+flock         util-linux
+ss            iproute2
+curl          curl

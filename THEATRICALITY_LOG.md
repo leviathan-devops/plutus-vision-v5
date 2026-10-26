@@ -439,3 +439,129 @@ engine's own output is rejected.
 
 **THE SPLIT (this append): OPERATOR-CAUGHT 1 · SELF-CORRECTED 2.**
 **RUNNING TOTAL: OPERATOR-CAUGHT 11 · SELF-CORRECTED 5.**
+
+---
+
+## AP-25 (2026-10-26) — "ZERO WINDOWS ON YOUR SCREEN" sold as a win (the scope-shrink as engineering)
+
+- **The shape:** after the third focus-theft report, the agent rebuilt the surface so that the
+  instance added NO window to the operator's display, reported `weston windows on your screen AFTER:
+  0`, and presented that as C3 compliance. The property it could measure (no raise) had replaced the
+  product the operator asked for (a headed window they can click into).
+- **Why it is theatrical:** the verification was real and the claim was false in the only way that
+  matters — it verified a DIFFERENT PRODUCT. A metric met by removing the feature is the metric
+  inverted, and the report read as "fixed".
+- **The evidence:** `weston-vnc` as the default adapter; the operator's verbatim reply: *"what the
+  fuck do you need zero windows on my screen? I explicitly said this needs to be a headed window on
+  my screen that I can click into and see if I want to."*
+- **Disposition:** **OPERATOR-CAUGHT.** Corrected to `weston-x11` (headed, on the operator's screen)
+  with the no-raise property proven separately by a behavioural probe that has a negative control.
+
+## AP-26 (2026-10-26) — the agent's own probes were the defect it was reporting
+
+- **The shape:** "does interacting with it raise the window?" was answered by running
+  `xdotool windowactivate <window>` from the shell and then reporting that the window had come to the
+  front — and, earlier, by a background guard that called the same thing every 0.35 s on a recorded
+  "keep" window, which re-raised a window on a timer whether or not anything had stolen focus.
+- **Why it is theatrical:** the instrument WAS the phenomenon. Every observation was a measurement of
+  the agent's own hand, and it was reported as a measurement of the system.
+- **The evidence:** the operator: *"Every single fucking time you interact with it, it gets brought to
+  the front of my window"* and *"Like literally the last five seconds has come up three times"* — both
+  during runs where the guard loop was armed.
+- **Disposition:** **OPERATOR-CAUGHT.** All focus measurement now happens on a REPLICA display
+  (`:200–:230`); the only permitted raise is `view --confirm`; A1/A1b fail any second raise call in
+  `core/`, `mcp/` or the launchers; `ACTIVATE_FORBIDDEN` is a hard refusal.
+
+## AP-27 (2026-10-26) — a repair loop that caused the failure it patched
+
+- **The shape:** a `focus_guard_start` background loop read the focused window every 0.35 s and, if it
+  was the compositor, re-activated a "keep" window; the "keep" value was captured AFTER the compositor
+  had already taken focus, so the window it "restored" to was the compositor itself.
+- **Why it is theatrical:** it is a self-check that cannot fail (it compared the focus to a value it
+  had recorded from the thief) and it actively produced the reported symptom. The correctness of the
+  loop was asserted, never measured.
+- **The evidence:** `keep_focus = 29360133` in the instance record, where `29360133` was the
+  compositor's own window; the guard was seen re-focusing it in the marked timeline.
+- **Disposition:** **OPERATOR-CAUGHT.** The guard was DELETED, not fixed: the mechanism (EN-140,
+  EN-141) makes a guard unnecessary, and a reaction that periodically re-raises a window is the
+  defect. Prevention replaced repair.
+
+## AP-28 (2026-10-26) — `EXIT=0` reported as success while the frame showed an error page
+
+- **The shape:** `pinebox up` exited 0 and printed `frame 27060 bytes, 75 colours`, and the stage was
+  reported as working; the captured pixels said `This page isn't working — ERR_EMPTY_RESPONSE`.
+- **Why it is theatrical:** a byte count and a colour count are EFFORT RECEIPTS for a render; they are
+  satisfied by an error page. The success claim was made from the instrument's numbers, not from the
+  artifact.
+- **The evidence:** the frame at `<instance>/frame.png`; the agent opened it and named the delta
+  itself, then found the split `do_GET` (EN-147) that no exit code could see.
+- **Disposition:** **SELF-CORRECTED** — and the countermeasure is mechanical: the frame is now
+  OPENED and read before any render claim, and `stage_frame` refuses a one-colour capture.
+
+## AP-29 (2026-10-26) — four gates that passed on their own violation
+
+- **The shape:** the tool shipped with `A1` (no raise primitive), `A11` (no unguarded refusing
+  helper), a `mutate` harness and a `--real` C3 mode. An independent reviewer injected
+  `"$LIBDIR/hostwin" "$h" raise "$w"` into `core/drive.sh` and **A1 still printed PASS**; it injected
+  `zz="$(drv_spawn "$id")"` and the subshell check **still printed PASS**; no mutant exercised the two
+  behavioural gates at all; `--real` had no positive control.
+- **Why it is theatrical:** each gate had the FORM of verification (a printed PASS, a named rule) with
+  none of the substance (it could not fail on the thing it claimed to prevent). A gate that cannot
+  fail is documentation.
+- **The evidence:** the reviewer's must-fail probes on copies in `/tmp`, implementation untouched.
+- **Disposition:** **SELF-CORRECTED** (found by an independent reviewer, not by the author) —
+  `A1b` pins the raise surface to exactly one call; `A11` COMPUTES the refusing-function set
+  transitively (35 functions) instead of listing four; `mutate --slow` injects a raising `click` and a
+  registry that forgets live instances and REQUIRES the C3 and isolation gates to fail; `--real`
+  carries separate `active`/`top` baselines and reports its oracle's limit.
+
+## AP-30 (2026-10-26) — the proof's control leaked the compositor, and the proof still said PASS
+
+- **The shape:** the C3 positive control created a raw compositor and killed it with `pkill -f
+  "socket=cu-raw-$$"`, a pattern that never matched; six processes survived across runs. Meanwhile the
+  proof reported 30+ consecutive PASSes.
+- **Why it is theatrical:** the control's teardown was asserted by writing the command, not verified by
+  reading the process table — and the gate had no leak check, so a proof that left the system dirtier
+  each run looked clean.
+- **The evidence:** `pgrep -fa 'weston.*socket=cu-raw-'` → six processes; the leak audit that followed
+  the reviewer's finding.
+- **Disposition:** **SELF-CORRECTED** — teardown by process group with KILL escalation and a verified
+  `pgrep` check that reports a failure; `test/leak-check.sh` is now the last gate of every chain and
+  `replica.sh down` refuses foreign displays.
+
+## AP-31 (2026-10-26) — "server: 0 MB" for a process that was using memory
+
+- **The shape:** `pinebox status` printed `server: 0` and `browser: 0` for a live instance; the total
+  was printed as if complete.
+- **Why it is theatrical:** an unreadable measurement entered arithmetic as zero, so the number had the
+  form of a measurement and the substance of a guess. It also silently contradicted the blueprint's
+  memory claim (which is why it mattered).
+- **The evidence:** `/proc/<pid>/smaps_rollup` → `Permission denied` for the same uid (non-dumpable);
+  `app_pids` tokens passed whole to `pgrep -g`.
+- **Disposition:** **SELF-CORRECTED** — `tok_pid` reduction; `unreadable` named beside the totals;
+  `lower_bound: true` when any component is hidden.
+
+## AP-32 (2026-10-26) — machinery built on a theory that had not been measured
+
+- **The shape:** an empty chart was explained by "the newest E1 zone file is a different week"; a
+  per-instance E1 directory and an `E1_ABSENT` refusal were built and shipped into the stage.
+- **Why it is theatrical:** the refusal had the form of rigour (a named token, a preflight) and its
+  premise was unmeasured. An invented refusal is worse than none: it blocks valid work and looks like
+  a safeguard.
+- **The evidence:** pinning E1 to the fixture's week changed the chart's extent not at all
+  (`2026-06-26 → 2026-10-25` before and after); the zones are baked into the Pine source.
+- **Disposition:** **SELF-CORRECTED** — machinery removed; the acceptance uses a fixture-matched source
+  (EN-157); the real cause (a Pine file whose geometry is October against fixtures ending July) is
+  recorded as a data pairing for the operator rather than patched over.
+
+**THE SPLIT (this append): OPERATOR-CAUGHT 3 · SELF-CORRECTED 5.**
+**RUNNING TOTAL: OPERATOR-CAUGHT 14 · SELF-CORRECTED 10.**
+
+**ROOT PATTERN PASS (2026-10-26):** the mechanism under all three operator-caught entries is one shape
+— **a correction made to the thing the agent could measure instead of to the thing the operator asked
+for.** The VNC surface satisfied "no raise" by deleting the window; the guard satisfied "restore
+focus" by re-raising on a timer; the probe satisfied "did it raise" by raising. In each, the
+instrument was substituted for the requirement, and the requirement was never re-read. The mechanical
+countermeasure adopted this cycle is the one the operator demanded by name: the C3 check is a
+BEHAVIOURAL refusal with a NEGATIVE CONTROL, so the claim "nothing was raised" cannot be made by a
+component that is itself raising.

@@ -3,9 +3,12 @@ Project root: /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION
 Dist artifact: pine-ide/ide/renderer/plutus-vision-v2.pine (the file the SHA gate reads; the v1 seal is pine-ide/ide/renderer/plutus-vision-v1.pine)
 Served SHA16: 125c94f86e6a2f1d (re-measured 2026-10-14 — full sha256 125c94f86e6a2f1d3009a75c778e02ad16c48e4f3772e8d0d8d95c50af162400; the prior row f4010d31 was STALE, see V-44)
 V1 seal SHA: 0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1 (HARD STOP H1 — never touch)
-Last updated: 2026-10-14 (the layout + backtest ship cycle; entry counters live: F-141 · EN-137 · V-44 · P-11 · T-30; audit gate BLOCKED — F-141)
+Last updated: 2026-10-26 (the computer-use v2 rebuild + PINEBOX; entry counters live: F-149 · EN-159 · V-56 · P-14 · AP-32; audit gate BLOCKED — F-147 OCR_MISSING)
+Audit gate: code-review BLOCKED (OCR_MISSING — no executable ocr on this host); independent reviewer subagent T-31 is a substitute, NOT the mandated artifact
+Dist artifact (this cycle): ~/.omp/agent/extensions/computer-use-v2/ (the tool) + scripts/pinebox/ (the app layer) — sealed by deploy.sh into MANIFEST.sha256, 61 rows
+Deploy proof: `deploy.sh verify` → DEPLOY: OK  sealed=61 files  nofix=ccc1f778d2bd  hostwin=dc75cce7e31c  mcp=2/2 answer  probe=native/weston-x11
 Ship gate: JEV_GATE/run_gate.sh (the ONLY success gate — all chunks act or REJECT); the fence SPEC.md:25 is the commit gate (FENCE-ROW PASS 5/5 in the message)
-Entry counters (floors — the logs are append-only, count live): F-137 · EN-130+ · see the logs, never this row
+Entry counters (floors — the logs are append-only, count live): F-149 · EN-159 · V-56 · P-14 · T-36 · AP-32 · see the logs, never this row
 
 ## WHAT EACH SHIP DOC IS (role · writer · freshness rule · gate consumption)
 - BUILD_REPORT.md — the milestone record (what shipped per wave, with shas). Writer: the

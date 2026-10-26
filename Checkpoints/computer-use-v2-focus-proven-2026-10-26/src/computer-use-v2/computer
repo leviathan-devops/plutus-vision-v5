@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# computer - the CLI. A launcher: every action lives in core/cli.sh.
+exec bash "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)/core/cli.sh" "$@"

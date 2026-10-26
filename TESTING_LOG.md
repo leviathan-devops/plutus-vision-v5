@@ -2067,3 +2067,158 @@ forecast direction (rise to the resistance, fall to the support) matches.
 - **The verdict: PASS** — the tab mounts and the full series renders.
 - **The artifacts:** `/tmp/bt1.png` (the mounted room), `/tmp/bt6.png` (the full May 28 → Jul 2
   series under `ALL`).
+
+---
+
+## TEST PLAN ENTRY — 2026-10-26 — THE REBUILT COMPUTER-USE v2 (C3, isolation, gates)
+
+### CONTAINER (the replica-display rig — the isolation that makes the measurement possible)
+- **What:** every behavioural property of the tool, measured on a display that is NOT the operator's.
+- **How:** `test/replica.sh up` = a real X framebuffer + mutter 46.2 as its window manager on a fresh
+  display in `:200–:230`; `replica.sh operator` = a focused stand-in window; the oracle is the window
+  manager's own `_NET_ACTIVE_WINDOW` and the top of `_NET_CLIENT_LIST_STACKING`, read through
+  `helpers/hostwin`.
+- **PASS criteria:** the rig refuses `RIG_DIRTY` unless exactly the operator window is present; a gate
+  that reports PASS must FAIL on its own injected defect (`mutate`).
+- **FAIL criteria:** any measurement taken on a dirty rig, or on a display outside the range.
+- **Status:** PASSED
+
+### SCRIPT (the gate chain)
+- **What:** `test/run.sh --slow` — cmp-guard, strings (A1/A1b/A2/A3/A6/A7/A8/A10/A11), mutate (fast +
+  the two behavioural mutants), the scoped-store battery, mcp, c3-no-raise, isolation, leak-check.
+- **PASS criteria:** every gate exits 0 AND every mutant makes its gate exit non-zero with the named
+  token.
+- **FAIL criteria:** any gate exit != 0; any mutant that does not fire; any chain that leaves a process
+  or display behind.
+- **Status:** PASSED
+
+### HOST (the operator's real display)
+- **What:** `test/c3-no-raise.sh --real` and one full `pinebox up`/`shot`/`click`/`load`/`down` cycle on
+  `:1`, plus `deploy.sh verify`.
+- **PASS criteria:** `active` and `top` identical before/after every step (`active=0x0` — a native
+  Wayland window holds the focus — and `top` = the topmost X client), the frame OPENED and read, and
+  `DEPLOY: OK`.
+- **FAIL criteria:** any change in `active`/`top`; a frame that is blank or an error page.
+- **Status:** PASSED
+
+---
+
+## TEST RESULT — 2026-10-26 — T-31 · the independent review (the audit substitute)
+
+### SCRIPT
+- **The run:** a `reviewer` subagent, read-only, forbidden to open a window or touch `:1`, asked to
+  audit `~/.omp/agent/extensions/computer-use-v2/` against `DESIGN_BLUEPRINT_CU_v2.md` and to prove
+  each finding by `file:line`.
+- **The raw output (its verdict, condensed):** 4 blueprint deviations (the `view` row, the runtime
+  plane never consulted, V1's "0 deleted L5 lines" unevaluable, `--id` defaulting to 0) and 7 runtime
+  defects — among them `host_display()` read only from env (so the C3 guard reported `n/a` exactly
+  where MCP/extension calls originate), `app_pids` read-modify-write outside the lock, `kill_group`
+  with no identity check, no path back from a dead CDP port, an empty `` `colours` `` producing invalid
+  JSON, and no `trap` on either compositor adapter.
+- **It also proved two of the author's gates BLIND:** an injected `"$LIBDIR/hostwin" "$h" raise "$w"`
+  left `A1` printing PASS, and an injected `zz="$(drv_spawn "$id")"` left the subshell check printing
+  PASS.
+- **The verdict:** PASS as an audit (it found real defects); FAIL as a gate, because four of its own
+  detectors could not fire.
+- **The artifacts:** the full report is at `agent://CuV2Reviewer` in that session; every finding was
+  dispositioned in the following commit (12 fixed, 2 restated as spec amendments).
+
+## TEST RESULT — 2026-10-26 — T-32 · the computer-use gate chain
+
+### SCRIPT
+- **The run:** `bash ~/.omp/agent/extensions/computer-use-v2/test/run.sh --slow`
+- **The raw output:** `cmp-guard PASS · strings PASS · mutate PASS · state battery PASS (32 pass, 0
+  fail, 68 expect() calls) · mcp PASS · c3-no-raise PASS · isolation PASS · mutate --slow PASS ·
+  leak-check PASS` → `9 gates · 0 failed`, exit 0.
+- **The behavioural mutants (the proof the gates bite):** a `click` that raises the instance's window
+  makes `FAIL click (X path)`; a registry where `inst_live()` always returns false makes
+  `FAIL sibling killed` (13 pass / 3 fail). Both fire, both name the right check.
+- **The verdict:** PASS.
+- **The artifacts:** `test/leak-check.sh` exit 0 at the end of the chain; `DEPLOY: OK` (T-36).
+
+## TEST RESULT — 2026-10-26 — T-33 · the PINEBOX gate chain
+
+### SCRIPT
+- **The run:** `bash PLUTUS_VISION/scripts/pinebox/test/run.sh --full`
+- **The raw output:** `strings (B1 B2 B4 B12 B13) PASS · mutate PASS · inject (P0 P1 B3 B10) PASS · mcp
+  (P11 P12) PASS · multi N=2 PASS · multi N=7 PASS · leak-check PASS` → `7 gates · 0 failed`, exit 0.
+- **The seven-instance run (P9), measured lines:** 7 `up` with the operator's focus and stack top
+  unchanged after each; `0 shared ports: 35 port assignments, 35 distinct`; `7 instances on 7 distinct
+  display slots`; `exactly 7 compositors`; `the operator's display holds 7 compositor windows + the
+  operator's own`; `up --id 0 REFUSED PORT_TAKEN` (the operator's own `pv-server` holds the canonical
+  port); `down --id 1` left instances 2..7 serving; chrome count flat across 3 loads; 46 checks,
+  0 failed.
+- **The B10 assertions (the isolation proof):** each instance's SERVED bytes name its own `apiBase`,
+  `pineStation` and `PlutusPineShellConfig.railBases`, and no default (id 0) port appears anywhere.
+- **The verdict:** PASS.
+- **The artifacts:** `design/DESIGN_BLUEPRINT_PINEBOX.md` §19 amendments; commit `4de2be2`.
+
+## TEST RESULT — 2026-10-26 — T-34 · C3 on the operator's real desktop
+
+### HOST
+- **The run:** `bash test/c3-no-raise.sh --real` (display `:1`), then one `pinebox up --id 1 --pine
+  test/fixtures/ema-ribbon.pine` with `shot` / `click` / `load` / `status` / `down`.
+- **The raw output:** `26 PASS · 0 FAIL`; `BEFORE: active=0x0 top=0xa0000a x-clients=1` and `AFTER:`
+  the same, and the same again after every verb of the PINEBOX cycle; teardown left `active=0x0
+  top=0xa0000a x-clients=1` and `0` leftover compositors.
+- **The frame:** `frame.png` 114 750 bytes, 146 colours, OPENED — the Pine IDE with DXY 1H candles, both
+  EMAs and 4 crossover triangles, status row `FIXTURE · DXY · 1H · 508 bars · rail : 9764 · station UP`.
+- **The oracle's stated limit:** it reads the X focus and the X stack; it cannot read the focus of a
+  Wayland-native window (`active=0x0` is that case).
+- **The verdict:** PASS, with the limit recorded rather than papered over.
+- **The artifacts:** `/tmp/real-pinebox.png`; the checkpoint `visual/runtime-state.png` (unchanged repo
+  bytes) carries the replica frame; the real-desktop frame is cited here by path and size.
+
+## TEST RESULT — 2026-10-26 — T-35 · the release-order rate (the intermittent, measured)
+
+### CONTAINER
+- **The run:** 60 consecutive `computer shell up --id 1` / `shell down --id 1` cycles on a fresh
+  replica, with the C3 sampler recording `active`/`top` every 30 ms for the WHOLE of each `up`.
+- **The raw output:** `60 trials of the NEW sequence: ok=60 FOCUS_STOLEN=0 other=0`, against
+  `3 of 24`, `5 of 45` and `1 of 40` (~11%) for the previous lower-then-release order.
+- **The verdict:** PASS. If the true rate were still 11%, P(0 in 60) ≈ 0.001.
+- **The artifacts:** `<instance>/c3-up.timeline` (kept per run under `C3_SAMPLES_KEEP`); the failing-run
+  timelines show `+547 ms stack=operator,compositor` (EN-141).
+
+## TEST RESULT — 2026-10-26 — T-36 · the deploy
+
+### HOST
+- **The run:** `~/.omp/agent/extensions/computer-use-v2/deploy.sh seal && deploy.sh install`.
+- **The raw output:** `DEPLOY: OK  sealed=61 files  nofocus=ccc1f778d2bd  hostwin=dc75cce7e31c  mcp=2/2
+  answer  probe=native/weston-x11`.
+- **The must-fail probes (each refusal on its own defect, then restored byte-exact):** an edited sealed
+  file → `DEPLOY_DRIFT`; an unsealed file present → `DEPLOY_DRIFT`; a removed helper link →
+  `HELPER_STALE`; an `mcp.json` without the two servers → `MCP_NOT_REGISTERED`; a registration pointing
+  at `/nonexistent` → `MCP_NOT_REGISTERED`; then the real tree → `DEPLOY: OK`.
+- **The verdict:** PASS.
+- **The artifacts:** `MANIFEST.sha256` (61 rows, committed with the tool); `~/.omp/agent` commit
+  `5263655`.
+
+---
+
+## TEST PLAN ENTRY — 2026-10-26 — THE CODE-AUDIT GATE (this cycle)
+
+### SCRIPT
+- **What:** the mandated ship-docs input: a `code-review` run with structured JSON and a verdict line.
+- **How:** `code-review action=scan` over `core/`, `helpers/`, `index.ts`, `mcp/` and
+  `scripts/pinebox/`, excluding `scoped/` and `test/`.
+- **PASS criteria:** `AUDIT GATE: PASS (0 critical/high)` with a `session_id`, the file scope, the
+  per-severity counts and a JSON path under `artifacts/` or `/tmp/sg-ocr-*.json`.
+- **FAIL criteria:** any critical/high finding.
+- **Status:** BLOCKED
+
+## TEST RESULT — 2026-10-26 — the code-audit gate
+
+### SCRIPT
+- **The run:** `code-review action=scan scanPath=<core,helpers,index.ts,mcp,scripts/pinebox>` then
+  `code-review action=health`.
+- **The raw output:** `OCR_MISSING: the binary is not executable at
+  /home/leviathan/.npm-global/bin/ocr` on both. No `sg-ocr-*.json` exists for this build.
+- **The verdict:** **BLOCKED** — not PASS, not FAIL. No artifact, so no verdict. Per the degraded-run
+  law every ship-ready / production-grade claim for this build is withheld.
+- **AUDIT GATE: BLOCKED (OCR_MISSING — the review lane has no executable binary on this host)**
+- **The partial substitute:** the independent `reviewer` subagent run (T-31) — which is an adversarial
+  code review, and found 12 real defects, but is NOT the mandated artifact and is not reported as one.
+- **The retry condition:** install/repair `ocr` (or repoint the lane at a keyed provider), then re-run
+  the scan and accept only a verdict line carrying a session id, a non-empty file scope and a
+  non-trivial duration.

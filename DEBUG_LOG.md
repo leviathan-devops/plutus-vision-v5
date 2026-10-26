@@ -3107,3 +3107,349 @@ DXY points because DXY is its worked example; the indicator is 4-pair.)
   predicate is the spec — read it, do not theorise about it. I spent three rounds on hypotheses
   (a SHA16 comparison, markdown bold, backtick spans) and one line of `grep -n "W-9"` would have
   ended all of them. Every failed round was fixed in the INSTRUMENT, never in the evidence.
+
+---
+
+# EN-140 — THE COMPOSITOR FOCUS THEFT: the root cause, measured (2026-10-26)
+
+- **THE FINDING:** every time a computer-use instance came up, the operator's focused window
+  changed and the compositor window came to the front of their screen. Reported repeatedly and
+  verbatim: "it's still fucking gripping focus and forcing it to the top of my screen every time
+  you use it", then "every single fucking time you interact with it, it gets brought to the front
+  of my window". The first build had treated this as a cleanup problem (kill the leaks) and then
+  as a guard problem (a poll loop that re-focused the operator's window). Both were reactions.
+- **THE ROOT CAUSE:** `libweston-13/x11-backend.so` imports `xcb_create_window` and
+  `xcb_map_window` directly and references **none** of the atoms it would need to declare either a
+  user-time or a placement: `strings /usr/lib/x86_64-linux-gnu/libweston-13/x11-backend.so |
+  grep -E '^_NET_'` returns 0 of the 11 such atoms. The host window manager therefore sees a
+  window with **no `_NET_WM_USER_TIME`** at map time and applies its default focus-on-map policy.
+  The compositor window is not "stealing" focus; it is asking for it in the only way a window
+  with those properties can be understood, and it is being given what it asked for.
+- **THE MEASUREMENT (a paired A/B, each case on its OWN fresh replica display — real X framebuffer
+  plus mutter 46.2 as its window manager — with an operator stand-in focused and exactly one
+  client present before the compositor starts):**
+  - **A, no interposer:** focus STOLEN (`6291459 → 29360133`), compositor on TOP of
+    `_NET_CLIENT_LIST_STACKING`, `_NET_WM_USER_TIME` reports `not found`.
+  - **B, `nofocus.so`:** focus KEPT on the operator, `_NET_WM_USER_TIME = 0`.
+  - and with focus fixed, the window **still covered the operator** (stack top = the compositor),
+    so placement needed its own hint: `_NET_WM_STATE = [BELOW]` set before the map.
+- **THE FIX:** `helpers/nofocus.c` — an `LD_PRELOAD` interposer on `xcb_map_window` that sets both
+  EWMH hints on the SAME connection immediately before the map request, which is the moment the
+  window manager reads them. The adapter then releases BELOW so a human can still click the window
+  forward, and it VERIFIES the result on the window manager's own stack rather than trusting the
+  request.
+- **THE VERIFICATION:** `test/c3-no-raise.sh` on a replica = 32 checks, 0 failed, with three
+  controls (negative = unchanged; positive raw compositor = STOLEN; positive `view` = RAISED).
+  `test/c3-no-raise.sh --real` on the operator's own desktop = 26 checks, 0 failed, before ==
+  after (`active=0x0` — a native Wayland window holds the focus — and `top=0xa0000a`).
+- **THE LESSON:** a window manager is not being adversarial when it focuses a new window; it is
+  reading properties. When a claim like "C3 yes" is written into a design table, it is a
+  PREDICTION until a probe reads the window manager's own record. The first build asserted C3 and
+  never proved it, which is why it shipped a focus thief.
+
+# EN-141 — the release order: why the fix failed 11% of the time, and the one-flush verb
+
+- **THE FINDING:** after EN-140's fix, `up` still ended with the compositor on top of the operator
+  in **3 of 24**, then **5 of 45**, then **1 of 40** runs (~11%) — refused correctly by the C3
+  check, but intermittent, which is worse than deterministic: a single green run proves nothing.
+- **THE ROOT CAUSE:** a marked timeline (`c3_mark` + `C3_SAMPLE_DEBUG=1`, kept as
+  `<instance>/c3-up.timeline`) of a failing run showed the sequence in milliseconds:
+  `+74 ms stack=compositor,operator` (mapped at the BOTTOM — BELOW worked) → `+218 ms lower` (no
+  change; already the bottom) → `+522 ms below-off` → **`+547 ms stack=operator,compositor`**.
+  Leaving the BELOW layer drops the window at the **TOP** of the normal layer, and a `lower`
+  issued BEFORE the release is a **no-op** because the window is already at the bottom of its
+  current layer. The release was the raise.
+- **THE FIX:** `hostwin release` sends `_NET_WM_STATE` remove-BELOW and `_NET_RESTACK_WINDOW`
+  lower in **ONE flush**, so the window manager handles both in a single dispatch and draws no
+  frame between "released" and "lowered"; the adapter then verifies on the WM stack with a bounded
+  correction (8 tries, 150 ms apart) and refuses `WINDOW_RELEASE_FAILED` if BELOW survives.
+- **THE VERIFICATION:** 60 consecutive `up`/`down` cycles on a fresh replica with a 30 ms sampler
+  over the whole of each `up` (any single sample with the compositor above the operator counts as
+  a failure): **0 failures**, against 5/45 and 3/24 before. The sampler is the instrument: a
+  before/after pair cannot see a raise that is undone in between.
+- **THE LESSON:** when a fix is intermittent, the next move is a TIMELINE, not a theory. Three
+  theories were wrong (pointer position, window size, pid reuse); the timeline named the exact
+  step in one run. And: "reduce the window to its own layer" is a RAISE on this window manager —
+  the operation that looks like cleanup is the operation that steals.
+
+# EN-142 — `/dev/tcp` was both inverted and unreliable; `ss` is the predicate
+
+- **THE FINDING:** a service never started and its readiness check passed instantly, so the
+  compile probe failed against nothing (`STATION_WILL_NOT_COMPILE`, `station.log: MISSING`).
+- **THE ROOT CAUSE:** `listening() { ! (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }` — the `!`
+  inverts it, so it returns TRUE when the port is CLOSED. `if ! listening` therefore never started
+  the service. Worse, when the `!` was removed the function still reported a REAL live listener
+  (a `python3 -m http.server` bound to `:45999`, `ss` confirming one LISTEN row) as closed —
+  `/dev/tcp` is not a reliable probe in this environment at all.
+- **THE FIX:** `core/lib.sh:155` `port_listening()` / `port_free()` read `ss -ltnH` —
+  `ss -ltnH "sport = :$1" | grep -q .` — and every caller uses it.
+- **THE VERIFICATION:** both directions on a live listener: OPEN `:45999` → `listening` (correct);
+  CLOSED `:45998` → `not-listening` (correct); and the old form shown failing the closed case.
+- **THE LESSON:** a predicate needs a KNOWN-POSITIVE control before it is trusted. The inverted
+  form passed its own eye-test because both directions "looked like shell".
+
+# EN-143 — a LISTEN row with an invisible owner is a HELD port, not a draining socket
+
+- **THE FINDING:** `pb_claim` returned success while a stranger's `python3 -m http.server` held
+  `:9751`; `up` then spent 60 s failing `STATION_WILL_NOT_COMPILE` instead of refusing in the
+  first second.
+- **THE ROOT CAUSE:** `ss -ltnpH`, `fuser` and `lsof` all failed to name that listener's owner (a
+  non-dumpable process: `/proc/<pid>/smaps_rollup` returns `Permission denied` for the same uid —
+  the identical root cause as EN-147). An earlier version of the predicate treated an ownerless
+  LISTEN row as "a socket the kernel is draining after a kill" — wrong twice over: a socket in
+  LISTEN state cannot be draining, and the exemption made a stranger's server undetectable.
+- **THE FIX:** the predicate is the LISTEN row, not its owner (`core/lib.sh:155`), and
+  `pb_port_holder` reports `unknown (owner not visible)` — which `pb_claim` refuses on, since an
+  invisible owner can never be proven to be ours.
+- **THE VERIFICATION:** with the stranger listening: `pb_claim rc=1` naming `PORT_TAKEN:9751`; with
+  every port free: `rc=0` and silent.
+- **THE LESSON:** "owner not visible" is not "owner absent". A measurement you cannot take is a
+  reason to refuse, never a reason to assume the benign case.
+
+# EN-144 — a `refuse` inside `$(...)` exits only the subshell
+
+- **THE FINDING:** `computer click --id 9` printed THREE refusals and continued driving with empty
+  values; `terminal read` printed `{"ok":true,"text":""}` for a session that does not exist.
+- **THE ROOT CAUSE:** `refuse` calls `exit 1`, which ends the SUBSHELL created by `$( )`, not the
+  caller. Every `$(slot_of "$id")` without `|| exit $?` therefore produced an empty value and the
+  verb carried on with it.
+- **THE FIX:** 10 sites in `core/drive.sh` now propagate (`|| exit $?`), the terminal read captures
+  before printing, and `test/subshell-exit.sh` COMPUTES the set of refusing functions transitively
+  (35 of them) instead of listing four — because the hand-written list had missed exactly the
+  helper a reviewer used to prove the gate blind.
+- **THE VERIFICATION:** the predicate exits 0 on the tree and exits 1 naming `drive.sh` for the
+  reviewer's own `zz="$(drv_spawn "$id")"` mutant; `click --id 9` now prints one refusal.
+- **THE LESSON:** a gate enumerating four names is a gate that will be bypassed by the fifth. Compute
+  the property; do not list instances of it.
+
+# EN-145 — `cmd | grep -q` under `pipefail` reports SIGPIPE on the writer
+
+- **THE FINDING:** `activate is REFUSED` PASSED while `...with the token ACTIVATE_FORBIDDEN`
+  FAILED — on the same command, which demonstrably does print the token.
+- **THE ROOT CAUSE:** `set -o pipefail` plus `grep -q` (which exits at the first match) makes the
+  WRITER die of SIGPIPE, so the pipeline's status is non-zero even though the pattern matched.
+- **THE FIX:** capture first, then match in the shell: `out="$(cmd 2>&1)"; case "$out" in *TOKEN*)`.
+- **THE VERIFICATION:** `c3-no-raise.sh` 32/0 including that assertion.
+- **THE LESSON:** a test that pipes into `grep -q` under `pipefail` reports the writer's fate, not
+  the match. It fails in the direction that looks like a real defect — the most expensive direction.
+
+# EN-146 — PSS "0 MB" for a live server: an unreadable measurement reported as a value
+
+- **THE FINDING:** `pinebox status` reported `server: 0 MB` and `browser: 0 MB` for a running
+  instance (712 MB measured end-to-end).
+- **THE ROOT CAUSE:** two distinct defects. (1) The browser's recorded pids are identity tokens
+  (`pid:starttime`), and `pb_pss_group` passed the whole token to `pgrep -g`. (2) The pv-server
+  python is non-dumpable, so `/proc/<pid>/smaps_rollup` is `Permission denied` — the awk produced
+  an empty string and the arithmetic counted 0, which reads as "uses no memory".
+- **THE FIX:** tokens are reduced with `tok_pid`; `pb_pss_group` returns `"<kB> <unreadable-pids>"`
+  and `status` reports `unreadable` plus `lower_bound: true` instead of folding a hidden process
+  into the sum as 0.
+- **THE VERIFICATION:** `status --id 1` now prints `browser: 572, compositor: 74, station: 36,
+  rail: 30, instance: 712, unreadable: "server pid(s) 3610609"`.
+- **THE LESSON:** a missing measurement must never enter arithmetic as zero. Name it, mark the total
+  as a floor, and let the reader see which component is unknown.
+
+# EN-147 — the server patch that split `do_GET`, and the page that hung on ERR_EMPTY_RESPONSE
+
+- **THE FINDING:** after adding a serve-time hook to `scripts/pv-server.py`, `curl /pine.html`
+  returned `http=000 bytes=0` (a hang) and the browser showed
+  `This page isn't working — 127.0.0.1 didn't send any data — ERR_EMPTY_RESPONSE`.
+- **THE ROOT CAUSE:** the hook was inserted with a method definition (`def _pinebox_page`) in the
+  MIDDLE of `do_GET`. A `def` at class indent ends the enclosing method, so `do_GET` lost its
+  final `return super().do_GET()`; the request fell off the end of the handler and no response was
+  ever written. The server was listening and alive the whole time, which is why `ss` said "up".
+- **THE FIX:** restore from git, then insert the GUARD inside `do_GET` immediately before its final
+  return, at the SAME indent, and place the method AFTER `do_GET` ends. Verified structurally with
+  `ast`: `Handler` has `do_GET` and `_pinebox_page`, and `do_GET` ends with `return super().do_GET()`.
+- **THE VERIFICATION:** pristine from git = `http=200 bytes=4424`; patched = `http=200` with
+  `"apiBase": "http://127.0.0.1:<this instance's server>"`; doctored page = `500 CONFIG_BLOCK_ABSENT`.
+- **THE LESSON:** a listening socket and a serving handler are different claims. The instrument that
+  settled this was `curl -w '%{http_code}'`, not `ss` — and a structural `ast` read is what proved
+  the method was intact, because the file still imported and still started.
+
+# EN-148 — `WAYLAND_DISPLAY` inherited into the instance: chrome maps no window at all
+
+- **THE FINDING:** `chrome opened no window on :3` while CDP answered and the log showed
+  `Message 2 rejected by interface blink.mojom.Widget` — the browser ran, the window never appeared.
+- **THE ROOT CAUSE:** this host is a Wayland session (`WAYLAND_DISPLAY=wayland-0`,
+  `XDG_SESSION_TYPE=wayland`). Inherited by chrome, it renders Wayland-native into the OPERATOR's
+  compositor instead of the instance's Xwayland, so nothing is mapped where the instance is looking.
+  The skill `computer-use-virtual-display` states this exact trap; the build had not applied it.
+- **THE FIX:** every app launch strips it and pins X11: `env -u WAYLAND_DISPLAY ... GDK_BACKEND=x11
+  QT_QPA_PLATFORM=xcb XDG_SESSION_TYPE=x11 MOZ_ENABLE_WAYLAND=0 ...` plus `--ozone-platform=x11`.
+- **THE VERIFICATION:** 0 windows on `:3` inherited; `4194307 127.0.0.1 1625x930` with the leak
+  stripped. PINEBOX stage 3 then refuses `WINDOW_NOT_MAPPED` when it recurs.
+- **THE LESSON:** a nested display inherits the parent's ENTIRE environment, including the pointer to
+  the parent's session. Any variable that names a display or a compositor must be either overridden
+  or stripped, and the check is "did a window appear on MY display", never "did the process start".
+
+# EN-149 — the page has TWO config globals, and the blueprint named only one
+
+- **THE FINDING:** `RUN_FAILED VIL_RAIL_DOWN — "no VIL rail answered on <the canonical rail>"` on an
+  instance whose OWN rail was up on its own port, while the status row read `rail : undefined`.
+- **THE ROOT CAUSE:** `pine-ide/ide/renderer/tabs/pineshell.js:103` reads
+  `var cfg = window.PlutusPineShellConfig || {}` and `:151` `railBases: cfg.railBases || undefined`.
+  `PlutusPineShellConfig` is read at three sites and **defined nowhere** in the renderer, so the
+  engine fell to `pine-ide/pine-ide/gate.mjs:21` `DEFAULT_RAIL_BASES` — the CANONICAL rail. Every
+  instance would have used instance 0's rail: the exact cross-contamination the design forbids.
+  The injected `railBases` inside `dashboardConfig` was never read by that path.
+- **THE FIX:** `scripts/pinebox/inject.py` defines the SECOND global in the served bytes beside the
+  dashboardConfig rewrite (`window.PlutusPineShellConfig = {"railBases":[<this instance's rail>]}`),
+  leaving `readerUrl` unset because `pineshell.js:106` derives it from `railBases[0]`. B10 now
+  asserts BOTH globals in the served bytes, and `git diff HEAD -- pine-ide/` stays EMPTY.
+- **THE VERIFICATION:** the served page for instance 3 carries
+  `PlutusPineShellConfig = {"railBases": ["http://127.0.0.1:9784"]}` and the status row reads
+  `rail : 9784 · station UP`; a failing predicate ("does not name this instance's rail in
+  PlutusPineShellConfig") was demonstrated firing BEFORE the fix and silent after.
+- **THE LESSON:** a design document's "the only seam" is a hypothesis about code you did not write.
+  Find every read site of the config before declaring the seam closed — `grep -rn 'railBases'` would
+  have shown it in one command.
+
+# EN-150 — `pv-load.mjs` matched the CANONICAL page URL, so no instance had a tab
+
+- **THE FINDING:** `NO_PAGE: no pine.html tab on CDP :9222` even with the instance's CDP port passed
+  through the environment.
+- **THE ROOT CAUSE:** two hardcodings, not one. The port was hardcoded (patched first), and then the
+  PAGE MATCH was too: `t.url.includes(":9851/pine.html")`. With the port fixed, the tab still did
+  not match, because the instance's page lives on its own server port.
+- **THE FIX:** both come from the environment — `PV_CDP_PORT`, `PV_SERVER_PORT`, defaulting to the
+  original values so the canonical flow is unchanged; the match uses the server port.
+- **THE VERIFICATION:** load on instance 1 (`:9861` / CDP `:9232`) returns
+  `{"bars":508,"onChart":32,"counts":{"boxes":2,"labels":12,"lines":17,"table":1}}` and the page's own
+  status row reads `FIXTURE · DXY · 1H · 508 bars`.
+- **THE LESSON:** when parametrising a script, grep EVERY literal in it, not just the one that failed.
+  The second hardcoding turned a fixed bug into the same bug with a different message.
+
+# EN-151 — the C3 sampler's background loop held the command substitution open
+
+- **THE FINDING:** a verb wrapped in the C3 sampler never returned; the shell hung with no output.
+- **THE ROOT CAUSE:** `c3_sampler_start` is called inside `$(...)`. Its background loop inherited
+  that substitution's stdout, and a command substitution does not finish until every writer to the
+  pipe has closed — so the sampler kept the substitution open for as long as it ran.
+- **THE FIX:** the loop redirects to `/dev/null 2>&1` and appends its samples to a file; only the
+  pid and the file path are printed, so the substitution closes immediately.
+- **THE VERIFICATION:** `up` returns in ~19 s with a 32-line timeline kept at
+  `<instance>/c3-up.timeline`.
+- **THE LESSON:** a daemon started from inside a command substitution must not inherit its stdout.
+  This is the shell form of "a background process holding the terminal".
+
+# EN-152 — a pid is not an identity: `pid:starttime` tokens for every recorded process
+
+- **THE FINDING:** teardown could signal a pid that had already been reused by an unrelated process.
+  A reviewer named it: "a reused pid gets `kill -TERM "-$p"`".
+- **THE ROOT CAUSE:** every record stored a bare pid. Between a crash and a teardown, the kernel can
+  hand that number to anything.
+- **THE FIX:** `core/lib.sh` `pid_token` = `pid:<starttime>` (field 22 of `/proc/<pid>/stat`, which
+  never repeats for a pid); `tok_alive` compares BOTH; `surface_down` kills only a token that still
+  matches; `comp_tok` is recorded by every adapter; `inst_pid` prefers the token.
+- **THE VERIFICATION:** `tok_alive(self)` = yes; `tok_alive(pid:1)` = no (wrong start time);
+  `tok_alive(pid)` = no (a bare pid never matches).
+- **THE LESSON:** record identity, not a handle. The cheapest unforgeable identity on Linux is the
+  start time in `/proc/<pid>/stat`.
+
+# EN-153 — the detector fixtures contained the literals, so the detector fired on the fixtures
+
+- **THE FINDING:** immediately after adding `test/mutate.sh`, the real tree failed its OWN B2 and B4
+  detectors (`HARDCODED_PORT_OUTSIDE_BLOCK`, `RAISE_FORBIDDEN`) — with no defect in the product.
+- **THE ROOT CAUSE:** the mutant injects a literal (a base port number, `xdotool windowactivate`)
+  by writing it into a test script. That literal now EXISTS in the tree, and the detector greps the
+  tree. The test became the violation.
+- **THE FIX:** the fixtures build the literals at RUNTIME (`"X=$((9800 + 51))"`, `w=window;
+  echo "xdotool ${w}activate"`, `r=ra; echo "... ${r}ise"`), so the bytes are produced only in the
+  mutant copy; and `strings.sh` DERIVES the base ports from `ports.sh` itself
+  (`pb_ports_json 0 | jq -r ...`) instead of naming them.
+- **THE VERIFICATION:** `strings.sh` passes on the real tree AND every mutant still fires.
+- **THE LESSON:** a detector that scans a tree containing its own test fixtures must either exempt the
+  fixtures by artifact class or never contain the pattern itself. The first option hides a real
+  violation; the second is the one that keeps the gate honest.
+
+# EN-154 — `.gitignore` does not unstage: ignoring after `git add` changes nothing
+
+- **THE FINDING:** after adding eight ignore rules for the derived card trees, `git status` still
+  showed the same 1,606 documents staged, and the hook refused the identical set.
+- **THE ROOT CAUSE:** `.gitignore` affects only UNTRACKED paths. Those files were already in the
+  index from the earlier `git add`, and an index entry is not subject to the ignore rules.
+- **THE FIX:** `git reset` (unstage; the worktree is untouched), commit the ignore rules, then
+  re-run `git add` — which now honours them. 2,815 staged → 413.
+- **THE VERIFICATION:** "ignored paths staged (must be 0): 0".
+- **THE LESSON:** ignore-then-add is the order. An index is a snapshot of a decision already made;
+  changing the policy later does not retract it.
+
+# EN-155 — a `.gitignore` pattern with a mid-slash is anchored to its own directory
+
+- **THE FINDING:** `MASTER_CONTEXT/.omp/graph-intelligence/CHARTER.md` (48 lines) was staged and
+  refused, although `.omp/graph-intelligence/` was already in `.gitignore`.
+- **THE ROOT CAUSE:** git treats a pattern containing a separator anywhere but the END as relative to
+  the `.gitignore`'s own directory. `.omp/graph-intelligence/` therefore matched only `./.omp/...`,
+  never a nested copy.
+- **THE FIX:** `**/.omp/graph-intelligence/` and `**/.ua/`.
+- **THE VERIFICATION:** the canon group's hook run went from `REJECT(W-9): MASTER_CONTEXT/.omp/...`
+  to a passing run.
+- **THE LESSON:** read the pattern language, not the pattern's intent. `*.log` matches at any depth;
+  `a/b/` does not.
+
+# EN-156 — the C3 control leaked one compositor per run, and the replica range touched `:99`
+
+- **THE FINDING:** six `weston --backend=x11-backend.so --socket=cu-raw-*` processes were alive after
+  the C3 proof had passed 30+ times, and an unrelated agent's rig on `:99` had disappeared.
+- **THE ROOT CAUSE:** (1) The positive control killed its compositor with `pkill -f "socket=cu-raw-$$"`,
+  where `$$` inside the subshell did not expand to the value the socket was created with, so the
+  match never fired and the process survived — one leak per run, invisible because the gate reported
+  PASS. (2) My scratch teardown used `pkill -f 'Xvfb.real :9[0-9]'`, a pattern that also matched
+  another agent's `Xvfb.real :99` + fluxbox rig.
+- **THE FIX:** the control is torn down by PROCESS GROUP with KILL escalation and the teardown is
+  VERIFIED (`pgrep -g` empty), or it reports a failure; replicas are restricted to `:200–:230` with
+  `replica.sh down` refusing any other display by name (`REPLICA_FOREIGN`), and every chain now ends
+  with `test/leak-check.sh` (`RIG_LEFTOVER` / `LEAK`).
+- **THE VERIFICATION:** C3 proof 32/0 with "leaked raw compositors after the run: 0"; `replica.sh
+  down` refuses `:99`, `:1`, `:0`, `:693`, `:9333`, `:199`, `:231` and accepts `:2xx`.
+- **THE LESSON:** a control that leaks the thing it is testing is not a control. And a kill pattern
+  wide enough to be convenient is wide enough to hit a neighbour's process — kill what you recorded,
+  by group, and verify it is gone.
+
+# EN-157 — the E1 theory was wrong, and its machinery was removed rather than kept
+
+- **THE FINDING:** the loaded chart framed to a ONE-HOUR window at the last bar, showing nothing,
+  while the engine reported 508 bars and 32 drawn objects.
+- **THE FIRST THEORY (WRONG):** the server hands the page the NEWEST E1 zone file while the fixture
+  was a different week, so the zones were priced for another week and the extent stretched the view.
+  Machinery was built on it: a per-instance E1 directory (symlinks) and an `E1_ABSENT` refusal.
+- **THE MEASUREMENT THAT KILLED IT:** pinning E1 to the fixture's week changed NOTHING — same extent
+  (`2026-06-26 → 2026-10-25`), same one-hour window. The zones on this chart do not come from the E1
+  route at all; they are baked into the Pine SOURCE.
+- **THE ACTUAL CAUSE:** `plutus-vision-v2.pine` (mtime 2026-10-25) contains October timestamps
+  (`1791144000000` = 2026-10-04 … 2026-10-25) while every bar fixture in the repo ends 2026-07-21;
+  `pv-load.mjs:66-67` frames to the geometry's extent, which the chart clamps to a one-hour window
+  pinned at the last bar.
+- **THE FIX:** the machinery was REMOVED (E1 pin and `E1_ABSENT` deleted — an invented refusal blocks
+  weeks that would otherwise work), and the stage-5 acceptance uses a fixture-matched source
+  (`test/fixtures/ema-ribbon.pine`). The data pairing itself is recorded as the operator's to resolve.
+- **THE VERIFICATION:** with the matched source, 508 bars and candles + both EMAs + 4 triangles in the
+  OPENED frame, on a replica AND on the real desktop.
+- **THE LESSON:** a theory that produced a plausible-looking refusal was still a theory. The test that
+  killed it cost one `up` and one `evaluate`. Build the probe before the machinery.
+
+# EN-158 — a window search by TITLE finds nothing when the title is the URL
+
+- **THE FINDING:** `chrome opened no window` even though a window had mapped.
+- **THE ROOT CAUSE:** the search was `xdotool search --name 'Plutus'`; a chrome `--app=` window's
+  title is the page's title, which here was `127.0.0.1`. The profile also maps 10x10 helper windows
+  (`Chromium clipboard`), so "any window" is not the answer either.
+- **THE FIX:** find by GEOMETRY — the largest new window (width > 400) is the app's client area;
+  PINEBOX stage 3 uses the same rule and records `app_win`.
+- **THE VERIFICATION:** the window is found and driven (`4194307 127.0.0.1 1625x930`); `app.log`
+  shows the dispatched `ButtonPress … (100,100)` and the `KeyPress` events arriving.
+- **THE LESSON:** address a window by a property that is stable and yours (size, id, the core's own
+  spawn record), not by a string the application chooses.
+
+# EN-159 — readiness requiring HTTP 200 reported a live, listening service as DOWN
+
+- **THE FINDING:** the rail came up, listened on its port, answered, and the record said `rail: down`.
+- **THE ROOT CAUSE:** `pb_http_ok` demanded the exact status 200 on `GET /`; the rail's `/` is not a
+  200 route. The service was up; the predicate was wrong.
+- **THE FIX:** `pb_http_answers` — a service is up when it ANSWERS (any HTTP status); only the PAGE
+  requires a 200, because the page is the thing being served.
+- **THE VERIFICATION:** `status` and the page's own status row now read `rail : <port> · station UP`.
+- **THE LESSON:** "up" and "correct" are different predicates. Demanding the strong one where only the
+  weak one applies turns a healthy subsystem into a false failure — and a false failure is how a real
+  one later gets ignored.

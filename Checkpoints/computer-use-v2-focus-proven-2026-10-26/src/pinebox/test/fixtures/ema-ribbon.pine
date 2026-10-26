@@ -1,0 +1,9 @@
+//@version=5
+// THE PINE SHELL - a study smoke case (the station's own catalog script).
+// A source whose geometry lies INSIDE the bar fixture's window, so the loaded chart is
+// verifiably not blank: candles, two EMAs, and crossover markers.
+indicator("EMA Ribbon", overlay=true)
+e = ta.ema(close, 20)
+plot(e, "EMA 20", color=color.new(color.yellow, 0), linewidth=2)
+plot(ta.ema(close, 50), "EMA 50", color=color.new(color.blue, 0), linewidth=1)
+plotshape(ta.crossover(e, ta.ema(close, 50)), title="Cross up", style=shape.triangleup, location=location.belowbar, color=color.new(color.green, 0), size=size.small)

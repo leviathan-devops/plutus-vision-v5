@@ -1,0 +1,1 @@
+DEPLOY: OK  sealed=61 files  nofocus=ccc1f778d2bd  hostwin=dc75cce7e31c  mcp=2/2 answer  probe=native/weston-x11

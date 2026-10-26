@@ -1,0 +1,4 @@
+# the release-order rate measurement (T-35)
+60 consecutive up/down cycles, 30 ms sampler over each up:
+  ok=60  FOCUS_STOLEN=0  other=0
+before the one-flush release: 3/24, 5/45, 1/40 (~11%)

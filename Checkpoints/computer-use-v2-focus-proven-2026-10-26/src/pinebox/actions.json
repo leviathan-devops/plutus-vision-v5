@@ -1,0 +1,39 @@
+{
+  "version": "1.0.0",
+  "comment": "THE PINEBOX VERB TABLE (blueprint 7B). The CLI scripts/pinebox/pinebox is the only implementation; the OMP extension and the MCP server read this table to turn a tool call into CLI argv and add nothing. A new verb is one row here plus its function in pinebox.",
+  "params": {
+    "id":      { "type": "string",  "description": "the instance id, 0..9 (id 0 is the canonical port block the operator's own IDE may hold)" },
+    "week":    { "type": "string",  "description": "the bar fixture week, e.g. 2026-07-06 (fixtures/bars/<week>.json must exist)" },
+    "pair":    { "type": "string",  "description": "the instrument, e.g. DXY" },
+    "tf":      { "type": "string",  "description": "the timeframe, e.g. 1H" },
+    "pine":    { "type": "string",  "description": "a Pine source file to load and run (stage 5)" },
+    "adapter": { "type": "string",  "description": "force a surface adapter (weston-x11 | weston-vnc | xvfb | existing)" },
+    "out":     { "type": "string",  "description": "a file path for the frame" },
+    "action":  { "type": "string",  "description": "drive: a computer-use verb (screenshot, click, type, key, focus ...)" },
+    "x":       { "type": "number",  "description": "drive click: page CSS pixels" },
+    "y":       { "type": "number",  "description": "drive click: page CSS pixels" },
+    "text":    { "type": "string",  "description": "drive type: the text" },
+    "key":     { "type": "string",  "description": "drive key: a CDP chord such as Enter or ctrl+a" },
+    "send":    { "type": "string",  "description": "terminal: text to send to the instance's tmux" },
+    "read":    { "type": "boolean", "description": "terminal: read the pane" },
+    "get":     { "type": "string",  "description": "state: the key to read" },
+    "put":     { "type": "string",  "description": "state: the key to write" },
+    "value":   { "type": "string",  "description": "state put: the value" },
+    "project": { "type": "number",  "description": "status: project the measured memory to this many instances" },
+    "all":     { "type": "boolean", "description": "down: every instance" },
+    "confirm": { "type": "boolean", "description": "view: REQUIRED - set only when the operator asked to see the instance; view raises a window on their screen" }
+  },
+  "actions": {
+    "ports":    { "argv": ["ports"],    "flags": ["id"] },
+    "up":       { "argv": ["up"],       "flags": ["id", "week", "pair", "tf", "pine", "adapter"] },
+    "down":     { "argv": ["down"],     "flags": ["id", "all"] },
+    "list":     { "argv": ["list"],     "flags": [] },
+    "status":   { "argv": ["status"],   "flags": ["id", "project"] },
+    "shot":     { "argv": ["shot"],     "flags": ["id", "out"] },
+    "load":     { "argv": ["load"],     "flags": ["id", "pine", "pair", "tf"] },
+    "drive":    { "argv": ["drive"],    "flags": ["id", "action", "x", "y", "text", "key", "out"] },
+    "terminal": { "argv": ["terminal"], "flags": ["id", "send", "read"] },
+    "state":    { "argv": ["state"],    "flags": ["id", "get", "put", "value"] },
+    "view":     { "argv": ["view"],     "flags": ["id", "confirm"] }
+  }
+}

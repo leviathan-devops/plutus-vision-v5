@@ -2471,3 +2471,81 @@ own restore switch.
 - The port is **NOT locked** (F-140). The killer is disarmed; binding the port is the open item.
 - The rendered layout was verified through the operator's own display and its live DOM, never
   through a headless side-channel.
+
+---
+
+## 2026-10-26 — COMPUTER-USE v2 REBUILT TO ITS BLUEPRINT, AND PINEBOX SHIPPED (C3 proven, audit BLOCKED)
+
+**The built.**
+- **The core** (`~/.omp/agent/extensions/computer-use-v2/`, 48 files, commit `5263655`): `core/`
+  {lib, govern, probe, runtime, surface, drive, terminal, state, cli} + 4 surface adapters
+  {weston-x11, weston-vnc, xvfb, existing} + `core/cdp.mjs` (the browser drive path) +
+  `core/actions.json` (THE action table both forwarders read) + `core/guest/boot.sh` with
+  `rootfs/{manifest.txt,assert.sh}`; `helpers/` {nofocus.c, hostwin.c, build.sh keyed by source sha};
+  `mcp/server.mjs` + `index.ts` (thin forwarders); `scoped/` (the 7 files, `cmp`-identical to the
+  boilerplate); `test/` (9 gates); `deploy.sh` (seal/install/verify).
+- **The focus fix:** `helpers/nofocus.c` sets `_NET_WM_USER_TIME=0` + `_NET_WM_STATE=[BELOW]` before the
+  map; `hostwin release` removes BELOW and lowers in ONE flush, then verified on the WM stack.
+- **PINEBOX** (`scripts/pinebox/`, commit `4de2be2`): `ports.sh` (the id-derived block), `inject.py`
+  (rewrites BOTH config globals in the served bytes), `stages/{services,page,load}.sh`, the `pinebox`
+  CLI, `actions.json` + `mcp/server.mjs` + the `pinebox` OMP extension, `test/` (7 gates incl.
+  `multi.sh`). Plus `scripts/pv-server.py` (an opt-in `PINEBOX_PORTS` hook) and `scripts/pv-load.mjs`
+  (`PV_CDP_PORT`/`PV_SERVER_PORT`).
+- **The blueprints** now carry measured amendments: `design/DESIGN_BLUEPRINT_CU_v2.md` §18,
+  `design/DESIGN_BLUEPRINT_PINEBOX.md` §19 (with a re-measured anchor table).
+- **The durable lesson** is a managed skill: `measure-focus-theft-on-replica`.
+
+**The why.** The operator's schema, twice: *"this needs to be a headed window on my screen that I can
+click into and see if I want"* and *"It just should not fucking rip the primary focus"*. The first
+build satisfied neither and was discarded; this build had to satisfy both, proven.
+
+**The how (the decisions that mattered).**
+1. **Measure the window manager, not the window.** The oracle is `_NET_ACTIVE_WINDOW` +
+   `_NET_CLIENT_LIST_STACKING`, read through xcb, on a REPLICA display — never on `:1`, and never by
+   calling `windowactivate` (which IS the defect). Three controls (negative, positive-raw,
+   positive-view) or the run is INSTRUMENT_INVALID.
+2. **Prevention beats repair.** The interposer prevents the focus-on-map; the one-flush release
+   prevents the release-raise. The "focus guard" that polled and re-raised was DELETED, not tuned.
+3. **C3 is a refusal, not a table cell.** `up` tears the instance down with `FOCUS_STOLEN` if the
+   operator's focus or stack top moved onto one of our windows — by IDENTITY, over EVERY 30 ms sample
+   of the verb.
+4. **One implementation, three surfaces.** `core/cli.sh` holds every decision; `index.ts` and
+   `mcp/server.mjs` translate `core/actions.json` into argv and add nothing, so a fix lands in all
+   three at once (and `test/mcp.sh` proves neither forwarder implements a verb).
+5. **The page is frozen; the served bytes are not.** Both config globals are rewritten at serve time
+   (`git diff HEAD -- pine-ide/` is EMPTY), which is what makes seven concurrent instances honest.
+
+**The evidence.**
+- `test/run.sh --slow` → 9 gates, 0 failed (state battery: 32 pass / 0 fail / 68 expects).
+- `scripts/pinebox/test/run.sh --full` → 7 gates, 0 failed, incl. P9 seven instances: 35 distinct
+  ports / 35 assignments, 7 slots, 7 compositors, 0 operator-focus changes, 46 checks.
+- Release-order rate: **0 failures in 60** runs (30 ms sampler), vs ~11% (3/24, 5/45, 1/40).
+- Real desktop: **26/26**, `active`/`top` unchanged through `up` + 17 verbs + teardown.
+- `deploy.sh verify` → `DEPLOY: OK  sealed=61 files  mcp=2/2 answer  probe=native/weston-x11`, with
+  five must-fail probes (DEPLOY_DRIFT ×2, HELPER_STALE, MCP_NOT_REGISTERED ×2) each firing first.
+- Two shipped frames OPENED and read: the replica frame (candles + both EMAs + 4 triangles, status row
+  naming the instance's OWN rail) and the real-desktop frame (identical).
+
+**The verification (what ran, in order).** strings/cmp-guard → the store battery → mcp → c3-no-raise
+(replica) → isolation → mutate --slow → leak-check; then the PINEBOX chain incl. 7 instances; then
+C3 `--real` and one full PINEBOX cycle on `:1`; then `deploy.sh seal/install/verify`.
+
+**The honest notes.**
+- **AUDIT GATE: BLOCKED** — `OCR_MISSING` (no executable `ocr` on this host). Every ship-ready claim
+  for this build is withheld; the independent reviewer subagent (T-31) found 12 real defects and is
+  NOT reported as the mandated artifact (F-147).
+- **V11 unproven / V12 not built:** `guest/boot.sh` exists and its refusals are proven, but no guest
+  image exists, so a real boot is untested; agentOS is Phase Two and refuses `AGENTOS_UNAVAILABLE`
+  (V-54, V-55).
+- **The E2 geometry is still discarded** (`run.mjs:163` counts polylines/linefills/tables and drops
+  them) — `counts.polylines: 0` on every load. Not attempted rather than half-done (V-56).
+- **`plutus-vision-v2.pine` cannot render against any fixture here:** its geometry is October 2026
+  while every fixture ends 2026-07-21. Stage-5 acceptance uses `test/fixtures/ema-ribbon.pine`; the
+  pairing is the operator's to resolve (F-148, EN-157).
+- **The C3 oracle is X-side only** — it cannot read the focus of a Wayland-native window
+  (`active=0x0` is that case, recorded in the test output).
+- **88 authored docs remain untracked**, refused by the repo's own W-9 floor; nothing was padded and
+  no gate was weakened (F-149, P-14).
+- **One possible neighbour loss:** a scratch `pkill -f 'Xvfb.real :9[0-9]'` may have taken another
+  agent's `:99` rig (F-146, P-13). Replicas are now confined to `:200–:230`.
+- **The operator's fence:** two passes ran on `:1` (self-authorised, recorded as P-12).

@@ -1,0 +1,487 @@
+# EVIDENCE STATE — PLUTUS VISION
+
+_CURRENT TRUTH as of 2026-10-22 — refreshed by canon-doc-update. **Every sha below was measured
+in this session with `sha256sum`; a prior version of this block carried `125c94f8…` for
+`plutus-vision-v2.pine`, which is STALE — the file on disk is `668e89d7…`.**_
+
+- HARD-STOP baseline (RULE-D) sha256 `0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1`
+  — `plutus-vision-v1.pine`, **1,270 L · 76,550 bytes**, UNCHANGED and REPRODUCIBLE from its five modules.
+- CURRENT v2 tree artefact sha256 `668e89d79a08e68e35d0bf5a8c15f565e6ab297287b4e14d8a193e47e9178cb9`
+  — `plutus-vision-v2.pine`, **1,863 L · 108,826 bytes**.
+- The SMC parent sha256 `605bff82d3539e9e5e258da30ba4ec80607a3df7749fb5deb5f4402350f95847`
+  — `plutus-vision-v0.pine`, **1,520 L · 83,089 bytes** (the purge target).
+- git HEAD `ea70789` · 142 dirty paths at measurement time.
+- The graph: **163 cards · 8 hubs · 8 type schemas · diagnostics 0**.
+- The gate, measured with its correct CLI:
+  `python3 gates/anti/anti_patterns.py . pine=plutus-vision-v1.pine tree=.`
+  → **rc=1, 4 classes, 6/13 evaluated**: A3 (no ABSENT token) · A9 (15m in **27** build files) ·
+  A10 (choch 488 · fvg 102 · fair value gap 141 · premium 182 · discount 183 · liquidity void 23 ·
+  change of character 1 · inducement 1 · breaker block 1) · A12 (progress-prose/code **5.9**,
+  graph 583 KB excluded as substrate).
+- Evidence from THIS session, all tool-produced:
+  `sha256sum plutus-vision-v1.pine` -> `0d20e8314ce992fc…` (1,270 L)
+  `sha256sum plutus-vision-v2.pine` -> `668e89d79a08e6…` (1,863 L — supersedes the stale `125c94f8…`)
+  `sha256sum plutus-vision-v0.pine` -> `605bff82d3539e…` (1,520 L)
+  `ls cards/*.md | wc -l` -> 163 · `ls sources/*.md | wc -l` -> 8 · `ls type/*.yaml | wc -l` -> 8
+  the gate's four behaviours, mutation-proven: no-subject rc=2 · clean rc=0 · token-removed rc=1 ·
+  15m-injected rc=1
+  the anchor audit: **68 file:line anchors checked across COMPACTION_SURVIVAL + POST-COMPACTION_PROMPT,
+  68 resolve, 0 broken** (an earlier draft carried 8 anchors to cards that DO NOT EXIST — corrected)
+_Purpose: per-gate evidence with shas; the honest gaps._
+
+<!-- LQZ:CANON-HAND -->
+## THE E1 BUILD ANCHORS (the deliverable's file:line refs)
+
+- `.omp/ct-results.json:1` — the W9 verdict (`overallVerdict: PASS`, 7/7 angles A1-A7).
+- `context_management/CURRENT_STATE.md:6` — the current-build truth SHAs.
+- `TESTING_LOG.md:1541` — the P5 adversarial pass + the `AUDIT GATE: PASS` line.
+- `RUNTIME_LEDGER.md:1` — the runtime findings (what RUNNING taught that READING could not).
+- `Checkpoints/v2-working-baseline-2026-10-05/CHECKPOINT_MANIFEST.md:1` — the sealed checkpoint.
+- `packages/plutus-vision-e1-automatic/plutus-vision-e1-automatic_DPL1_SPEC.md:1` — the binding spec.
+<!-- /LQZ:CANON-HAND -->
+
+## GATE 2 — PARITY (scripts/compare.py → COMPARE.json)
+
+| subsystem | source ok | counts |
+|---|---|---|
+| SMC | True | `{"plots": 0, "plotPoints": 0, "markers": 0, "boxes": 5, "labels": 97, "lines": 93, "tables": 0, "polylines": 0` |
+| SWEEPS | False | `null` |
+| VOIDS | True | `{"plots": 0, "plotPoints": 0, "markers": 0, "boxes": 500, "labels": 0, "lines": 0, "tables": 0, "polylines": 0` |
+| POOLS | True | `{"plots": 0, "plotPoints": 0, "markers": 0, "boxes": 15, "labels": 0, "lines": 10, "tables": 0, "polylines": 0` |
+| MERGED | — | `{"plots": 0, "plotPoints": 0, "markers": 0, "boxes": 486, "labels": 97, "lines": 275, "tables": 0, "polylines"` |
+
+lost=121 extra=258 — explained in SPEC_VIOLATION_LOG (VOIDS cap 120 + SWEEPS-raw 1; extra = 258 SWEEPS drawings).
+
+## GATE 3 — PIPELINE ViL (scripts/vil.py → vil/vil-results.json)
+
+runId `VIL-20261001T203228` · overall **PASS** · indicator `605bff82d3539e9e`
+
+| case | design | verdict | png sha256-16 | bytes | pixelStd | reader | why |
+|---|---|---|---|---|---|---|---|
+| clean-15m | PASS | PASS | `a62e6faed8797e8f` | 244431 | 30.31 | Qwen3.5-4B-Q4_K_M.gguf | reader PASS + structure drew 170 |
+| clean-30m | PASS | PASS | `8691b6d02fa9b994` | 245366 | 30.42 | Qwen3.5-4B-Q4_K_M.gguf | reader PASS + structure drew 228 |
+| clean-1H | PASS | PASS | `6219e5d89ca29b65` | 240517 | 30.23 | Qwen3.5-4B-Q4_K_M.gguf | reader PASS + structure drew 200 |
+| clean-4H | PASS | PASS | `8e4644a5f821b6ee` | 250224 | 30.41 | Qwen3.5-4B-Q4_K_M.gguf | reader PASS + structure drew 325 |
+| battery-planted-defect | FAIL | FAIL | `67248bc21f801adf` | 105449 | 22.72 | Qwen3.5-4B-Q4_K_M.gguf | price candlesticks are visible, but no filled horizontal rec |
+| battery-unjudgeable-black | INCONCLUSIVE | INCONCLUSIVE | `0cc05e91a54d8980` | 1598 | 0.0 | — | MEASUREMENT: unjudgeable frame (near-uniform) |
+| battery-dead-channel | INCONCLUSIVE | INCONCLUSIVE | `1ee8f5df842e4acb` | 3000 | — | — | TRANSPORT: decode failed (OSError) |
+
+## GATE 4 — ENGINEER ViL
+
+FAIL — 3 named deltas (TESTING_LOG R-04): D1 VOIDS tan borders (PIPELINE) · D2 label overlap ·
+D3 right-edge W/S clipping. Recorded against the GATE-3 shas above.
+
+## HONEST GAPS
+
+- VOIDS 380/500 by design (engine ceiling).
+- 3-4 dropped anchors = SMC source behaviour.
+- No D timeframe evidence (no D data).
+- Drawings draggable; no settings menu.
+- The reader is a 4B model: it confirmed presence, it did not catch D1-D3 (T-07).
+
+
+## THE SHA BLOCK (all read-first docs carry this verbatim)
+
+| artifact | sha256[:16] |
+|---|---|
+| lqz-luxalgo.pine | `db06b60574125039` |
+| lqz-plutus.pine | `68881deaca0c66a1` |
+| plutus-vision-v1.pine | `82da437af969a315` |
+| plutus-vision-v0.pine | `605bff82d3539e9e` |
+
+
+
+<!-- LQZ:CANON-HAND -->
+
+# THE PER-GATE EVIDENCE — every gate, its instrument, its command, its numbers
+
+**Hand-maintained. The generated inventory above is the map; this is the ledger.** Every number
+below was produced by the command printed beside it, on this tree, at HEAD `d3a3c81` (the seal
+rev 9 was cut at `1c64f20`). Nothing here is inherited from a prior session: where a number is a
+prior measurement it is labelled *baseline*; everything else is this session's re-run.
+
+## THE GATE LADDER — order is law (a later gate never runs on a failed earlier one)
+
+| # | gate | instrument | command | verdict on this tree |
+|---|---|---|---|---|
+| L0 | COMPILE | the station `:9741` | `curl -s -m 20 -X POST :9741/run -d '{...}'` | D1/D2/D3 `success:true`; title AND `sourceSha` asserted |
+| L1 | UNIT | bun | `bun test ./scripts/` | **12 pass · 0 fail** · 4 files · 182 expect |
+| L1.5 | ADVERSARIAL | `lqz_adversarial.py` | `python3 scripts/lqz_adversarial.py` | **7/7 PASS · ZERO confirmed defects** |
+| L2 | PARITY | `compare.py` | `python3 scripts/compare.py > /tmp/c.out 2>&1; echo $?` | SMC 195/195 · POOLS 25/25 · VOIDS 380/500 **exact** · SWEEPS named (F-XX) · **exit=1** |
+| L2b | MERGED SECTIONS | `verify_four.py` | `python3 scripts/verify_four.py` | **4/4 subsystems executed** |
+| L3/L4 | PANEL GRIDS | `lqz_panel_ide.py` + the eye | open each PNG, record per panel | 6 judgment surfaces on disk, every panel opened |
+| L-ART | SERVED ARTIFACT | `verify_served_pine.sh` | `bash scripts/verify_served_pine.sh` | `SERVED_PINE_OK` (root == renderer == wire · 4 files) |
+| SEAL | CHECKPOINT | `seal_checkpoint.py` | tracked count vs sealed count | rev 9 · **873 → 873 MATCH** |
+
+## L0 · COMPILE — the station, the authoritative instrument
+
+The compile gate is the pin's step 1. It is the station's `POST /run`, never a `GET /health` —
+**the health route can hang for 4.0–20 s while `/run` returns `{"success":true}`** (the documented
+half-alive state; `scripts/pv-ide.sh` and `vil-rail.mjs` both probe the WORK route for exactly
+this reason, and the rail learned it the hard way in D-XXI).
+
+| deliverable | title asserted at L0 | `sourceSha[:16]` | payload |
+|---|---|---|---|
+| D1 `lqz-luxalgo.pine` | `LQZ LuxAlgo` | `db06b60574125039` | `success:true` |
+| D2 `lqz-plutus.pine` | `LQZ Plutus — operator candle liquidity` | `68881deaca0c66a1` | `success:true` |
+| D3 `plutus-vision-v1.pine` | `Plutus Vision v1` | `82da437af969a315` | `success:true` |
+| v0 `plutus-vision-v0.pine` | (the parity reference) | `605bff82d3539e9e` | `success:true` |
+
+**THE TITLE IS NOT AN IDENTITY (D-XX/D-XXI).** The shipped D1 and its `-both` variant BOTH carry
+the title `LQZ LuxAlgo`; a retry loop that asserts the title breaks on the engine's debounced-flush
+compile of the PREVIOUS file and reports the old file's counts under the new file's name. The
+per-file `sourceSha` is the only assertion that bites.
+
+## L1 · UNIT — `bun test ./scripts/`
+
+```
+12 pass · 0 fail · Ran 12 tests across 4 files
+```
+
+| file | tests | expect | what each pins |
+|---|---|---|---|
+| `scripts/lqz_core.test.ts` | 4 | 46 | `test_cluster_rejects_beyond_tol` (NEGATIVE, runs first) · `test_cluster_merges_within_tol` (positive) · `test_source_select_is_total` (exhaustive) |
+| `scripts/lqz_render.test.ts` | 2 | 45 | `test_zone_spans_full_width` (holds at barIndex **1603** AND **325** — the clamp yields 0, never negative) · `test_colour_by_side` (now pins the GUARDED line `lqz-luxalgo.pine:887`) |
+| `scripts/lqz_ship.test.ts` | 3 | 40 | the station compile per deliverable (L0) with the run's own title AND the source law (L1) |
+| `scripts/lqz_w6.test.ts` | 3 | 51 | `test_panel_grid_complete` · `test_panel_rows_are_same_bars` (the FRAME-SOURCE distinctness law) · `test_ab_diff_is_measurable` |
+| **TOTAL** | **12** | **182** | the PATH form |
+
+**THE RUN FORM IS LAW.** `bun test scripts/` is a **FILTER**, not a path: it walks into
+`Checkpoints/**` and runs the SEALED COPIES of the same tests → **24 across 8 files** (the failure
+doubles). `bun test ./scripts/` is the PATH form → the live four. Canonical: **with `./`**.
+
+## L1.5 · ADVERSARIAL — A1…A7, verbatim, each with the mutant it bit
+
+```
+  [PASS] A1 detector paint suppressed                 live colour inputs=0 transparent=10
+  [PASS] A2 drawing caps raised to 500                per-deliverable: [True, True, True]
+  [PASS] A3 mutant: wrong title refused               exit=1
+  [PASS] A4 mutant: duplicate panels refused          exit=1 guarded
+  [PASS] A5 grid artifact present                     panel-grid-1H.png 523703 bytes
+  [PASS] A6 ledger carries the frame shas             3/3 shas cited
+  [PASS] A7 library cross-reference clean             library 5/5 bands>0 irregular 5/5 · grids 4/4 bands>0 irregular 4/4
+
+ADVERSARIAL VERDICT: 7/7 PASS
+ZERO confirmed defects — every guard bit its mutant
+```
+
+| id | the mutation planted | the guard that refused it |
+|---|---|---|
+| A1 | a detector's paint left live | the source-kind suppression PREDICATE (was a hand-list that missed `voi_lqFC`) |
+| A2 | a cap left at the old ceiling | the 500-cap per deliverable, all three True |
+| A3 | a grid composed from the wrong deliverable | the title assertion → `PANEL_GRID_FAIL: D1`, exit=1 |
+| A4 | **two panels from ONE deliverable, distinct bytes** | **the SOURCE-distinctness guard** (the frame guard alone returned `PANEL_GRID_OK` — the defect this round found) |
+| A5 | a grid cited but absent | the artifact-present check (bytes > 0) |
+| A6 | a ledger row without frame shas | 3/3 shas required |
+| A7 | a synthetic/uniform grid | **IRREGULARITY**, not the count — a uniform spacing would be a synthetic grid |
+
+`reports/LQZ_ADVERSARIAL_AUDIT.txt` carries the FULL pass and its header names the artifact shas
+at audit time (so the audit says WHAT it audited). **A7's decisive property is irregularity**: the
+library's 5/5 frames and the deliverable grids 4/4 all show bands>0 AND irregular.
+
+## L2 · PARITY — `python3 scripts/compare.py` (compare.py's OWN contract: exit 1 on any loss)
+
+| subsystem | baseline (2026-10-01) | this tree | verdict |
+|---|---|---|---|
+| SMC | 195/195 | **195/195** | **EXACT MATCH** |
+| POOLS | 25/25 | **25/25** | **EXACT MATCH** |
+| VOIDS | 380/500 | **380/500** | **EXACT MATCH** (bounded by design; see D-04) |
+| SWEEPS | 258/258 | **`PINE_RUNTIME_ERROR`** | **REGRESSION — NAMED RESIDUAL (F-XX)** |
+| MERGED (the shipping ancestry) | — | `ok · boxes 486 · labels 97 · lines 275` | runs |
+
+**THE CORRECTION (recorded, not overwritten).** An earlier entry read `RC=0`; that captured the
+exit of the `| tail` PIPELINE, not of the script. Measured properly:
+`python3 scripts/compare.py > /tmp/compare.out 2>&1; RC=$?` → **exit=1**, `VERDICT: DELTA
+lost=121 extra=258`. `compare.py` exits 1 on ANY loss — the instrument is RED by its own contract.
+
+**THE SWEEPS CORRELATION THAT SETTLES IT:** the baseline `SWEEPS 258/258` and this run's
+`MERGED-ONLY drawings: 258` are **the same 258** — the drawings, matched when the source ran,
+unmatched now that it cannot. The failure is `Cannot read properties of undefined (reading
+'get_left')` at ALL FOUR TFs (HTTP 422) — absolute, not data-shaped — and it lives in Vela's
+drawing extraction (`velaPinets 0.2.14`), never in the source (unchanged since `4d993b7`).
+
+## L2b · MERGED SECTIONS — `python3 scripts/verify_four.py`
+
+```
+SMC      PASS  boxes=5    labels=22   lines=19
+SWEEPS   PASS  boxes=12   labels=0    lines=24
+VOIDS    PASS  boxes=94   labels=0    lines=0
+POOLS    PASS  boxes=1    labels=0    lines=2
+4/4: 4/4 subsystems executed
+```
+
+**TWO INSTRUMENTS, TWO SUBJECTS — never conflate them:** `verify_four.py` runs the four
+SUBSYSTEMS INSIDE THE MERGED BUNDLE (it slices the merged file's sections and runs each
+standalone); `compare.py` runs the ORIGINAL SOURCES in `sources/` against the merged. The
+shipping logic is green in both senses that matter; the failing leg is the comparison INPUT.
+
+## L3/L4 · THE PANEL GRIDS — the operator's judgment surfaces, with their shas
+
+| grid | sha256[:16] | what it holds |
+|---|---|---|
+| `reports/panel-grid-IDE-15m-2026-W29.png` | `299889060907a1fb` | `[ library \| D1 \| D2 \| D3 ]` |
+| `reports/panel-grid-IDE-30m-2026-W29.png` | `c1da1d67e074b9f8` | 4 panels |
+| `reports/panel-grid-IDE-1H-2026-W29.png` | `e29c0969f8676569` | 4 panels |
+| `reports/panel-grid-IDE-4H-2026-W29.png` | `444b332a02b77b23` | 4 panels |
+| `reports/panel-grid-IDE-4TF-2026-W29.png` | `2cbc46a8a75e7537` | `[ library \| D3 × 15m/30m/1H/4H ]` |
+| `reports/panel-grid-1H.png` | `6c01eec3592c75b2` | the older W6 CDP path |
+
+**D1's rows at the final sha** (`db06b6057412`): `15m 97 boxes/33 lines/1 label FAIL · 30m
+145/46/2 PASS · 1H 117/42/2 PASS · 4H 216/65/5 PASS`. **The 15m FAIL carries NO deltas** — it is
+the reader's verdict alone on a frame with one label; the operator's eyes are the appeal (P8).
+
+**The per-panel look** (`reports/lqz_panel_look_record.md`): D2 and D3 match the library's look
+(thin full-width rails + labels) at 30m/4H; D3 is the only deliverable the reader passed at EVERY
+timeframe (`5 boxes / 57–80 lines / 22–30 labels`). **THE BARS ARE IDENTICAL** — re-measured:
+`400 bars, 2026-06-11T15:00 → 2026-07-06T06:00`, three distinct `sourceSha`s
+`d33c2b75e30d / 68881deaca0c / 82da437af969`, `IDENTICAL_BARS: true`. **THE VIEWPORTS ARE NOT** —
+the chart auto-fits per run and no viewport control exists in the CDP composer (a NAMED residual).
+
+**THE FRESHNESS GUARD IS LOAD-BEARING:** `lqz_panel_ide.py` matches each panel by `pineSha` prefix
++ timeframe and REFUSES a frame whose PNG mtime predates its source's mtime (the panel then reads
+`NO POST-FIX CAPTURE for this TF — UNPROVEN`). Without it a stale frame would be captioned current.
+
+## THE STARVATION DRILL — the proof contract's negative case, run
+
+`POST :9741/run` at limits 1/2/5/400, EUR/USD 1H, per deliverable:
+
+| deliverable | limit=2 | limit=5 | limit=400 | verdict |
+|---|---|---|---|---|
+| D1 `lqz-luxalgo` | 0 boxes · 0 lines · 0 labels | 0 · 0 · 0 | 117 · 42 · 2 | **ZERO at starvation — no fallback band** |
+| D2 `lqz-plutus` | 0 · 0 · 0 | 0 · 0 · 0 | 0 · 58 · 0 | **ZERO at starvation — no fallback band** |
+| D3 `plutus-vision-v1` | 0 boxes · 2 lines · 2 labels | 0 · 2 · 2 | 5 · 79 · 24 | **zero ZONES** |
+
+`limit=1` is refused by the station itself (no bars) — recorded, not a pass. **The one
+observation, recorded not waved:** D3's 2 labels at 2 bars are SMC `Weak High`/`Weak Low` structure
+labels whose geometry is degenerate — `{"time": 1783389600000, "price": null, "text": "Weak High"}`
+and a line with `a.price = null`, `a.time = 0` (epoch). **They cannot render.** D-XX's lesson
+reappearing: a count is not a render.
+
+## THE TOGGLE TABLE — `lqzLabel`, the operator's own knob (DRILL 4, the mechanical equivalent)
+
+| input state | boxes | lines | labels | gate |
+|---|---|---|---|---|
+| `lqzLabel=true` (the shipped default) | 117 | 42 | **2** | PASS |
+| `lqzLabel=false` (the toggle applied) | 117 | 42 | **0** | **MECH_VETO** — `boxes>0 · labels=0` is exactly what `gate.mjs:157` refuses |
+
+**The knob, the default, and the veto now agree about what "unlabelled" means.** The pre-registered
+expectation (2 → 0) was met.
+
+## THE RUNS' sourceShas — the identity chain, in the order it was established
+
+| run | `sourceSha[:16]` | boxes · lines · labels | note |
+|---|---|---|---|
+| D1 `luxalgo` (default) | `bca5fb5f178c` | 117 · 36 · 0 | the dead-knob measurement, pre-fix |
+| D1 `-both` variant | `e9a1d25e05fa` | 117 · 42 · 2 | +2 labelled full-width zones |
+| D1 first PASS run | `88de18cfde20` | 117 · 42 · 2 | the look, png `cceb3271898d3d35` |
+| D1 final (shipped default `both`) | `db06b6057412` | 117 · 42 · 2 | the grids' source |
+| D2 (final) | `68881deaca0c` | 0 · 58 · 0 | no labels by its own design |
+| D3 (final) | `82da437af969` | 5 · 79 · 24 | the richest panel |
+| v0 (the parity reference) | `605bff82d3539e9e` | — | **UNCHANGED across the whole session** |
+
+**THE RULE THIS TABLE EXISTS TO ENFORCE:** assert `sourceSha`, never a title. Two files can share
+a display name; the per-file identity is the only thing that cannot lie about which file ran.
+
+## THE SEAL — checkpoint rev 9 (`Checkpoints/v1-lqz-pin-execution-2026-10-02/`)
+
+| field | value |
+|---|---|
+| seal mode | `no-lock` — fully committed, reproducible from git at the SHA below. NEVER manifest-only |
+| git HEAD at seal | `1c64f20` |
+| the shas | D1 `db06b60574125039` · D2 `68881deaca0c66a1` · D3 `82da437af969a315` · v0 `605bff82d3539e9e` |
+| counts | tracked (excl. the seal) **873** → sealed **873** · **MATCH** |
+| the evidence | unit 12/12 · adversarial 7/7 · parity 3/4 exact + SWEEPS named · the starvation drill (no fallback) · the `lqzLabel` toggle (2 → 0) · the settings-dialog op UNRUN, NAMED |
+| judgment surfaces | the six shas above |
+| honest gaps | the operator's P8 verdict · the settings-dialog op unrun · F-XX · D3's null-price labels at starvation · viewports differ · the 36 native primitives render via BRASS · the station wedges under sustained compiles (`scripts/pv-ide.sh`) |
+
+## HONEST REMAINDER — what is NOT proven, never reported as pass
+
+1. **No container round.** Every verdict is host-live, not container-grade.
+2. **No rig crash test** beyond `limit=1` (which refuses by name: `bars absent (1)`).
+3. **The settings dialog op (H2) is UNRUN** — attempted, unreachable from the exposed renderer
+   surface (`settingsDialog` null-prototype; `input` is the mouse handler; `indicatorSlices` is
+   the render-slice machinery). Drill 4's evidence stands on the station's own input path instead.
+4. **F-XX, the sweeps standalone leg** — open, bounded, named, with its resume condition.
+5. **D3's structure labels at starvation carry null prices** — dead geometry the counts census.
+6. **Reader PASS ≠ visual correctness.** The reader is a 4B model answering presence questions; it
+   confirmed presence, it did not catch D1–D3 (T-07). **The engineer read is mandatory per TF.**
+7. **The operator has not recorded a verdict.** P8 is theirs; nothing here substitutes.
+
+
+## THE ANCHORS (file:line — the code this doc speaks about)
+
+| anchor | what it is |
+|---|---|
+| `scripts/scripts/lqz_adversarial.py:67` | A4's mutant construction — the window/mark/expect patch |
+| `scripts/canon_gate.sh:1` | this canon gate itself, as a command with an exit code |
+| `scripts/compare.py:16` | the four subsystem slices the L2 parity keys on |
+| `scripts/verify_four.py:6` | the merged bundle's four sections — 4/4 measured |
+| `scripts/verify_served_pine.sh:20` | the stale-artifact guard's root==renderer==wire comparison |
+
+<!-- /LQZ:CANON-HAND -->
+
+
+---
+
+## STATE BLOCK — 2026-10-03 (supersedes every earlier SHA in this document)
+
+**THE VERIFIED ARTIFACT**
+```
+plutus-vision-v1.pine   sha256 0d20e8314ce992fc   1270 lines   SERVED_PINE_OK
+```
+This is the operator-approved state. Any SHA named above this block that disagrees is
+HISTORICAL and is preserved as history, not current truth.
+
+**THE SHIP**
+```
+Checkpoints/v1-working-baseline-2026-10-03/        the V1 WORKING BASELINE checkpoint
+Checkpoints/v1-ship-2026-10-02/PLUTUS_VISION_SHIP_v1.1.zip
+Checkpoints/v1-visual-clean-2026-10-02/            the pre-calibration visual save
+```
+
+**WHAT CHANGED TO REACH IT (each measured on the rig, EURUSD 1H W29)**
+- The render emits FILLED ZONES, not hairlines (the library's median band is 5.5px; ours was 1px).
+- `vision.mjs` reads BOTH `bgcolor` and `color` — the engine emits a box fill under `color`,
+  so every LQZ box was arriving with no fill (measured `boxesWithBgColor: 0` of 39).
+- The merge key is PRICE (was SIDE) — opposite-side levels could never merge, which produced
+  pairs of identical bands in opposite colours.
+- Side is assigned ONCE from the merged band (was derived per-sink from `price >= close`).
+- The invented "Buy/Sellside Liquidity" labels are REMOVED.
+- LIQUIDITY IS ONE GREEN CLASS. It was being coloured red/teal by positional side, which is
+  why the chart banded: top looked like supply, bottom like demand.
+
+**THE MEASURED RENDER (the numbers, not the prose)**
+```
+LQZ zones 27 (all green #2E8B57)   overlapping pairs 0   cross-side overlaps 0
+identical duplicate bands 0        labels 24 (the SMC's own)  LuxAlgo SMC boxes 5 (untouched)
+```
+
+**HONEST GAPS — WHAT IS NOT IN THIS ARTIFACT**
+- Engine 1 and Engine 2 from the v5.3.3 prompt are ABSENT. The grep census over the artifact
+  reads 0 for ZFP, BoM/MoM, the reaction counter, the fortress phase, the IPZone record, all
+  three pivot variants, the option-wall tiers, analyst tiering, the shape taxonomy, the shape
+  decision matrix, the ZFP-conditioned transitions, consolidation phase, day decomposition, the
+  forward mapping procedure, the speed rule and TF matching. The full census, the 23-item scope
+  and the 6-wave plan are in `artifacts/PLUTUS_VISION_V2_E1E2_SPEC.md`.
+- The LuxAlgo SMC supply/demand (5 boxes) is UNVERIFIED against the operator's canon notes
+  beyond "it renders"; the origin-candle mapping has NOT been independently checked.
+- The carried-forward ship docs describe an EARLIER baseline and are NOT a current verification
+  of this artifact.
+
+## [2026-10-07] — THE E2 BREAKTHROUGH-BAND + THE BACKWARDS-ENGINEERING EVIDENCE
+
+**THE ARTIFACT SHAs (measured this session).**
+```
+plutus-vision-v2.pine                         9c745705773cd0156805212876376f5b4180669899efc04e296e2b063fe72283
+plutus-vision-lqz/e1-render.pine              79fd8e2477bd7397c1c36d65a8900f95b44d081ccdefb4ea7eff79cd3d2d6555
+plutus-vision-v1.pine (SEALED, H1)            0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1
+```
+
+**THE BATTERY (re-run this session).**
+```
+python3 scripts/e1_st_18.py       RESULT pass=8  fail=0
+python3 scripts/e2_tests.py       RESULT pass=46 fail=0
+python3 scripts/e1_render_tests.py RESULT pass=24 fail=0
+python3 scripts/e1_tests.py       RESULT pass=18 fail=0
+scripts/wave_gates.py             17 pass / 4 fail (W1e · W2a · W2b · W2c — all operator-gated)
+```
+
+**THE FENCE.** `~/JARVIS_WORKSPACE/Shared_Workspace/JARVIS-CORE/b6/verdicts.jsonl` — a PASS row,
+`{"job":"fence","seat":"plutus-vision-lqz","verdict":"PASS","fence_exit":0}`; all 5 steps PASS
+(step-0-battery · step-1-e2-battery · step-2-structure · step-3-ladder · step-4-v1-seal).
+
+**THE E2 ACCURACY MEASUREMENT (the 5-week cross-validation, after §6.2 #1).**
+```
+beat-naive:  1/5 -> 3/5 week-check.py cv-2026-08-24 fixture -> evidence/crossval-5week.json
+MAE mean:    0.685 -> 0.518
+```
+
+**THE VISUAL CHECKPOINT.** `evidence/visual-checkpoints/e2-shape-chain-2026-08-31.png` (sha
+`2291f37d820c9aa4…`, 189726 bytes) — the E2 chain `R→SS→BS` walking Eq→Upper→Ceiling, opened by
+the operator this session.
+
+**THE MEASURED DEFECTS.** F-49 (the v8 zDeg is a fixed literal) · F-50 (a NaN price silently
+tolerated; ST-15) · F-51 (the E2 has no boundary-reversal). Each in FAILURE_LOG.md with its
+mechanism + file:line.
+
+## 2026-10-08T09:43:28+04:00 — THE W1-W7 EVIDENCE
+- test_zfp_discriminates 5/0 (breakout 55 > 40) · test_zone_assembly 30/0 (6 fixtures) ·
+  test_payload_computed 4/0 · test_pillars 35/0 · indicator_gate 3/0 (6 distinct of 6 weeks) ·
+  test_v1_seal_intact 2/0 · test_zfp_adversarial 16/0.
+- REGRESSION: e1_tests 18/0 · e2_tests 46/0 · e1_render_tests 24/0 · st_18 8/0 · st_19 11/0 ·
+  st_21 4/0 · st_22 7/0 · st_26 4/0.
+- THE LIVE RENDER: the IDE (CDP :9222) shows 4 boxes + the ceiling label "40% ZFP" (was 27%).
+- the checkpoint: `Checkpoints/indicator-port-w1-w7-2026-10-08/`
+
+## EVIDENCE — 2026-10-14 — THE LAYOUT CYCLE (the ship pass)
+**THE DEPLOYED FINGERPRINT (re-measured, never inherited):**
+```
+pine-ide/ide/renderer/plutus-vision-v2.pine   sha256 125c94f86e6a2f1d3009a75c778e02ad16c48e4f3772e8d0d8d95c50af162400   SHA16 125c94f86e6a2f1d
+pine-ide/ide/renderer/plutus-vision-v1.pine   sha256 0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1   UNTOUCHED (HARD STOP H1)
+pine-ide/charts/workbench.bundle.js           sha256 7ff93dcf5b2c9e77d0fbba310a7e9c2c04073e6521c233c664b140d888a61aec
+```
+**The changed-file SHAs (post-edit):** `pineshell.js d4c96cd703220e06` ·
+`pineshell.html 2a8cf681c5bf0261` · `pineshell.css c5f083866db1ac8f` ·
+`backtest.js 99a2057b595e5c24` · `pv-port-guard.sh c25d2f26bd3ca755`. Diff vs HEAD
+(`step_agent` @ `c058e3e`): **5 files, 241 insertions, 6 deletions**.
+
+**THE BEHAVIOURAL EVIDENCE (tokens read from tool results, never asserted):**
+- layout, live DOM on display `:5`:
+  `{"shellPresent":true,"hide":"left=0 face=0 foot=1","footDisplay":"none / none","editorPct":"34%","toggles":4,"splitter":true}` — `ERRORS: none`.
+- backtest: `[data-bt="go-last"]` before-state `bar 1/941` → after
+  `{"bar":"bar 941/941","visible":"visible 941 / 941"}`; mount stream contains no `RangeError`.
+- chart: `DXY · FIXTURE · 1h`, status `FIXTURE · DXY · 1H · 508 bars · rail :9754 · station UP`.
+
+**THE AUDIT ARTIFACT — BLOCKED, NOT PASSED:**
+`~/.opencodereview/sessions/home-leviathan-JARVIS_WORKSPACE-Shared_Workspace-PLUTUS_VISION/421ace33-83dd-475a-80a6-050bd89737e7.jsonl`
+— census `{'session_start':1,'llm_request':8,'llm_error':8,'review_item_failed':4,'session_end':1}`;
+`session_end` → `duration_seconds: 1.986`, `files_reviewed` = the 4 changed files (scope CORRECT),
+`llm_failures: 8`; every error `403 FreeTierError` from `127.0.0.1:4098/zen/v1/responses`.
+Retry condition recorded at FAILURE_LOG F-141 / TESTING_LOG.
+
+**THE GATES:** ship docs GATE S1-S7 **PASSED** (2026-10-14). The code-audit gate **BLOCKED**.
+
+---
+
+## 2026-10-18 — THE EVIDENCE DOCTRINE CHANGED: TEXT PROPERTIES ARE NOT EVIDENCE
+
+**Operator ruling, verbatim:**
+> *"every previous gate observed a text file's properties and none observed the running system.
+> The only fucking thing that matters is the running system. Everything else is irrelevant."*
+
+**WHAT THIS INVALIDATES.** All 15 gate scripts under `gates/e1/gates/` asserted text-file
+properties: `grep`, `sha256sum`, `wc -l`, file existence, and JSON files the same agent authored.
+They were proven to discriminate (15/15 refuse a corrupted input) — and that proof created a false
+sense of rigor. **A gate can fail correctly on a property that does not matter.**
+
+**THE FIVE CLASSES OF THEATRE FOUND:**
+
+| class | gates | the tell |
+|---|---|---|
+| ROW-AS-PROOF | 7_1, 9, 10, 11 | validates a JSON the agent typed; `"opened": true` is indistinguishable from actually opening it |
+| STRING-PROXY | 2, 3, 4, 12 | "fabrication gone" because a string is absent; the value can still be baked in the dist |
+| SELF-REPORTED LOG | 1, 5, 6 | `CONSUMED=YES` read from a text file the agent wrote |
+| HASH-AS-VERDICT | 0, 7 | two identical files, neither rendered; two empty files pass |
+| PROXY MEASUREMENT | 8 | the one real measurement answers "is something painted", never "is the zone at the right price" |
+
+**THE NEW EVIDENCE HIERARCHY:**
+
+```
+1  PIXELS OPENED THIS TURN      the rendered frame, described in its own terms
+2  A RETURNED VALUE             the code's output, produced by executing it
+3  A LIVE DEPENDENCY'S RESPONSE the real service answering
+--- the line below is not evidence, only a guard ---
+4  text properties              grep · sha · wc · exists · diff · an authored JSON
+```
+
+**A step whose only evidence is level 4 reports `UNVERIFIED`, never `PASS`.**
+
+**WHAT SURVIVES:** `gate_8`'s PIL chart-region non-black control — the only real measurement in
+the set — is retained and strengthened.
+
+**WHERE THE FRAMEWORK NOW LIVES:** `TESTING_LOG.md` §ZONE 16 — the per-step tests, the two
+questions, the five rules (no text-property pass · no self-authored artifact · every test carries a
+mutation · every test carries a negative control · the verdict is pixels opened this turn).
+
+**THE SUBJECT TEST, now mandatory before trusting any check:**
+> *what object does this check look at, and is that object the thing that runs?*

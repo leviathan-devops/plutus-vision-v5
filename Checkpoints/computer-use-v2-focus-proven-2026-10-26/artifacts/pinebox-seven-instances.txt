@@ -1,0 +1,71 @@
+══════════════════════════════════════════════════════════════════════════
+ PINEBOX multi-instance · N=7 · replica :90 · operator 0x80002c · 12240 MB available
+══════════════════════════════════════════════════════════════════════════
+
+── bring up 7 instances, one at a time; the operator must keep the focus through each ──
+  PASS  up --id 1: ready on :8, operator focus + top unchanged
+  PASS  up --id 2: ready on :9, operator focus + top unchanged
+  PASS  up --id 3: ready on :10, operator focus + top unchanged
+  PASS  up --id 4: ready on :11, operator focus + top unchanged
+  PASS  up --id 5: ready on :12, operator focus + top unchanged
+  FAIL  up --id 6
+        rc=1: REFUSED  FOCUS_STOLEN  —  weston-x11 up: stack top moved 0x80002c -> 0x1400005 (a window of this tool took the operator's focus or the top of the stack)   (the partly started instance 6 was torn down; logs kept in /tmp/pinebox-m3717558/i6) 
+  PASS  up --id 7: ready on :13, operator focus + top unchanged
+
+── isolation: each instance's own bytes name its own ports (B10) ──
+  PASS  instance 1 serves its OWN apiBase :9861, pineStation :9751, rail :9764
+  PASS  instance 1: CDP :9232 lists a pine.html target for ITS server :9861
+  PASS  instance 1 frame: 140 colours
+  PASS  instance 2 serves its OWN apiBase :9871, pineStation :9761, rail :9774
+  PASS  instance 2: CDP :9242 lists a pine.html target for ITS server :9871
+  PASS  instance 2 frame: 140 colours
+  PASS  instance 3 serves its OWN apiBase :9881, pineStation :9771, rail :9784
+  PASS  instance 3: CDP :9252 lists a pine.html target for ITS server :9881
+  PASS  instance 3 frame: 100 colours
+  PASS  instance 4 serves its OWN apiBase :9891, pineStation :9781, rail :9794
+  PASS  instance 4: CDP :9262 lists a pine.html target for ITS server :9891
+  PASS  instance 4 frame: 100 colours
+  PASS  instance 5 serves its OWN apiBase :9901, pineStation :9791, rail :9804
+  PASS  instance 5: CDP :9272 lists a pine.html target for ITS server :9901
+  PASS  instance 5 frame: 100 colours
+  FAIL  instance 6 has no record
+        
+  PASS  instance 7 serves its OWN apiBase :9921, pineStation :9811, rail :9824
+  PASS  instance 7: CDP :9292 lists a pine.html target for ITS server :9921
+  PASS  instance 7 frame: 100 colours
+  PASS  0 shared ports: 30 port assignments, 30 distinct
+  FAIL  display slots collide
+        slots: 8 9 10 11 12 13
+  FAIL  compositor count
+        6 for 7 instances
+  FAIL  host windows
+        7 windows, expected 8
+
+── B6: a second up on a live id is refused ──
+  PASS  up --id 1 again: REFUSED INSTANCE_LIVE
+
+── the canonical id: the operator's live IDE holds 9741/9754/9851, so id 0 must be REFUSED, not collided with ──
+  PASS  up --id 0: REFUSED PORT_TAKEN (the operator's own IDE is on :9851)
+  PASS  ...and nothing was started for it
+
+── B7/P10: down --id 1 leaves every other instance running ──
+  PASS  instance 2 still serves :9871 after instance 1 was torn down
+  PASS  instance 3 still serves :9881 after instance 1 was torn down
+  PASS  instance 4 still serves :9891 after instance 1 was torn down
+  PASS  instance 5 still serves :9901 after instance 1 was torn down
+jq: error: Could not open file /tmp/pinebox-m3717558/i6/state.json: No such file or directory
+  FAIL  instance 6 died with instance 1
+        :
+  PASS  instance 7 still serves :9921 after instance 1 was torn down
+  PASS  instance 1's record is gone
+  PASS  instance 1's browser processes are gone (by the recorded group, not a pattern)
+  PASS  the operator's focus survived the teardown
+
+── B5/P13: the browser does not accumulate across repeated loads ──
+  PASS  chrome processes for instance 7: 14 before, 12 after 3 loads (no growth; the blueprint's own 7F measures 11 for one --app chrome)
+  PASS  the operator's focus survived 3 loads
+
+══════════════════════════════════════════════════════════════════════════
+ PASS 38 · FAIL 6
+══════════════════════════════════════════════════════════════════════════
+exit=1

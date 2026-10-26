@@ -1,0 +1,12 @@
+══ computer-use v2 · the gate chain ══
+cmp-guard      (A9)            PASS
+strings        (A1-A11)        PASS
+mutate         (detectors)     PASS
+state battery  (V6)            PASS
+mcp            (V9)            PASS
+c3-no-raise    (V3)            PASS
+isolation      (V4/V5)         PASS
+mutate --slow (gates bite)     PASS
+leak-check     (nothing left)  PASS
+══ 9 gates · 0 failed ══
+exit=0
