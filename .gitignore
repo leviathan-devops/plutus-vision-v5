@@ -1,51 +1,24 @@
-# dependencies + build output
+# ── PLUTUS_VISION ignores: each rule names the FACT that justifies it ──────────────────────
+# git worktrees of THIS SAME repository checking out other branches (proven by `git worktree
+# list`: MIMO_AGENT -> mimo_agent, DEEPSEEK_AGENT -> deepseek_agent). Committing them would
+# embed another branch's tree inside step_agent.
+MIMO_AGENT/
+DEEPSEEK_AGENT/
+
+# an archive of a directory that is already tracked in full (pine-ide.zip = 1509 files of pine-ide/)
+pine-ide.zip
+
+# scratch and staging, not source
+.scratch-probe/
+.handover-stage/
+
+# vendored third-party inside a packaged copy
+Ship_Packages/**/novnc/vendor/
+
+# regenerable / runtime
 node_modules/
-dist/
-*.log
-
-# secrets — never in the tree
-.env
-.env.*
-*.pem
-*.key
-
-# runtime state (never evidence)
-runtime/
-*.db-shm
-*.db-wal
-session.json
-
-# bulk evidence: regenerable from the rig, not source
-vil/recordings/
-parity_frames/
-vision_frames/
-*.mp4
-
-# editor + OS
-.DS_Store
-
-# runtime state written by the IDE's own pipeline
-# evidence/ accumulates one PNG per capture and is reproducible by re-capturing.
-# vil/*.jsonl is NOT ignored: it is the VERDICT LEDGER -- the operator's own record, a few
-# rows per week, and the artifact the gate rows are read back from. That is a record, not
-# accumulating state.
-evidence/
 __pycache__/
 *.pyc
-.trident/
-.omp/
-desktop/tauri/target/
-
-# W7: regenerable gate exhaust (rebuilt fresh on every invocation — never source)
-.fence/
-JEV_GATE/litmus_evidence.txt
-JEV_GATE/litmus_shot.png
-
-# W7: analyzer exhaust (regenerable, pins a stale commit hash)
-.ua/
-
-# W7: handover/canon bulk (archives + training corpora; content extracted/committed separately)
-handovers/*.zip
-Original_Canon_Data/Training Data/
-Original_Canon_Data/Handover_Data/
-Original_Canon_Data/*.zip
+*.db-shm
+*.db-wal
+.DS_Store
