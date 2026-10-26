@@ -1,0 +1,3 @@
+$ test -d gates
+ok
+rc=0

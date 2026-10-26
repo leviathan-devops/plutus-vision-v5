@@ -1,0 +1,15 @@
+LITMUS EVIDENCE (scripts/indicator_gate.py — FRESH this gate run)
+artifact: pine-ide/ide/renderer/plutus-vision-v2.pine sha=653eea1a5fc4c01a744a7097c79a27e173d860402da494a05f205e2b77e80406
+data: DXY 1H yfinance, 3004 bars, cache=data/litmus/dxy_1h.csv
+seed: 20261011 · window: 400 real bars/Friday close · flat-cap: 12h
+canonical station-Oct: boxes=[(101.7879, 101.6129), (101.5692, 101.3942), (101.3505, 101.1755), (101.1318, 100.9568), (100.9131, 100.7381)] days=['R 60%', 'SS 60%', 'SS 60%', 'BS 80%', 'BS 80%'] tables=1
+canonical IDE-fixture: boxes=[(101.803, 101.623), (101.578, 101.398), (101.353, 101.173), (101.128, 100.948), (100.903, 100.723)] days=['R 60%', 'SS 60%', 'SS 60%', 'SS 60%', 'SS 60%'] tables=1
+dead-path audit (live grep, comments stripped): all 9 symbols 0 in code
+week 2026-07-17: ok:true boxes=5 RES=True SUP=True ceiling-ZFP=37% E2=R 60%/SS 60%/SS 60%/SS 60%/SS 60% range=1.447 bars=400
+week 2026-07-31: ok:true boxes=5 RES=True SUP=True ceiling-ZFP=40% E2=R 60%/SS 60%/SS 60%/SS 60%/SS 60% range=1.948 bars=400
+week 2026-08-07: ok:true boxes=5 RES=True SUP=True ceiling-ZFP=40% E2=BS 60%/R 75%/SS 60%/SS 60%/SS 60% range=2.237 bars=400
+week 2026-09-04: ok:true boxes=5 RES=True SUP=True ceiling-ZFP=55% E2=R 60%/SS 60%/SS 60%/BS 80%/BS 80% range=1.526 bars=400
+week 2026-10-09: ok:true boxes=5 RES=True SUP=True ceiling-ZFP=37% E2=BS 60%/R 75%/SS 60%/SS 60%/SS 60% range=2.513 bars=400
+differential: breakout-proxy 2026-10-09 (range 2.513, ceiling 37%) vs consolidation-proxy 2026-07-17 (range 1.447, ceiling 37%)
+screenshot: /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/JEV_GATE/litmus_shot.png 1626x931 sha=44339e1962444f39 mtime=2026-10-11 23:20:06 (buffer sha == artifact sha — BOUND)
+LITMUS: PASS — 5/5 weeks render >=5 zones with RES+SUP over real bars
