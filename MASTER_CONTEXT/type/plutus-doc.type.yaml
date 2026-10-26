@@ -1,0 +1,4 @@
+fields:
+  title: String
+  kind: [bible, spec, macro, feedback, analysis, doctrine, manual, reload]
+  status: [canon, superseded, draft]

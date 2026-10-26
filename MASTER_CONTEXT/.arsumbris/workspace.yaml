@@ -1,0 +1,6 @@
+type: au.engine.workspace::au-engine
+edit:
+  - MASTER_CONTEXT
+discover:
+  - mcp-bundle
+  - host-bundle

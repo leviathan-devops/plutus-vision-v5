@@ -1,0 +1,5 @@
+fields:
+  id: 'String{/^R[0-9]{1,2}$/}'
+  quote: String
+  source: String
+  status: [active, superseded, operator-confirmed, ratified]

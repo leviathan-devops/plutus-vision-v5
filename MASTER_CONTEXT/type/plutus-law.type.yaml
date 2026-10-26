@@ -1,0 +1,12 @@
+#: A governing law or invariant of the PLUTUS system — the immutable canon.
+fields:
+  #: The stable id (IRON-*, R*, ANCH-*, etc.).
+  id: String
+  #: One-line summary.
+  tldr: String
+  #: The verbatim statement of the law.
+  statement: String
+  #: The authority tier.
+  tier: [IMMUTABLE, EVOLVING, SUPERSEDED]
+  #: The file:line anchor.
+  anchor: String

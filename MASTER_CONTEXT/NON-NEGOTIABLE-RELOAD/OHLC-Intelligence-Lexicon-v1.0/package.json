@@ -1,0 +1,15 @@
+{
+  "name": "ohlc-intelligence-lexicon",
+  "version": "1.0.0",
+  "description": "OHLC-Intelligence-Lexicon boilerplate fork — the six trading lexicon machines + the 11-token reasoning chain, on the IntelligenceLexicon-Edition-v1.0 machine substrate (operator directive 2026-08-06)",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "bun build src/index.ts --outdir dist --target bun --format esm --bundle",
+    "typecheck": "bunx tsc --noEmit",
+    "test": "bun test tests/properties.ts"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "latest",
+    "typescript": "^5"
+  }
+}

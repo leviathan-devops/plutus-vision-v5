@@ -1,0 +1,4 @@
+fields:
+  id: 'String{/^HL-[0-9]{2}$/}'
+  rule: String
+  anchor: String

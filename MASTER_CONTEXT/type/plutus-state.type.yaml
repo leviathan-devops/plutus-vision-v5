@@ -1,0 +1,5 @@
+fields:
+  component: String
+  value: String
+  verifiedAt: Date
+  evidence: String

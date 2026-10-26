@@ -1,0 +1,3 @@
+fields:
+  term: String
+  definition: String

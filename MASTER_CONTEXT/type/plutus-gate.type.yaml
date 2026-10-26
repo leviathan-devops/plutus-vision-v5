@@ -1,0 +1,5 @@
+fields:
+  name: String
+  command: String
+  pass: String
+  cadence: [every-change, per-wave, ship-bar, manual]
