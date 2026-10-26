@@ -75,7 +75,20 @@ stage_verify() {
   [ "${onchart:-0}" -gt 0 ] 2>/dev/null || refuse NO_DRAWINGS "the script compiled but drew nothing (onChart=${onchart:-0}) - an empty chart is not a working indicator"
   rows="$rows{\"check\":\"drawn\",\"ok\":true,\"evidence\":\"$bars bars, $onchart drawn\"},"
 
-  # 6 · THE PIXELS. A one-colour frame is a capture of nothing.
+  # 6 · THE PIXELS, AND THEY MUST BE NEW. A capture byte-identical to the one before it is not a
+  # second look - it is the same frame, so nothing was re-rendered (the "identical bytes, 5 boxes then
+  # 0" trap). Capture fresh, compare against the recorded sha, refuse NO_FRESH_FRAME on a repeat.
+  local fresh freshsha prevsha
+  fresh="$d/verify-frame.png"
+  node "$CORE/cdp.mjs" "$cdp" screenshot "$fresh" >/dev/null 2>&1 \
+    || refuse CAPTURE_FAILED "could not capture the frame to verify the render"
+  freshsha="$(sha256sum "$fresh" | cut -c1-16)"
+  prevsha="$(pb_rec_get "$id" .frame_sha)"
+  if [ -n "$prevsha" ] && [ "$prevsha" = "$freshsha" ]; then
+    refuse NO_FRESH_FRAME "the frame is byte-identical to the previous capture ($freshsha) - nothing was re-rendered, so this is not a new look"
+  fi
+  pb_rec "$id" ".frame_sha = \"$freshsha\" | .frame = {path: \"$fresh\", bytes: $(stat -c%s "$fresh"), colours: $(pb_rec_get "$id" .frame.colours)}"
+
   colours="$(pb_rec_get "$id" ".frame.colours")"
   [ "${colours:-0}" -gt 1 ] 2>/dev/null || refuse FRAME_BLANK "the captured frame has ${colours:-0} colour(s) - open it before claiming a render"
   rows="$rows{\"check\":\"frame\",\"ok\":true,\"evidence\":\"$colours colours\"}"

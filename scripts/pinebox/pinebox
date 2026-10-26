@@ -145,6 +145,10 @@ pb_up() {
   stage_services "$id" "$d" "$week"                 # STAGE 2
   stage_page "$id" "$d"                             # STAGE 3
   stage_frame "$id" "$d"                            # STAGE 4
+  # THE WEEK IS SET BY `up`, NOT BY THE CALLER. The IDE's `.pine-week` control comes up EMPTY, so a
+  # freshly created instance failed its own `verify` with WEEK_MISMATCH while the data was correct
+  # (measured). The fixture's week is already known here, so a correct instance is the DEFAULT.
+  stage_week_set "$id" "$(pb_iso_week "$week")" >/dev/null 2>&1 || true
   [ -n "$pine" ] && stage_load "$id" "$d" "$pine" "$pair" "$tf"   # STAGE 5
 
   # P7: the whole `up` - not just its first stage - must have left the operator's focus alone
