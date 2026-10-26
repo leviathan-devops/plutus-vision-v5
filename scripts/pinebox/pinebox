@@ -49,6 +49,7 @@ ledger_row() {
 . "$PB_HOME/stages/services.sh"
 . "$PB_HOME/stages/page.sh"
 . "$PB_HOME/stages/load.sh"
+. "$PB_HOME/stages/verify.sh"
 need jq NO_JQ
 
 pb_dir() { printf '%s/i%s' "$PB_ROOT" "$1"; }
@@ -269,6 +270,20 @@ pb_state() {
   else refuse BAD_ARGS "state needs --get K or --put K V"; fi
 }
 
+pb_week() {
+  require_id "$(flag id 0)"; [ -s "$(pb_dir "$ID")/state.json" ] || refuse NOT_UP "pinebox instance $ID is not up"
+  [ -n "$(flag set)" ] || refuse BAD_ARGS "week needs --set YYYY-Www"
+  stage_week_set "$ID" "$(flag set)"
+  printf '{"ok":true,"id":%s,"week":"%s"}\n' "$ID" "$(flag set)"
+}
+
+pb_verify() {
+  require_id "$(flag id 0)"; local d; d="$(pb_dir "$ID")"
+  [ -s "$d/state.json" ] || refuse NOT_UP "pinebox instance $ID is not up"
+  local w; w="$(flag week "$(pb_rec_get "$ID" .week)")"; [ -n "$w" ] || w="$(pb_rec_get "$ID" .week)"
+  stage_verify "$ID" "$d" "$w"
+}
+
 pb_view() {
   require_id "$(flag id 0)"
   [ -s "$(pb_dir "$ID")/state.json" ] || refuse NOT_UP "pinebox instance $ID is not up"
@@ -317,5 +332,7 @@ case "$PB_VERB" in
   terminal) pb_terminal ;;
   state)    pb_state ;;
   view)     pb_view ;;
+  week)     pb_week ;;
+  verify)   pb_verify ;;
   *) refuse BAD_VERB "unknown verb '$PB_VERB' - run: pinebox help" ;;
 esac
