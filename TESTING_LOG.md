@@ -2222,3 +2222,98 @@ forecast direction (rise to the resistance, fall to the support) matches.
 - **The retry condition:** install/repair `ocr` (or repoint the lane at a keyed provider), then re-run
   the scan and accept only a verdict line carrying a session id, a non-empty file scope and a
   non-trivial duration.
+
+---
+
+## TEST PLAN ENTRY — 2026-10-26 — THE DEPLOYED SURFACE, after the session refresh
+
+### HOST
+- **What:** every artefact that was just deployed, exercised on the refreshed session through the
+  TOOLS the operator will use (`computer.*`, `pinebox.*`), not only through the CLI.
+- **How:** `computer probe` → `shell up id 3` → `shell spawn xev` → `screenshot` → `click`/`key`/
+  `type` → `shell down`; then `pinebox up id 2 --pine ema-ribbon.pine` → `status` → `shot` → `down`.
+  The focus oracle (`_NET_ACTIVE_WINDOW` + the top of `_NET_CLIENT_LIST_STACKING`) is read before and
+  after every single step; the window's own `_NET_WM_STATE` is read too (EN-162).
+- **PASS criteria:** `active`/`top` identical to the baseline (`0x0` / `0xa0000a`) at every step; the
+  instance window at the BOTTOM of the stack; `state` empty; the delivered events visible in the
+  target application's own log as non-synthetic X events; teardown leaving no process.
+- **FAIL criteria:** any change in `active`/`top`; a raised window; a non-empty `_NET_WM_STATE`; a
+  pass claimed from an exit code rather than from the application's log.
+- **Status:** PASSED
+
+## TEST RESULT — 2026-10-26 — T-37 · the deployed surface on the refreshed session
+
+### HOST
+- **The run (verbatim, through the tool surface):**
+  `computer probe` → runtime `native`, surface `weston-x11`, 4 adapters available with real evidence.
+  `computer shell up --id 3` → `{"ok":true,"display":":3","x_slot":"3", ... "host_win":"0x1e00005",
+  "comp_tok":"827507:83594196"}`.
+  `computer shell spawn --id 3 -- xev -geometry 600x400` → `{"ok":true,"window":"4194305",
+  "pid":837223,"c3":"held"}`.
+  `computer screenshot --id 3` → `{"bytes":268,"colours":12,"via":"x","c3":"held"}`.
+  `computer click/key/type` → three `{"c3":"held"}`.
+  `pinebox up --id 2 --pine .../ema-ribbon.pine` → frame 145 024 bytes / 265 colours,
+  `status_row:"FIXTURE · DXY · 1H · 508 bars"`, counts `{plots:2, markers:4}`, `bars:508, onChart:6`.
+  `pinebox status --id 2` → `{station:31, rail:28, compositor:67, browser:586, instance:712,
+  unreadable:"server pid(s) 850428"}` (MB, measured PSS, hidden process named).
+  `pinebox shot` → `{"bytes":145145,"colours":264,"via":"cdp","c3":"held"}`.
+- **The raw oracle readings:**
+  before = `active=0x0 top=0xa0000a x-clients=1`;
+  after `up` = `active=0x0 top=0xa0000a x-clients=2`, `stack = 0x1e00005,0xa0000a` (ours at the
+  BOTTOM), `usertime=0`;
+  after the three drive verbs = `active=0x0 top=0xa0000a`;
+  after both teardowns = `active=0x0 top=0xa0000a x-clients=1`, `weston=0`, `chrome=0`, `stations=0`.
+- **The delivery proof (the target's own log, not our claim):**
+  `ButtonPress event, serial 34, synthetic NO, window 0x400001, ... (120,120), state 0x0, button 1`
+  and `KeyPress ... keycode 56 (keysym 0x62, b)`, `KeyPress` count 3.
+- **The verdict:** PASS — 0 focus changes, 0 raises, 0 attention flags after the fix, 0 leftovers.
+- **The artifacts:** `/tmp/t3-shot.png` (opened and read: xev's 600×400 canvas); the pinebox frame
+  attached by the tool (PINE IDE, candles + EMA 20/50 + 4 crossover triangles, status row naming the
+  instance's OWN rail `:9774`).
+
+## TEST RESULT — 2026-10-26 — T-38 · the gate chains after the deploy
+
+### SCRIPT
+- **The run:** `test/run.sh --slow` (computer-use) and `scripts/pinebox/test/run.sh --full`.
+- **The raw output:** computer-use `cmp-guard PASS · strings PASS · mutate PASS · state battery PASS ·
+  mcp PASS · c3-no-raise PASS · isolation PASS · mutate --slow PASS · leak-check PASS` →
+  `9 gates · 0 failed`, `exit=0`.
+- **The verdict:** PASS for the tool chain.
+- **The artifacts:** `/tmp/t-cu.out` (full text), the pinebox chain's own output.
+
+## TEST RESULT — 2026-10-26 — T-39 · what testing BROKE (the three defects it found)
+
+### HOST
+- **The run:** the T-37 surface test, read honestly.
+- **The raw output:** three defects, none of which any pre-existing gate could see:
+  (1) `xvfb` reported `available:true` on the evidence `"Unrecognized option: -version"` — a dead
+      detector matching the word inside a failure (EN-160);
+  (2) `screenshot` on a live instance refused `WINDOW_GONE` for a condition that is not "gone"
+      (EN-161);
+  (3) a mapped instance carried `_NET_WM_STATE_DEMANDS_ATTENTION` — a taskbar flash the C3 oracle
+      could not see (EN-162).
+- **The verdict:** FAIL of the shipped state, PASS of the test (it found them).
+- **The artifacts:** fixes at `core/adapters/xvfb.sh:31`, `core/drive.sh:60`,
+  `helpers/hostwin.c` (release); re-sealed deploy `hostwin=88579d713640`; commit `9031f45`.
+
+## TEST PLAN ENTRY — 2026-10-26 — THE EXTENSION LOAD CONTRACT
+
+### SCRIPT
+- **What:** every extension enabled in `config.yml` must export a factory the loader accepts, or it
+  is skipped at boot with a warning.
+- **How:** read `omp config get extensions --json`, and for each path check the file exists and its
+  source matches `export default|export \{… as default\}|module.exports`.
+- **PASS criteria:** every enabled extension present and exporting; 0 warnings from a refresh.
+- **FAIL criteria:** any enabled path missing, or any file without a factory (the observed defect).
+- **Status:** PASSED
+
+## TEST RESULT — 2026-10-26 — T-40 · the extension load contract
+
+### SCRIPT
+- **The run:** the check over `omp config get extensions --json` after moving
+  `snapcompact-read-frames.ts` out.
+- **The raw output:** `14 enabled, 0 with a problem`; `config.yml refs: 0`;
+  `files in extensions/: 0`.
+- **The verdict:** PASS.
+- **The artifacts:** `extensions-disabled/snapcompact-read-frames.{ts,md}` (recoverable); the
+  `extensions` key set to 14 entries via `omp config set`; commit `9031f45`.

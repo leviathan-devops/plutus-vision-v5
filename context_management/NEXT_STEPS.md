@@ -1,4 +1,30 @@
 # NEXT STEPS — PLUTUS VISION
+
+---
+
+## ⚡ NEXT — 2026-10-26 (this block supersedes the plan below it)
+
+**ORDERED BY WHAT UNBLOCKS A SHIP CLAIM**
+1. **Clear the audit gate** — install/repair `ocr` (or repoint the lane at a keyed provider), then run
+   `code-review action=scan` over `core/`, `helpers/`, `index.ts`, `mcp/` and `scripts/pinebox/`.
+   Accept a verdict only with a session id, a non-empty file scope and a non-trivial duration
+   (F-147). Nothing may be called ship-ready before this.
+2. **Decide the 88 untracked authored docs** (F-149): scope the W-9 doc floor by artifact class the way
+   it already scopes `Original_Canon_Data/*`, or give the genuine engineering docs real `file:line`
+   anchors. Not padded, not ignored, awaiting the operator.
+3. **V11: build a guest image** from `core/guest/rootfs/manifest.txt` and boot it once
+   (`CU_GUEST_IMAGE=…`) — the launcher and its four refusal paths are proven, the boot is not.
+4. **V56: emit the E2 geometry** — `pine-ide/pine-station/run.mjs:163` counts polylines, linefills and
+   tables and discards them, so `counts.polylines` is 0 on every load. Needs the renderer's draw-path
+   consumption read first, and belongs in its own commit outside the frozen-page rule.
+5. **Resolve the Pine/fixture date pairing** — `plutus-vision-v2.pine` bakes OCTOBER 2026 geometry while
+   every bar fixture ends 2026-07-21, so it frames to a one-hour window with nothing in it (EN-157).
+   Stage-5 acceptance uses `scripts/pinebox/test/fixtures/ema-ribbon.pine` until this is settled.
+6. **Restore the five skills** a concurrent session deleted (F-150) once the cleanup agent finishes —
+   the operator asked for a delay before restoring.
+
+**DONE-WHEN per item** is the token or line named beside it; a claim without that artefact is not done.
+
 **As of 2026-10-22** · overwrite semantics · the queued work, in execution order
 
 ---

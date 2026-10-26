@@ -2508,3 +2508,62 @@ verdict was PASS; the run-4/5/6 findings were refinements, fixed, with 2 false p
   already uses for `Original_Canon_Data/*`; (b) give the genuine engineering docs (design/, spec/,
   features/, sources/) real `file:line` anchors — they genuinely reference real files, and for those
   it is work, not padding; (c) leave them untracked, which is git honestly reporting an undecided file.
+
+---
+
+### F-150 — a concurrent session destroyed a tracked skill and 5 others, mid-flight
+
+- **What happened:** while this session worked, `~/.omp/agent/managed-skills/` was reorganised by
+  another agent: the six TRACKED `SKILL.md` files were deleted from disk (`jev-engine-operations`,
+  `jev-gates-and-decisions`, `jev-intelligence-pipelines`, `jev-judge-calibration`,
+  `jev-wiring-and-lanes`, and `measure-focus-theft-on-replica` — the skill this session created an hour
+  earlier) and 99 other directories appeared untracked.
+- **Found:** at the "make git clean" step, by `git status` showing 6 ` D` entries plus 99 ` ??`
+  entries under `managed-skills/`.
+- **Root cause:** two sessions writing one directory with no lock. The cleanup agent was pruning
+  "unused" skills; this session's skill was, at that moment, unused — created but never yet loaded as
+  a skill in a session.
+- **Impact:** one session's committed work silently deleted, plus five others'. Recovered:
+  `measure-focus-theft-on-replica` restored from commit `5263655`, which CANCELLED the deletion (the
+  file matches HEAD again, so there is nothing to commit).
+- **Disposition:** FIXED for mine; the five other deletions left as found (another session's intent,
+  not mine to author). Structural note: `managed-skills/` has no writer lock, so a prune can delete a
+  live session's committed skill. The operator confirmed a cleanup agent is running and asked for a
+  short delay before restoring anything — the only coordination available while no lock exists.
+
+### F-151 — the sanctioned config verb rewrites the whole file, and no pre-edit copy existed
+
+- **What happened:** to remove the `snapcompact-read-frames.ts` entry from `config.yml` the sanctioned
+  path was used (`omp config set extensions <json>`), which rewrote the entire file (91 insertions, 28
+  deletions) rather than one line. The snapshot attempt that preceded it was itself BLOCKED by the
+  `ORDER_config-hand-edit` gate, so no earlier bytes exist.
+- **Found:** by the agent, immediately after the write, when diffing against HEAD showed 35 semantic
+  key changes.
+- **Root cause:** two independent facts. (1) `omp config set` serialises its parsed state, so a
+  one-key change rewrites every key's formatting. (2) `config.yml` had been diverging from HEAD for
+  days — other sessions moved `modelRoles.*` from `open-design/deepseek-v4.1-flash` to
+  `opencode-go/muse-spark-1.3-contributor`, set `memory.backend` from `mnemopi` to `off` and
+  `ttsr.enabled` from false to true — so ANY diff against HEAD conflates their work with mine.
+- **Impact:** the change is committed (`a952cc2`) as an honest snapshot: the authored line named, the
+  rest attributed to other sessions. What CANNOT be proven is that my write left the other 35 keys
+  byte-identical, because no pre-edit bytes exist. What IS proven: the file parses at 36 top-level
+  keys with every section present, the host loads 14 extensions, and the probe reports
+  `native/weston-x11`.
+- **Disposition:** OPEN (probability, not proof). Retry condition: the next such write must be
+  preceded by a per-key record taken through `omp config get <key>` (which the gate permits), so the
+  before-state exists as data rather than as a file copy.
+
+### F-152 — a broken extension warned on every boot for an unknown number of sessions
+
+- **What happened:** on every session start:
+  `Warning: Failed to load extension .../snapcompact-read-frames.ts: Extension does not export a
+  valid factory function`. The operator finally asked what it was.
+- **Found:** the operator, in the message that also ordered the test.
+- **Root cause:** the file exports `export function init(pi)` and no default; the loader requires a
+  default factory. So it was skipped every boot, and its purpose (forcing the agent to open
+  snapcompact's image frames) was silently absent — the warning was read past because it was per-boot
+  noise rather than a failure with a consequence.
+- **Impact:** an unknown number of sessions ran without the frame-reading behaviour it existed to
+  provide, each printing the warning that said so.
+- **Disposition:** FIXED — moved to `extensions-disabled/` (recoverable), entry removed with the
+  sanctioned verb; a sweep confirms 14 enabled extensions, 0 without a factory (commit `9031f45`).

@@ -1,5 +1,52 @@
 # EVIDENCE STATE — PLUTUS VISION
 
+---
+
+## ⚡ CURRENT STATE — 2026-10-26 (this block supersedes any state below it)
+
+**THE DEPLOYED ARTEFACT (measured this session, `sha256sum`)**
+```
+pine-ide/ide/renderer/plutus-vision-v2.pine   653eea1a5fc4c01a744a7097c79a27e173d860402da494a05f205e2b77e80406
+                                              1,863 L · the renderer bytes the IDE serves
+plutus-vision-v1.pine (THE V1 SEAL, HARD STOP) 0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1
+```
+⚠ The v2 file CHANGED since the 2026-10-22 manifest refresh (`668e89d7…` → `653eea1a…`). The manifest row is
+stale and the file on disk wins; the change is recorded in RUNNING_BUILD_LOG (2026-10-26).
+
+**WHAT IS LIVE ON THIS HOST, and how it is proven**
+- `computer` (~/.omp/agent/extensions/computer-use-v2/, 48 files, commit `5263655`) — a headed
+  computer per instance id. Surface `weston-x11` by default, `weston-vnc` only where no display exists.
+  C3 (no focus theft) is a PER-RUN BEHAVIOURAL REFUSAL, not a table cell: `core/govern.sh:125`
+  `c3_check` compares the WM's `_NET_ACTIVE_WINDOW` and the top of `_NET_CLIENT_LIST_STACKING` by
+  identity across EVERY 30 ms sample of the verb, and `up` tears the instance down on a breach.
+- `pinebox` (scripts/pinebox/, 17 files, commit `4de2be2`) — the Pine IDE as an app layer. Ports derive
+  from `--id` (`scripts/pinebox/ports.sh:21` `pb_ports_json`); the served page is rewritten at request
+  time for BOTH config globals it reads (`scripts/pinebox/inject.py:38`), so `git diff HEAD -- pine-ide/`
+  stays EMPTY; inputs are validated before any process starts
+  (`scripts/pinebox/stages/services.sh:34` `pb_preflight`).
+- The two compiled helpers: `nofocus.so` sha16 `ccc1f778d2bd`, `hostwin` sha16 `88579d713640`
+  (built into `~/.cache/computer-use/lib`, keyed by source sha; a stale helper is REFUSED
+  `HELPER_STALE`, never used).
+- Deploy proof: `deploy.sh verify` → `DEPLOY: OK  sealed=61 files  mcp=2/2 answer
+  probe=native/weston-x11`.
+
+**THE EVIDENCE, this cycle**
+- release-order rate: 0 failures in 60 `up`s with a 30 ms sampler (was 3/24, 5/45, 1/40 ≈ 11%).
+- real desktop: 26/26 checks, `active=0x0 top=0xa0000a` identical before/after every step.
+- pinebox seven concurrent instances: 35 distinct ports / 35 assignments, 7 slots, 7 compositors,
+  0 operator-focus changes, `up --id 0` correctly REFUSED `PORT_TAKEN` against the operator's own server.
+- gate chains: tool 9 gates / 0 failed; app layer 7 gates / 0 failed (both with behavioural mutants that
+  make their gates FAIL).
+- **AUDIT GATE: BLOCKED** (`OCR_MISSING` — no executable `ocr` on this host). No ship-ready claim is
+  made for this build; the independent reviewer subagent (12 defects, all fixed) is a substitute, not
+  the gate.
+
+**WHAT IS NOT DONE** (unchanged, and named rather than implied): the E2 polyline/linefill geometry is
+counted and discarded at `pine-ide/pine-station/run.mjs:163`; the guest runtime (V11) is unproven
+without an image; agentOS (V12) is not built; 88 authored docs are untracked because the repo's own W-9
+floor refuses them (none padded, no gate weakened).
+
+
 _CURRENT TRUTH as of 2026-10-22 — refreshed by canon-doc-update. **Every sha below was measured
 in this session with `sha256sum`; a prior version of this block carried `125c94f8…` for
 `plutus-vision-v2.pine`, which is STALE — the file on disk is `668e89d7…`.**_

@@ -1533,3 +1533,47 @@ the proven one and the probe's cause is UNKNOWN.
   seal corrupted to zeros → FAIL · log timestamps stripped → FAIL · a manifest count falsified → FAIL ·
   the seal deleted (fail-closed) → FAIL · restored → PASS.
 - EVIDENCE: `gates/canon_docs.py`, rc=0 on 17 checks; the seven mutations above, each rc=1.
+
+## [2026-10-26T17:10:00Z] — COMPUTER-USE v2 REBUILT TO ITS BLUEPRINT, AND PINEBOX SHIPPED ON IT
+- WHAT: a full rebuild of the computer tool (`~/.omp/agent/extensions/computer-use-v2/`, 48 files,
+  commit `5263655`) and the Pine IDE app layer (`scripts/pinebox/`, 17 files, commit `4de2be2`), both
+  replaced after the first attempt was discarded (`a846de2`). Two compiled helpers
+  (`helpers/nofocus.c`, `helpers/hostwin.c`), a devtools drive path (`core/cdp.mjs`), one action table
+  (`core/actions.json`) that the OMP extension and the MCP server both forward, 9 gates for the tool and
+  7 for the app layer, and `deploy.sh` (seal/install/verify).
+- WHY: the operator's requirement was BOTH halves at once — *"this needs to be a headed window on my
+  screen that I can click into and see if I want"* AND *"It just should not fucking rip the primary
+  focus"*. The first build satisfied neither: it chose the VNC surface (no window at all) and
+  "repaired" focus theft with a poll loop that re-raised a window every 0.35 s.
+- HOW: the mechanism was measured instead of guessed. weston's x11 backend maps its host window with
+  NONE of the 11 `_NET_WM_*` atoms, so the window manager applies focus-on-map — measured A/B on
+  isolated replica displays (focus STOLEN without the interposer, KEPT with it). The fix sets
+  `_NET_WM_USER_TIME=0` + `_NET_WM_STATE_BELOW` before the map, then `hostwin release` removes BELOW
+  and lowers in ONE flush (releasing alone drops the window on TOP; a lower BEFORE the release is a
+  no-op). Dead ends: window size (no effect), pointer position (a wrong heuristic), pid reuse (a real
+  bug but not this one) — a marked timeline named the exact step in one run.
+- EVIDENCE: release-order rate 0 failures in 60 runs with a 30 ms sampler (was 3/24, 5/45, 1/40);
+  real desktop 26/26 with `active=0x0 top=0xa0000a` unchanged; pinebox seven concurrent instances →
+  35 distinct ports / 35 assignments, 7 slots, 0 focus changes; `deploy.sh verify` → `DEPLOY: OK
+  sealed=61 hostwin=88579d713640 mcp=2/2 probe=native/weston-x11`; tool chain 9 gates 0 failed.
+- NEXT: the E2 polyline/linefill geometry is still counted and discarded (`run.mjs:163`); the guest
+  runtime (V11) is unproven without an image; the audit gate is BLOCKED on `OCR_MISSING`.
+
+## [2026-10-26T17:20:00Z] — THE DEPLOYED SURFACE TESTED ON THE REFRESHED SESSION: 3 defects found
+- WHAT: the shipped tools exercised through the extension surface (`computer.probe/up/spawn/screenshot/
+  click/key/type/down`, `pinebox.up/status/shot/down`) with the focus oracle read around every step.
+- WHY: the operator's order was *"test everything"* — and a gate chain that passes while the shipped
+  surface misbehaves is exactly the shape the whole rebuild exists to eliminate.
+- HOW: three defects surfaced that no gate could see, each chased to a mechanism: the xvfb probe
+  matched the WORD "version" inside its own failure message (`Unrecognized option: -version`) and
+  reported `available:true` on a failing command; `screenshot` refused `WINDOW_GONE` for "nothing bound
+  yet", a different condition from "the binding vanished"; and a mapped instance carried
+  `_NET_WM_STATE_DEMANDS_ATTENTION` — a taskbar flash the C3 contract never covered because it checks
+  focus and stacking, not the window's own state list.
+- EVIDENCE: after the fixes, a fresh `up` comes up `state=[]`, `stack=0x1e00005,0xa0000a` (ours at the
+  BOTTOM), `usertime=0`; delivery proven from xev's own log (`ButtonPress … (120,120) … synthetic NO`,
+  `KeyPress keycode 56 (keysym 0x62, b)`, 3 presses); teardown ×2 left `weston=0 chrome=0 stations=0`;
+  extension sweep `14 enabled, 0 with a problem`.
+- NEXT: the same pattern in AP-29/AP-33 — a check's FORM surviving while its SUBSTANCE does not — is
+  now the standing thing to hunt: assert a SUCCESS SHAPE (rc, usage line, token), never "output that
+  contains a word I recognise".

@@ -2549,3 +2549,52 @@ C3 `--real` and one full PINEBOX cycle on `:1`; then `deploy.sh seal/install/ver
 - **One possible neighbour loss:** a scratch `pkill -f 'Xvfb.real :9[0-9]'` may have taken another
   agent's `:99` rig (F-146, P-13). Replicas are now confined to `:200–:230`.
 - **The operator's fence:** two passes ran on `:1` (self-authorised, recorded as P-12).
+
+---
+
+## 2026-10-26 (second) — DEPLOYED AND TESTED ON THE REFRESHED SESSION: 3 defects found and fixed
+
+**The built.** Nothing new was designed. The deployed artefact was EXERCISED and three defects that no
+gate could see were found and fixed, plus the broken extension the operator asked about.
+
+**The why.** The operator's order after the refresh: *"test everything"* and *"whatever this is
+disable/delete it"* (the per-boot `Failed to load extension` warning).
+
+**The how.**
+1. **Tested through the tools the operator uses**, not only the CLI: `computer probe`, `shell up`,
+   `shell spawn`, `screenshot`, `click`/`key`/`type`, `shell down`, then `pinebox up` / `status` /
+   `shot` / `down` — with the focus oracle and the window's own `_NET_WM_STATE` read around EVERY step.
+2. **Each surprise was chased to a mechanism** instead of being worked around: the xvfb probe's word
+   match, the single token for two conditions, and the attention flag the C3 contract never covered.
+3. **The extension** was moved out of the load path rather than deleted (it is not in git), and its
+   config entry removed with the sanctioned verb.
+
+**The evidence.**
+- `computer probe` → `native` / `weston-x11`, and afterwards all four adapters honest.
+- Instance `up` → `active=0x0 top=0xa0000a x-clients=2`, `stack=0x1e00005,0xa0000a` (ours at the
+  BOTTOM), `usertime=0`, `state=[]`.
+- Delivery proven from xev's own log: `ButtonPress … (120,120) … synthetic NO`, `KeyPress … keycode 56
+  (keysym 0x62, b)`, 3 presses.
+- `pinebox up --id 2` → 145 024-byte frame / 265 colours, `FIXTURE · DXY · 1H · 508 bars`, counts
+  `{plots:2, markers:4}`, status row naming its OWN rail `:9774`; `status` → 712 MB with the hidden
+  server pid named; `shot` → CDP, 264 colours, `c3:"held"`.
+- Teardown ×2 → `weston=0`, `chrome=0`, `stations=0`, `x-clients=1`.
+- `test/run.sh --slow` → **9 gates, 0 failed, exit 0**.
+
+**The verification.**
+- The three fixes each proven both ways: xvfb real → available, fake → `available:false`;
+  `NO_WINDOW_BOUND` on a fresh instance vs `WINDOW_GONE` for a vanished binding; a fresh `up` now comes
+  up `state=[]` where it previously carried `_NET_WM_STATE_DEMANDS_ATTENTION`.
+- Deploy re-sealed after the edits: 61 files, `hostwin=88579d713640`, `mcp=2/2 answer`,
+  `probe=native/weston-x11`.
+- Extension sweep: `14 enabled, 0 with a problem`.
+
+**The honest notes.**
+- **`config.yml` cannot be proven to have changed only one key** — the sanctioned verb rewrites the
+  whole file and the pre-edit copy was blocked, so the other 35 keys' divergence from HEAD is
+  attributed to other sessions by INSPECTION, not by diff (F-151). The file parses at 36 keys and the
+  host runs.
+- **A concurrent session deleted six tracked skills**, one of them this session's; mine is restored
+  (the deletion is cancelled because the file matches HEAD), the other five left as found (F-150).
+- **The audit gate is still BLOCKED** (`OCR_MISSING`) — no ship-ready claim is made this cycle either.
+- **The pinebox chain's seven-instance gate** was re-run and is reported in T-38 when it completed.

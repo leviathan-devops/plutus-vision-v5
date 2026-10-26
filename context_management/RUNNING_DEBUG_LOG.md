@@ -1230,3 +1230,56 @@ raises the extremes toward HEAVY and flips the E2 to the reversal the operator e
   finding and would send a resumed session to build the wrong architecture. Retained as history.
 - LESSON: **an index is a GENERATED artefact.** Every hand-maintained count in a documentation set
   is a future lie with a known fix.
+
+## [2026-10-26T17:12:00Z] — THE FOCUS THEFT: no `_NET_WM_USER_TIME` at map
+- SYMPTOM: every instance brought the compositor window to the front of the operator's screen; the
+  operator reported it five times (*"it's still fucking gripping focus and forcing it to the top of my
+  screen every time you use it"*).
+- ROOT CAUSE: `libweston-13/x11-backend.so` imports `xcb_create_window`/`xcb_map_window` and references
+  0 of the 11 `_NET_WM_*` atoms, so the host WM sees a window with no user-time and applies
+  focus-on-map. Every map is one theft, so every leaked compositor was one more.
+- FIX: `helpers/nofocus.c` (LD_PRELOAD on `xcb_map_window`) sets `_NET_WM_USER_TIME=0` and
+  `_NET_WM_STATE=[BELOW]` on the same connection before the map; the adapter then releases BELOW so a
+  human can click the window forward, and verifies on the WM's own stack.
+- LESSON: a window manager is not adversarial — it reads properties. "C3 yes" in a design table is a
+  PREDICTION until a probe reads `_NET_ACTIVE_WINDOW` and the top of `_NET_CLIENT_LIST_STACKING`.
+- EVIDENCE: A/B on separate replica displays — no interposer: focus STOLEN, compositor on TOP,
+  usertime `not found`; with it: focus KEPT, usertime `0`.
+
+## [2026-10-26T17:14:00Z] — RELEASING `BELOW` IS A RAISE (11% intermittent)
+- SYMPTOM: after the fix, `up` still ended with the compositor on top in 3 of 24, 5 of 45, 1 of 40 runs.
+- ROOT CAUSE: a marked timeline of a failing run: `+74 ms` mapped at the BOTTOM → `+218 ms lower` (no-op,
+  already the bottom) → `+522 ms below-off` → `+547 ms` the compositor is TOP. Leaving the BELOW layer
+  keeps the window's most-recent stack position, and a `lower` issued BEFORE the release is a no-op.
+- FIX: `hostwin release` sends remove-BELOW and `_NET_RESTACK_WINDOW` lower in ONE flush, then the
+  adapter verifies and corrects (bounded, 8 tries).
+- LESSON: an intermittent fix needs a TIMELINE, not a theory. Three theories were wrong (pointer
+  position, window size, pid reuse); the timeline named the step in one run.
+- EVIDENCE: 60 consecutive `up`s with a 30 ms sampler over the whole verb → 0 failures.
+
+## [2026-10-26T17:16:00Z] — `_NET_WM_STATE_DEMANDS_ATTENTION` outlived `up`
+- SYMPTOM: a mapped instance reported `state=[_NET_WM_STATE_DEMANDS_ATTENTION]` while `usertime=0`,
+  focus untouched (`active=0x0`) and the window at the BOTTOM of the stack.
+- ROOT CAUSE: something requests activation on the window; with zero user-time the WM cannot grant it,
+  so it converts the request into "demands attention" — the flag that makes a taskbar entry flash. The
+  C3 contract covered focus and stacking and never read the window's own state list.
+- FIX: `hostwin release` also removes that atom in the same flush (`helpers/hostwin.c`, sha
+  88579d713640).
+- LESSON: "does not take the focus" and "does not ask for attention" are different properties. An
+  oracle that reads only the WM's focus record can pass a window that still blinks at the operator.
+- EVIDENCE: running instance `state=[_NET_WM_STATE_DEMANDS_ATTENTION] → []` on one release, focus and
+  stack unchanged; a fresh `up` now comes up `state=[]`.
+
+## [2026-10-26T17:18:00Z] — THE xvfb PROBE PROVED ITSELF AVAILABLE WITH ITS OWN ERROR
+- SYMPTOM: `computer probe` reported `{"adapter":"xvfb","available":true,"evidence":{"xvfb":"Unrecognized
+  option: -version"}}`.
+- ROOT CAUSE: the probe ran `Xvfb -version` (exits 1 here) and matched `*...*version*` against the
+  output — the string `Unrecognized option: -version` contains the word. A second defect followed
+  while fixing it: capturing `Xvfb -help | head -1` and reading `$?` measures the PIPE, and `head`
+  exiting early makes the writer die of SIGPIPE → `exited 141` for a working binary.
+- FIX: `Xvfb -help` is the discriminator (rc 0 AND `"use: X"`), and the rc is taken from the COMMAND
+  with the full output captured first (`core/adapters/xvfb.sh:31`).
+- LESSON: anchor a probe to a SUCCESS SHAPE, never to a word that also appears in the failure. And
+  `$?` after a pipe is the last stage's status, not the command's.
+- EVIDENCE: real Xvfb → `available:true` + `use: X [:<display>] [option]`; a fake Xvfb exiting 1 →
+  `available:false`, `"Xvfb -help exited 1"`.

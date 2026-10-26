@@ -460,3 +460,35 @@ requires reading; a graph requires querying and can be graded for usability.
 **The honest result:** the blind audit returned FALSIFIED AS STATED — 31 of 36 questions COMPLETE,
 with three blocking defects (the SL contradiction, the regime-threshold mismatch, no E2-CANNOT-DO
 card). The graph is good and not yet sufficient. **That verdict is recorded rather than softened.**
+
+---
+
+## 2026-10-26 — THE OPERATOR'S RULINGS ON THE COMPUTER TOOL (verbatim, binding)
+
+**R1 · THE WINDOW IS THE PRODUCT, AND IT MUST NOT TAKE THE FOCUS.** *"this needs to be a headed window
+on my screen that I can click into and see if I want. It just should not fucking rip the primary focus
+are you fucking retarded?"* AND *"The solution is not to kill the window. That's fucking stupid. The
+point is that this needs to work normally without stealing focus."*
+Context: the agent had proposed a VNC surface that added no window at all, then presented "0 windows on
+your screen" as a C3 success. Ruling: BOTH properties are the requirement; neither satisfies the other.
+Consequence in the code: `weston-x11` is the default surface; the C3 check REFUSES `FOCUS_STOLEN` and
+tears the instance down rather than shipping one.
+
+**R2 · THE SURFACE IS NOT NEGOTIABLE BY CONVENIENCE.** *"One, why are you using VNC? VMC is not the
+fucking spec. Two, what the fuck do you need zero windows on my screen?"*
+Consequence: `core/probe.sh` selects by contract (C3 satisfied, a display exists), never by preference;
+`weston-vnc` is reachable only where no display exists.
+
+**R3 · THE SCOPE IS THE OPERATOR'S, INCLUDING THE WORD "EVERYTHING".** *"test everything"*, *"Make sure
+everything is cleanly documented go ahead and generate the full ship package."*
+Consequence: every phase of the ship-package skill runs; no phase, doc or component is dropped or
+reduced, and a blocked component is named with its unblock condition rather than replaced.
+
+**R4 · A BROKEN COMPONENT IS DISABLED OR DELETED, NOT TOLERATED.** *"[the per-boot extension warning] —
+whatever this is disable/delete it"*
+Consequence: the file was moved to `extensions-disabled/` (recoverable, not destroyed) and its config
+entry removed with the sanctioned verb; a sweep now proves every enabled extension exports a factory.
+
+**R5 · CONFIRMED BY THE OPERATOR, ON THEIR OWN SCREEN.** *"I can confirm that nothing stole focus. from
+my active device and I can see it on my screen as well if I look at the windows. Good job."*
+This is the OUTSIDE observation that closes C3 — the one claim an agent cannot make for itself.

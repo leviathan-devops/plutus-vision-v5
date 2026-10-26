@@ -565,3 +565,33 @@ instrument was substituted for the requirement, and the requirement was never re
 countermeasure adopted this cycle is the one the operator demanded by name: the C3 check is a
 BEHAVIOURAL refusal with a NEGATIVE CONTROL, so the claim "nothing was raised" cannot be made by a
 component that is itself raising.
+
+---
+
+## AP-33 (2026-10-26) — the adapter that proved itself available with its own error message
+
+- **The shape:** the `xvfb` adapter's probe ran `Xvfb -version`, which exits 1 with
+  `Unrecognized option: -version`, and matched that output against a pattern containing the word
+  "version" — so it printed `available: true, reason: ""`, offering a FAILING COMMAND as its evidence.
+  The probe had the form of rigour (it ran something, recorded evidence, carried a reason field) and
+  no discriminating power at all.
+- **Why it is theatrical:** the evidence field is precisely where a reader looks to decide whether to
+  trust `available:true`, and it was filled with the proof of failure.
+- **The evidence:** `{"adapter":"xvfb","available":true,"evidence":{"xvfb":"Unrecognized option:
+  -version"}}` in the T-37 output; fixed at `core/adapters/xvfb.sh:31`, proven both ways — real Xvfb →
+  available with `use: X [:<display>] [option]`; a fake Xvfb exiting 1 → `available:false`,
+  `"Xvfb -help exited 1"`.
+- **Disposition:** **SELF-CORRECTED** — found only because the shipped surface was exercised end to end
+  after deploy, rather than trusted from its own gate chain, which had passed `strings`, `mutate` and
+  `mcp` while this stood.
+
+**THE SPLIT (this append): OPERATOR-CAUGHT 0 · SELF-CORRECTED 1.**
+**RUNNING TOTAL: OPERATOR-CAUGHT 14 · SELF-CORRECTED 11.**
+
+**ROOT PATTERN PASS (2026-10-26, second append):** the same shape as AP-29 — a check whose FORM
+survives inspection while its SUBSTANCE does not. The distinguishing detail: AP-29's gates passed on
+an injected defect; AP-33's probe reported success on its OWN ERROR OUTPUT. Both were found by a party
+other than the author (a reviewer subagent; an end-to-end run of the deployed surface). The
+countermeasure that would have caught AP-33 in one line: a probe must assert a SUCCESS SHAPE (an rc, a
+usage line, a token), and its evidence field must be the thing that proved it — never whatever output
+the command happened to produce.

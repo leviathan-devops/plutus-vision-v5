@@ -3453,3 +3453,81 @@ DXY points because DXY is its worked example; the indicator is 4-pair.)
 - **THE LESSON:** "up" and "correct" are different predicates. Demanding the strong one where only the
   weak one applies turns a healthy subsystem into a false failure — and a false failure is how a real
   one later gets ignored.
+
+---
+
+# EN-160 — the xvfb adapter's probe was a DEAD DETECTOR that accepted a failure as evidence
+
+- **THE FINDING:** `computer probe` reported `{"adapter":"xvfb","available":true,"reason":"",
+  "evidence":{"xvfb":"Unrecognized option: -version"}}` — an adapter declared available on the
+  strength of its own failure message.
+- **THE ROOT CAUSE:** the probe ran `Xvfb -version`, which exits 1 on this host, and then matched
+  `*X*erver*|*Xvfb*|*X.Org*|*version*` against the output. The string
+  `Unrecognized option: -version` CONTAINS the word "version", so the pattern matched the error.
+  A detector that accepts any output containing a word it looks for cannot distinguish success from
+  failure — it reports whatever it is given.
+- **THE FIX:** the discriminator is `Xvfb -help` (rc 0, prints `use: X [:<display>] [option]`), and
+  the rc is taken from the COMMAND. `core/adapters/xvfb.sh:31`.
+- **THE SECOND BUG FOUND WHILE FIXING IT:** the first attempt captured `Xvfb -help | head -1` and
+  read `$?` — which is the PIPE's status, and `head` exiting early makes the writer die of SIGPIPE, so
+  the adapter reported `Xvfb -help exited 141` for a working binary. The rc must come from the command,
+  so the whole output is captured first and the first line taken after.
+- **THE VERIFICATION:** real Xvfb → `available:true`, evidence `use: X [:<display>] [option]`; a fake
+  `Xvfb` that exits 1 → `available:false`, `reason:"Xvfb -help exited 1"`; through the tool, all four
+  adapters now report honestly.
+- **THE LESSON:** a probe's pattern must be anchored to a SUCCESS SHAPE (a usage line, an rc), never
+  to a word that also appears in the failure. And `$?` after a pipe measures the last stage.
+
+# EN-161 — `WINDOW_GONE` was two conditions wearing one token
+
+- **THE FINDING:** `computer screenshot --id 3` on a live instance refused
+  `WINDOW_GONE: instance 3 has no bound window`.
+- **THE ROOT CAUSE:** `win_of` refused `WINDOW_GONE` when nothing had been bound yet, while
+  `win_check` refuses `WINDOW_GONE` when a bound window has since vanished. Those are different
+  facts and they call for different next actions: the first means "spawn an app, then bind", the
+  second means "your binding went away".
+- **THE FIX:** `core/drive.sh:60` refuses `NO_WINDOW_BOUND` with the spawn-then-focus remedy;
+  `WINDOW_GONE` is left to mean only what it says.
+- **THE VERIFICATION:** on a fresh instance, `shell_spawn` then `screenshot` → `{"bytes":268,
+  "colours":12,"via":"x","c3":"held"}`; the refusal path now names `NO_WINDOW_BOUND`.
+- **THE LESSON:** a token is a caller's only branch key. Two conditions behind one token force every
+  consumer to guess, and the guess is wrong half the time.
+
+# EN-162 — a mapped instance carried `_NET_WM_STATE_DEMANDS_ATTENTION`
+
+- **THE FINDING:** immediately after `up` on the operator's display, the compositor's host window
+  reported `state=[_NET_WM_STATE_DEMANDS_ATTENTION]` while `usertime=0`, the focus was untouched
+  (`active=0x0`) and the window sat at the BOTTOM of the stack. Focus and stacking were correct; the
+  window was still ASKING to be noticed.
+- **THE ROOT CAUSE:** something requests activation on that window (weston forwarding a client's
+  request, or its own focus handling); the window manager cannot grant it with a zero user-time, so
+  it converts the request into "demands attention" — the flag that makes a taskbar entry flash. The
+  C3 contract covered focus and stacking and did not cover attention, so a flash could survive a
+  PASS.
+- **THE FIX:** `hostwin release` now removes `_NET_WM_STATE_DEMANDS_ATTENTION` in the SAME flush as
+  remove-BELOW and the restack, so the flag cannot outlive `up`.
+  `helpers/hostwin.c` (release verb), sha 88579d713640.
+- **THE VERIFICATION:** the running instance went from `state=[_NET_WM_STATE_DEMANDS_ATTENTION]` to
+  `state=[]` on one `release`, focus/stack unchanged; and a FRESH `up` now comes up at `state=[]`.
+- **THE LESSON:** "does not take the focus" and "does not ask for attention" are different
+  properties. A window can be perfectly well-behaved by the focus oracle and still blink at the
+  operator — so the oracle needs to read the window's own state list, not only the WM's focus record.
+
+# EN-163 — the extension that never loaded: `export function init()` is not a factory
+
+- **THE FINDING:** on every session start:
+  `Warning: Failed to load extension ~/.omp/agent/extensions/snapcompact-read-frames.ts: Extension
+  does not export a valid factory function`.
+- **THE ROOT CAUSE:** the file exported `export function init(pi: any)` and no default. The loader
+  looks for a default export (the shape every other extension in this directory uses: `export
+  default function`, or `export { x as default }`). So the file was skipped on every boot while its
+  intent — force the agent to read snapcompact image frames — was silently absent.
+- **THE FIX:** moved to `~/.omp/agent/extensions-disabled/` (recoverable, not destroyed) and its entry
+  removed from `config.yml`'s `extensions` with `omp config set` — the config gate refuses a hand
+  edit (`ORDER_config-hand-edit`). 14 extensions remain, all exporting a factory.
+- **THE VERIFICATION:** a check over every enabled extension (file exists AND matches
+  `export default|export {… as default}|module.exports`) reports 14 enabled, 0 with a problem; the
+  other three direct-file extensions (`jarvis-*.js`) already used `export { x as default }`.
+- **THE LESSON:** the loader's factory contract is the SPEC, and a file that fails it produces a
+  warning that is easy to read past on every single boot. A one-line sweep over the enabled list —
+  "does each export a factory?" — turns a per-boot warning into a single check.

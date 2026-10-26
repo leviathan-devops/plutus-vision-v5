@@ -6,8 +6,8 @@ every doc re-measured with wc -l, every sha re-measured with sha256sum)
 ```
 plutus-vision-v1.pine   0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1
                         1,270 L · 76,550 B · THE V1 SEAL · REPRODUCIBLE from its five modules
-plutus-vision-v2.pine   668e89d79a08e68e35d0bf5a8c15f565e6ab297287b4e14d8a193e47e9178cb9
-                        1,863 L · 108,826 B
+plutus-vision-v2.pine   653eea1a5fc4c01a744a7097c79a27e173d860402da494a05f205e2b77e80406
+                        1,863 L · measured 2026-10-26 (was 668e89d7… at the 10-22 refresh)
 plutus-vision-v0.pine   605bff82d3539e9e5e258da30ba4ec80607a3df7749fb5deb5f4402350f95847
                         1,520 L · 83,089 B · the SMC parent (the purge target)
 ```

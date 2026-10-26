@@ -1,4 +1,24 @@
 # TASK QUEUE — PLUTUS VISION
+
+---
+
+## ⚡ TASK QUEUE — 2026-10-26 (this block supersedes the queue below it)
+
+| id | task | state | evidence it is done |
+|---|---|---|---|
+| Q-1 | clear the audit gate (F-147) | BLOCKED on `OCR_MISSING` | a `sg-ocr-*.json` with a verdict line carrying a session id + file scope + duration > 10s |
+| Q-2 | decide the 88 W-9-refused docs (F-149) | WAITING ON OPERATOR | a gate scope row, or `file:line` anchors measured in each doc |
+| Q-3 | guest boot (V11) | BUILT-UNPROVEN | one real boot with `CU_GUEST_IMAGE` set, `guest/boot.sh` returning an instance |
+| Q-4 | E2 geometry (V56) | NOT STARTED | `counts.polylines > 0` in a load result |
+| Q-5 | Pine/fixture date pairing | NOT STARTED | a load of `plutus-vision-v2.pine` whose extent overlaps its bars |
+| Q-6 | restore 5 deleted skills (F-150) | DEFERRED per operator | the 5 `SKILL.md` files present and `git status` clean for them |
+| Q-7 | `config.yml` before-state capture (F-151) | OPEN | a per-key record taken via `omp config get <key>` before the next write |
+
+**CLOSED THIS CYCLE:** the focus theft (0/60), the release-order race (0/60), the attention flag
+(`state=[]`), the xvfb dead detector (both directions proven), `WINDOW_GONE` split into
+`NO_WINDOW_BOUND`, the broken extension disabled (14 enabled / 0 invalid), and the deployed surface
+exercised end to end with delivery proven from the target's own log.
+
 **As of 2026-10-22** · overwrite semantics · every task, its gate, its status
 
 ---
