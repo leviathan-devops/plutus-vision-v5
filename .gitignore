@@ -22,3 +22,8 @@ __pycache__/
 *.db-shm
 *.db-wal
 .DS_Store
+
+# archives of directories already tracked uncompressed; the 196 MB one also exceeds GitHub's
+# 100 MB per-file limit, so tracking it would make the repository unpushable
+handovers/PLUTUS_VISION_CONTEXT_HANDOVER.zip
+Original_Canon_Data/Handover_Data.zip
