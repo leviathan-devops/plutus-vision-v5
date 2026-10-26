@@ -190,7 +190,11 @@ CANDLES_CRUSHED    an overlay forces the price axis so the bars collapse
 LABEL_OVERLAP      text collides with text or with the plot
 WRONG_COLOURS      the element's colour violates the clause's colour law
 MISSING_ELEMENT    a required element is absent
-OTHER              (recorded, never routed — and its count is a spec gap alarm)
+  (NO ESCAPE HATCH - the nine classes above are EXHAUSTIVE. The choice question forces one
+   of them. If the judge cannot place the defect the call returns DEFECT_UNCLASSIFIED and
+   the run is FAIL/INCONCLUSIVE - never routed, never bucketed, never counted as a class.
+   An unclassifiable defect means the TAXONOMY is deficient: the line stops and the
+   taxonomy is extended before any further verdict is accepted.)
 ```
 
 Each label maps to an OWNER FILE in the execution workflow's routing table. A class that fires twice
@@ -304,7 +308,7 @@ evidence to every later reader.
 ```
   every call writes a ledger row  →  "which clauses fail most" is a query, not a memory
   a class firing twice            →  a new mechanical check in the gate (structural encoding)
-  OTHER firing at all             →  a spec gap: the defect has no class, so it has no owner
+  DEFECT_UNCLASSIFIED at all      ->  the taxonomy is deficient: stop the line and extend it
   a judge answer ~0.5 on a clause →  the CLAUSE is unobservable as written; rewrite the clause
   a ticket disputed by a human    →  the region + question are re-run and the two tickets are compared;
                                      a disagreement is a calibration incident, not a re-roll
@@ -500,3 +504,69 @@ is COMPRESSED by rule — the oldest verdicts collapse to a count — never trun
 **The consequence for the ticket:** part 3 (`judgment.json`) records the epoch hash, so a verdict is
 reproducible *with the memory that produced it*. Two identical frames judged with different epochs are
 different judgements, and the ticket says which one it was.
+
+---
+
+# §16 · THE NARRATIVE EPOCH — IT ALREADY EXISTS; WIRE IT, DO NOT BUILD IT
+
+**Measured, not assumed.** The operator's instinct ("doesn't this already exist inside the aether agent")
+is CORRECT. Two implementations exist on this host, and P3 adopts the aether one because it is the
+substrate PINEBOX already inherits:
+
+### The aether implementation (adopted)
+
+```
+aether-context-manager.ts:12   "(b) THE CHAIN: the memory's last-N generations + the epoch summary."
+aether-context-manager.ts:60   epochSummary(): string;
+aether-context-manager.ts:387  const epochSummary = memory.epochSummary();
+aether-context-manager.ts:390  const chainText = renderChain(sessionWindow, priorPrompts, epochSummary);
+scope-memory.ts:94,107,119     CREATE TABLE …        ← the store is SQLITE, not in-process memory
+```
+
+So the chain is already: **last-N generations + prior prompts + `epochSummary`** rendered into one text
+block. That IS the narrative epoch. P3 does not invent a memory; it points the existing
+`renderChain(...)` at the ticket ledger and passes its output as the judge's `state` (§15 C3).
+
+### The full-featured reference (adopted as the SCHEMA, not as new code)
+
+`Omni_Vision_v5.1.4/src/backend/memory.ts` (326 lines) carries the richer shape, and it is the schema the
+ledger mirrors:
+
+```
+root    ~/.vc-memory/{projectId}/sessions/{sessionKey}/
+state   state.json  { sessionKey, projectId, lastFrameId, epochSummary, parentSessionId, created_at }
+db      vision.sqlite
+          storyline(version, content, art_direction, updated_at)      ← the standing brief, versioned
+          frames(frame_id UNIQUE, media_path, media_type, frame_seq)  ← the artifacts
+          analyses(frame_id, seq, analysis_json, brief_hash,          ← ONE ROW PER JUDGEMENT
+                   brain_model, vlm_model, created_at)
+          timeline(seq, frame_id, summary, epoch)                     ← the narrative spine
+          epochs(epoch, summary, created_at)                          ← the epoch roll-up
+api     resolveMemory(projectId, sessionKey) · appendAnalysis · lastAnalyses(n) ·
+        nextSeq · currentEpoch · appendEpoch · getEpochSummary · appendVerifyLog
+guard   assertScopedWrite()  — a write outside the session dir is a LOUD error, never a silent pass
+```
+
+Two properties P3 adopts verbatim: **`parentSessionId`** (an epoch can fork and inherit a prior narrative —
+so a re-run after a fix continues the story instead of losing it) and **`assertScopedWrite`** (the ledger
+cannot be written outside the instance's evidence dir).
+
+### The mapping (what P3 adds, and nothing more)
+
+| Omni/aether field | P3 ticket field |
+|---|---|
+| `analyses.analysis_json` | `judgment.json` (the verbatim judge response) |
+| `analyses.brief_hash` | `clause` sha (the requirement that was judged) |
+| `frames.media_path` | `region.png` + `frame.png` |
+| `epochs.summary` | the epoch summary rendered into the judge's `state` |
+| `appendVerifyLog(entry)` | the ticket ledger row |
+| `verify-log.jsonl` | `evidence/ledger.jsonl` (append-only, row-hash-chained) |
+
+**BOILERPLATE STATUS:** the mechanism exists in `aether_agent_backend_v2` (context-manager + scope-memory)
+and, in fuller form, is vendored into `Paragon_V2_Behavior_Algorithms/vendor/paragon-substrate/src/shadow/memory.ts`.
+A standalone extraction is therefore NOT a prerequisite for P3 — P3 imports the aether one. If a
+general-purpose pack is wanted later, the source to extract is the aether pair, not a new design.
+
+**What P3 adds beyond the existing epoch (the only new work):** the **repeat alarm** (same clause failing N
+times must be said out loud in `state`, because a 4B judge given a clean epoch will re-approve a defect it
+already rejected) and **the delta** (what changed in the artifact since the last call, from the frame shas).
