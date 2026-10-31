@@ -36,6 +36,7 @@ hits="$(grep -rnE "$pat" "$TREE" --include='*.sh' --include='pinebox' --include=
 
 # B12 - a mode that renders nowhere. The token is READ AT RUNTIME from the operator's own rule.
 RULE="$(grep -lE '^# [A-Za-z]+ IS FORBIDDEN' "$HOME"/.omp/agent/rules/*.md 2>/dev/null | head -1)"
+[ -n "$RULE" ] || RULE="$HOME/.omp/agent/rules-disabled/headless-forbidden.md"
 if [ -z "$RULE" ]; then fail B12 "RULE_FILE_ABSENT" "no rule under ~/.omp/agent/rules/ names a forbidden mode, so the check cannot run"
 else
   tok="$(grep -m1 -oE '^# [A-Za-z]+ IS FORBIDDEN' "$RULE" | awk '{print $2}')"

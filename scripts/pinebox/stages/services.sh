@@ -88,6 +88,9 @@ stage_services() {
     || refuse CONFIG_NOT_INJECTED "the page served on :$srv does not name pineStation :$st"
   printf '%s' "$served" | grep -qE "PlutusPineShellConfig *= *\{[^}]*\"railBases\": *\[\"http://127\.0\.0\.1:$rail\"\]" \
     || refuse CONFIG_NOT_INJECTED "the page served on :$srv does not name this instance's rail :$rail in PlutusPineShellConfig - the engine would fall back to the default rail"
+  local wb; wb="$(curl -s -m 5 "http://127.0.0.1:$srv/charts/workbench.bundle.js")"
+  printf '%s' "$wb" | grep -qF "var MAIN_API = \"http://127.0.0.1:$srv\";" \
+    || refuse CONFIG_NOT_INJECTED "the workbench served on :$srv does not name this instance's MAIN_API - its fixture feed would use another instance"
   printf '  services  station :%s · rail :%s (%s) · server :%s  (apiBase/pineStation verified in the served bytes)\n' \
     "$st" "$rail" "$(jq -r .rail "$d/state.json")" "$srv" >&2
 }

@@ -41,7 +41,10 @@ srv="$(jq -r .server <<<"$P")"; st="$(jq -r .station <<<"$P")"; rl="$(jq -r .rai
 case "$page" in *"\"apiBase\": \"http://127.0.0.1:$srv\""*) ok "served apiBase names instance 3's server :$srv";; *) bad "B10 apiBase" "$(printf '%s' "$page" | grep -oE 'apiBase[^,]*' | head -1)";; esac
 case "$page" in *"\"pineStation\": \"http://127.0.0.1:$st\""*) ok "served pineStation names instance 3's station :$st";; *) bad "B10 pineStation" "";; esac
 case "$page" in *"PlutusPineShellConfig = {\"railBases\": [\"http://127.0.0.1:$rl\"]}"*) ok "served PlutusPineShellConfig names instance 3's rail :$rl (the second config global)";; *) bad "B10 rail" "";; esac
+wb="$(curl -s -m 5 "http://127.0.0.1:$free/charts/workbench.bundle.js")"
+case "$wb" in *"var MAIN_API = \"http://127.0.0.1:$srv\";"*) ok "served workbench MAIN_API names instance 3's server :$srv";; *) bad "B10 workbench MAIN_API" "missing instance base";; esac
 base="$(jq -r .server <<<"$(pinebox ports --id 0 | jq -c .ports)")"
+case "$wb" in *"var MAIN_API = \"http://127.0.0.1:$base\";"*) bad "B10 workbench default" "canonical MAIN_API leaked";; *) ok "the workbench's canonical MAIN_API is not served";; esac
 case "$page" in *"http://127.0.0.1:$base"*) bad "B10: the DEFAULT port leaked into the served page" "the page still names :$base";; *) ok "no default (id 0) port appears anywhere in the served page";; esac
 n="$(git -C "$PV" diff HEAD --stat -- pine-ide/ | wc -l)"; [ "$n" = 0 ] && ok "git diff -- pine-ide/ is EMPTY: the page was NOT touched" || bad "P1 pine-ide edited" "$n lines"
 kill "$SP" 2>/dev/null; SP=""

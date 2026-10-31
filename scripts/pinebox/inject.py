@@ -30,6 +30,7 @@ BLOCK = re.compile(r"window\.dashboardConfig\s*=\s*\{[^}]*\}")
 #       pine-ide/ide/renderer/tabs/pineshell.js:103,147 and NEVER DEFINED anywhere in the renderer.
 # With it undefined, `cfg.railBases` is undefined, the engine falls to gate.mjs:21
 # DEFAULT_RAIL_BASES (the canonical rail), and EVERY instance would use instance 0's rail
+WORKBENCH_MAIN_API = re.compile(rb'var MAIN_API = "http://127\.0\.0\.1:9851";')
 # (measured: RUN_FAILED VIL_RAIL_DOWN "no VIL rail answered on <the canonical rail>").
 # So the rewrite DEFINES the second global too, in the served bytes only. readerUrl is left
 # unset on purpose: pineshell.js:106 derives it from railBases[0] + '/vil/look'.
@@ -88,6 +89,17 @@ def inject_dashboard_config(body: bytes, ports: dict) -> bytes:
     if len(s) != 1 or json.dumps(shell["railBases"][0]) not in s[0]:
         raise Refused("INJECT_FAILED", "the rewritten page does not carry exactly one PlutusPineShellConfig naming the instance's rail")
     return out.encode("utf-8")
+def inject_workbench_base(body: bytes, ports: dict) -> bytes:
+    """Rewrite the frozen workbench's MAIN_API in served bytes only.
+    Absence is loud: the canonical server would cross-contaminate instances.
+    """
+    server = config_for(ports)["apiBase"].encode()
+    out, n = WORKBENCH_MAIN_API.subn(b'var MAIN_API = "' + server + b'";', body)
+    if n != 1:
+        raise Refused("WORKBENCH_CONFIG_ABSENT", "workbench.bundle.js has no canonical MAIN_API assignment to rewrite")
+    return out
+
+
 
 
 def _main(argv):
@@ -107,7 +119,6 @@ def _main(argv):
             return 1
     print("usage: inject.py --check FILE | --render FILE PORTS_JSON", file=sys.stderr)
     return 2
-
 
 if __name__ == "__main__":
     sys.exit(_main(sys.argv[1:]))

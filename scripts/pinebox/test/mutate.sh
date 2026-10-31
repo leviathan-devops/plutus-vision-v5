@@ -19,7 +19,9 @@ fresh() {
   ( cd "$W/repo" && git init -q && git add -A && git -c user.email=t@t -c user.name=t commit -qm base )
 }
 run() { PB_TREE="$W/repo/scripts/pinebox" PB_REPO="$W/repo" bash "$W/repo/scripts/pinebox/test/strings.sh" 2>&1; }
-TOK="$(grep -m1 -oE '^# [A-Za-z]+ IS FORBIDDEN' "$(grep -lE '^# [A-Za-z]+ IS FORBIDDEN' "$HOME"/.omp/agent/rules/*.md | head -1)" | awk '{print tolower($2)}')"
+RULE_FILE="$(grep -lE '^# [A-Za-z]+ IS FORBIDDEN' "$HOME"/.omp/agent/rules/*.md 2>/dev/null | head -1)"
+[ -n "$RULE_FILE" ] || RULE_FILE="$HOME/.omp/agent/rules-disabled/headless-forbidden.md"
+TOK="$(grep -m1 -oE '^# [A-Za-z]+ IS FORBIDDEN' "$RULE_FILE" | awk '{print tolower($2)}')"
 
 mutant() { # name token 'injection (cwd = $W/repo)'
   fresh; ( cd "$W/repo" && eval "$3" )

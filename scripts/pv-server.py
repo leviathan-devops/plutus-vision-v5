@@ -562,6 +562,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(200, {"success": True, "data": {"cells": len(cells or []), "fixture": FIXTURE}})
         if PINEBOX_PORTS is not None and u.path in ("/", "/pine.html"):
             return self._pinebox_page(u.path)
+        if PINEBOX_PORTS is not None and u.path == "/charts/workbench.bundle.js":
+            return self._pinebox_workbench(u.path)
         return super().do_GET()
 
     def _pinebox_page(self, path):
@@ -582,6 +584,25 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(out)
+    def _pinebox_workbench(self, path):
+        """Serve the frozen workbench with this instance's MAIN_API, bytes only."""
+        fs_path = self.translate_path(path)
+        try:
+            body = open(fs_path, "rb").read()
+            out, code = _pinebox_inject.inject_workbench_base(body, PINEBOX_PORTS), 200
+        except _pinebox_inject.Refused as e:
+            sys.stderr.write("[pv-server] REFUSED %s: %s (%s)\n" % (e.token, e.detail, fs_path))
+            out, code = ("%s: %s" % (e.token, e.detail)).encode(), 500
+        except OSError as e:
+            sys.stderr.write("[pv-server] cannot read %s: %s\n" % (fs_path, e))
+            out, code = ("PAGE_UNREADABLE: %s" % e).encode(), 500
+        self.send_response(code)
+        self.send_header("Content-Type", "text/javascript; charset=utf-8" if code == 200 else "text/plain")
+        self.send_header("Content-Length", str(len(out)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(out)
+
 
     # ── THE AGENT'S FACE PROXY ──────────────────────────────────────────────
     # Forward the three face prefixes to the dashboard server VERBATIM: method,
