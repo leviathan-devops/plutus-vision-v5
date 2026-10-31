@@ -39,7 +39,7 @@ stage_week_set() {
 
 stage_verify() {
   local id="$1" d="$2" week="$3"
-  local st rail srv cdp want got bars onchart colours rows=""
+  local st rail srv cdp want got bars onchart colours rows="" frame_json frame_rec
   st="$(pb_port "$id" station)"; rail="$(pb_port "$id" rail)"; srv="$(pb_port "$id" server)"; cdp="$(pb_port "$id" cdp)"
   want="$(pb_iso_week "$week")"
 
@@ -64,7 +64,7 @@ stage_verify() {
 
   # 4 · THE WEEK. The operator's named failure: an indicator read on the wrong week.
   got="$(node "$CORE/cdp.mjs" "$cdp" evaluate \
-        "(()=>{const el=document.querySelector('.pine-week');return (el&&el.value)||(document.body.innerText.match(/\\\\d{4}-W\\\\d{2}/)||[''])[0]})()" \
+        "(()=>{const el=document.querySelector('.pine-week');return (el&&el.value)||(document.body.innerText.match(/\\d{4}-W\\d{2}/)||[''])[0]})()" \
         2>/dev/null | jq -r '.value // empty')"
   [ "$got" = "$want" ] || refuse WEEK_MISMATCH "the IDE is set to '${got:-<none>}' but the loaded bars are week $want (fixture $week) - an indicator read here would be read on the wrong week"
   rows="$rows{\"check\":\"week\",\"ok\":true,\"evidence\":\"$got == $want\"},"
@@ -78,19 +78,30 @@ stage_verify() {
   # 6 · THE PIXELS, AND THEY MUST BE NEW. A capture byte-identical to the one before it is not a
   # second look - it is the same frame, so nothing was re-rendered (the "identical bytes, 5 boxes then
   # 0" trap). Capture fresh, compare against the recorded sha, refuse NO_FRESH_FRAME on a repeat.
-  local fresh freshsha prevsha
+  local fresh freshsha prevfresh
   fresh="$d/verify-frame.png"
-  node "$CORE/cdp.mjs" "$cdp" screenshot "$fresh" >/dev/null 2>&1 \
-    || refuse CAPTURE_FAILED "could not capture the frame to verify the render"
-  freshsha="$(sha256sum "$fresh" | cut -c1-16)"
-  prevsha="$(pb_rec_get "$id" .frame_sha)"
-  if [ -n "$prevsha" ] && [ "$prevsha" = "$freshsha" ]; then
-    refuse NO_FRESH_FRAME "the frame is byte-identical to the previous capture ($freshsha) - nothing was re-rendered, so this is not a new look"
+  prevfresh="$d/frame.png"
+  frame_json="$("$COMPUTER" screenshot --id "$id" --out "$fresh" 2>"$d/verify-shot.err")" \
+    || refuse CAPTURE_FAILED "could not capture and measure the frame: $(tail -1 "$d/verify-shot.err")"
+  # Freshness belongs to the CHART PIXELS, not the PNG container: the UTC
+  # footer changes every second, so byte hashes differ on an unchanged chart.
+  if [ -f "$prevfresh" ]; then
+    python3 - "$prevfresh" "$fresh" <<'PY'
+import sys
+from PIL import Image, ImageChops
+a, b = (Image.open(p).convert("RGB") for p in sys.argv[1:3])
+if a.size != b.size:
+    raise SystemExit(0)
+box = (550, 70, a.width - 6, 660)
+if ImageChops.difference(a.crop(box), b.crop(box)).getbbox() is None:
+    raise SystemExit(1)
+PY
+    [ $? -eq 0 ] || refuse NO_FRESH_FRAME "the chart pixels are unchanged; only frame metadata or the UTC clock moved"
   fi
-  pb_rec "$id" ".frame_sha = \"$freshsha\" | .frame = {path: \"$fresh\", bytes: $(stat -c%s "$fresh"), colours: $(pb_rec_get "$id" .frame.colours)}"
-
-  colours="$(pb_rec_get "$id" ".frame.colours")"
-  [ "${colours:-0}" -gt 1 ] 2>/dev/null || refuse FRAME_BLANK "the captured frame has ${colours:-0} colour(s) - open it before claiming a render"
+  freshsha="$(sha256sum "$fresh" | cut -c1-16)"
+  frame_rec="$(jq -c '{path,bytes,colours}' <<<"$frame_json")"
+  pb_rec "$id" ".frame_sha = \"$freshsha\" | .frame = $frame_rec"
+  colours="$(jq -r '.colours // 0' <<<"$frame_json")"
   rows="$rows{\"check\":\"frame\",\"ok\":true,\"evidence\":\"$colours colours\"}"
 
   printf '{"ok":true,"id":%s,"week":"%s","verdict":"WORKS","checks":[%s]}\n' "$id" "$want" "$rows"

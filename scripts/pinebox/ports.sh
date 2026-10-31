@@ -22,8 +22,10 @@ pb_ports_json() {
   local n="$1"
   [[ "$n" =~ ^[0-9]+$ ]] && [ "$n" -le "$PB_MAX_ID" ] \
     || refuse BAD_ID "pinebox instance id must be 0..$PB_MAX_ID so the derived port blocks cannot overlap, got '$n'"
+  # A 100-port stride is REQUIRED, not cosmetic: ws is server+80, so a stride
+  # of 10 made id 0's ws collide with id 8's server. 100 separates every family.
   printf '{"station":%d,"rail":%d,"server":%d,"cdp":%d,"ws":%d,"vnc":%d}' \
-    $((9741 + n * 10)) $((9754 + n * 10)) $((9851 + n * 10)) $((9222 + n * 10)) $((9851 + n * 10 + 80)) $((5900 + n))
+    $((9741 + n * 100)) $((9754 + n * 100)) $((9851 + n * 100)) $((9222 + n * 100)) $((9851 + n * 100 + 80)) $((5900 + n))
 }
 
 pb_port() {
@@ -44,7 +46,7 @@ pb_port_holder() {
 pb_claim() {
   local id="$1"; shift
   local own=" $* " name port holder pid
-  for name in station rail server cdp ws; do
+  for name in station rail server cdp ws vnc; do
     port="$(pb_port "$id" "$name")"
     holder="$(pb_port_holder "$port")"
     [ -z "$holder" ] && continue

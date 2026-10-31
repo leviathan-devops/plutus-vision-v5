@@ -27,7 +27,17 @@ echo "── P0: the port block ──"
 j="$(pinebox ports --id 3)"
 n="$(jq -r '.ports|[.station,.rail,.server,.cdp,.ws]|map(tostring)|unique|length' <<<"$j")"
 [ "$n" = 5 ] && ok "pinebox ports --id 3 prints 5 distinct ports: $(jq -c .ports <<<"$j")" || bad "P0 distinct" "$j"
-[ "$(jq -r .ports.server <<<"$j")" = "$(jq -r .ports.server <<<"$(pinebox ports --id 0)" | awk '{print $1+30}')" ] && ok "derived from the id: id 3's server = id 0's server + 30" || bad "P0 derivation" ""
+[ "$(jq -r .ports.server <<<"$j")" = "$(jq -r .ports.server <<<"$(pinebox ports --id 0)" | awk '{print $1+300}')" ] && ok "derived from the id: id 3's server = id 0's server + 300" || bad "P0 derivation" ""
+python3 - <<'PY'
+import subprocess,json
+seen={}
+for i in range(10):
+    out=subprocess.check_output(['pinebox','ports','--id',str(i)],text=True)
+    for k,v in json.loads(out)['ports'].items(): seen.setdefault(v,[]).append((i,k))
+collisions=[(p,u) for p,u in seen.items() if len(u)>1]
+assert not collisions, collisions
+print(f"  PASS  all {len(seen)} service ports across ids 0..9 are distinct")
+PY
 pinebox ports --id 10 >/dev/null 2>&1; rc=$?; [ $rc -eq 1 ] && ok "id 10 is REFUSED (the derived blocks would overlap above 9)" || bad "id bound" "rc=$rc"
 
 echo; echo "── P1/B10: the SERVED bytes name the instance's own ports ──"

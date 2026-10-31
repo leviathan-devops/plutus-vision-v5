@@ -15,7 +15,7 @@
 
 stage_load() {
   local id="$1" d="$2" pine="$3" pair="$4" tf="$5"
-  local abs="$pine" cdp srv out
+  local abs="$pine" cdp srv out result
   case "$pine" in /*) ;; *) abs="$PWD/$pine" ;; esac
   [ -f "$abs" ] || refuse PINE_ABSENT "no such pine source: $abs"
   need bun LOAD_UNAVAILABLE
@@ -28,13 +28,16 @@ stage_load() {
       tok="$(printf '%s' "$line" | sed -nE 's/^([A-Z_]+):.*/\1/p')"
       refuse "${tok:-PINE_LOAD_FAILED}" "$(printf '%s' "$line" | sed -E 's/^[A-Z_]+: *//') (source $abs, $pair $tf)"
     }
+  result="$(jq -c . <<<"$out")" || refuse PINE_LOAD_FAILED "pv-load returned non-JSON output, so no successful load can be recorded: $(printf '%s' "$out" | tail -1)"
+  [ "$(jq -r '.bars // 0' <<<"$result")" -gt 0 ] || refuse NO_BARS "pv-load returned success-shaped output with zero bars"
+  [ "$(jq -r '.onChart // 0' <<<"$result")" -gt 0 ] || refuse NO_DRAWINGS "pv-load returned zero chart objects"
   sleep 1
   stage_frame "$id" "$d"
 
   # the page's OWN status row: what the page itself says it loaded
   local row
   row="$(node "$CORE/cdp.mjs" "$cdp" evaluate "(document.body.innerText.match(/FIXTURE[^\\n]*/)||['(no FIXTURE row)'])[0]" 2>/dev/null | jq -r '.value // empty')"
-  pb_rec "$id" ".load = {\"pine\": \"$abs\", \"pair\": \"$pair\", \"tf\": \"$tf\", \"status_row\": $(jq -Rn --arg r "$row" '$r'), \"result\": $(printf '%s' "$out" | jq -c . 2>/dev/null || echo null)}"
+  pb_rec "$id" ".load = $(jq -nc --arg pine "$abs" --arg pair "$pair" --arg tf "$tf" --arg row "$row" --argjson result "$result" '{pine:$pine,pair:$pair,tf:$tf,status_row:$row,result:$result}')"
   printf '  load      %s  %s %s  -> %s\n' "$(basename "$abs")" "$pair" "$tf" "$(printf '%s' "$out" | jq -c '{bars,onChart,counts}' 2>/dev/null)" >&2
   printf '  status    %s\n' "$row" >&2
 }
