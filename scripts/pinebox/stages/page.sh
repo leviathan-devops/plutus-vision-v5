@@ -21,7 +21,8 @@ stage_page() {
   srv="$(pb_port "$id" server)"; cdp="$(pb_port "$id" cdp)"
   profile="$d/chrome"; url="http://127.0.0.1:$srv/pine.html"
   need google-chrome-stable WINDOW_NOT_MAPPED
-  rm -rf "$profile"
+  case "$profile" in "$d"/*) ;; *) refuse SCOPE_VIOLATION "chrome profile $profile escapes instance dir $d" ;; esac
+  rm -rf -- "$profile"
 
   local out
   # the flags and WHY each is there: blueprint section 7E. --ozone-platform=x11 pins it to
@@ -39,7 +40,10 @@ stage_page() {
         *) pb_forward_refusal "$d/spawn.err" ;;
       esac
     }
-  pb_rec "$id" ".chrome = {\"profile\": \"$profile\", \"cdp\": $cdp, \"url\": \"$url\", \"window\": \"$(jq -r .window <<<"$out")\"}"
+  local chrome_json
+  chrome_json="$(jq -nc --arg profile "$profile" --argjson cdp "$cdp" --arg url "$url" --arg window "$(jq -r '.window // empty' <<<"$out")" '{profile:$profile,cdp:$cdp,url:$url,window:$window}')"
+  [ -n "$(jq -r '.window // empty' <<<"$out")" ] || refuse WINDOW_NOT_MAPPED "the core returned no browser window for instance $id"
+  pb_rec "$id" ".chrome = $chrome_json"
 
   # the CDP target list must name pine.html on THIS instance's server port
   local targets
@@ -51,7 +55,7 @@ stage_page() {
 }
 
 pb_cdp_names_page() {
-  curl -s -m 2 "http://127.0.0.1:$1/json/list" 2>/dev/null | jq -e --arg p ":$2/pine.html" 'any(.[]; .type=="page" and (.url|contains($p)))' >/dev/null 2>&1
+  curl -s -m 2 "http://127.0.0.1:$1/json/list" 2>/dev/null | jq -e --arg p "http://127.0.0.1:$2/pine.html" 'any(.[]; .type=="page" and .url==$p)' >/dev/null 2>&1
 }
 
 stage_frame() {

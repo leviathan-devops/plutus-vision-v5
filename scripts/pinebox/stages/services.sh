@@ -11,7 +11,7 @@
 # server port (anti-pattern B10 - the whole isolation proof).
 
 # wait up to N seconds for a command to succeed
-pb_wait() { local secs="$1"; shift; local i; for i in $(seq 1 $((secs * 4))); do "$@" && return 0; sleep 0.25; done; return 1; }
+pb_wait() { local secs="$1" deadline=$((SECONDS + $1)); shift; while [ "$SECONDS" -lt "$deadline" ]; do "$@" && return 0; sleep 0.25; done; return 1; }
 
 # THE STATION CHECK PROBES THE WORK ROUTE, NOT THE LIVENESS ROUTE (measured, pv-ide.sh:
 # GET / can hang for the full client timeout on a station whose POST /run compiles fine).
@@ -32,13 +32,15 @@ pb_http_answers() { curl -s -m 2 -o /dev/null "$1" 2>/dev/null; }
 # pb_preflight WEEK: everything about the INPUTS that can be known before a single process
 # starts. Nothing is spawned for an instance whose inputs are wrong.
 pb_preflight() {
-  local week="$1" fix renderer
+  local week="$1" instance_id="${2:-0}" fix renderer
   fix="$PV_ROOT/fixtures/bars/$week.json"
   renderer="${PINEBOX_RENDERER_ROOT:-$PV_ROOT/pine-ide/ide/renderer}"
   [ -f "$fix" ] || refuse FIXTURE_ABSENT "no bars fixture for week '$week': $fix"
   [ -d "$PV_ROOT/pine-ide/pine-station/node_modules/pinets" ] || refuse ENGINE_ABSENT "run npm install in $PV_ROOT/pine-ide/pine-station"
-  python3 "$PB_HOME/inject.py" --check "$renderer/pine.html" >/dev/null 2>"$PB_ROOT/.inject.err" \
-    || refuse CONFIG_BLOCK_ABSENT "$(sed -E 's/^REFUSED +CONFIG_BLOCK_ABSENT +— +//' "$PB_ROOT/.inject.err" | head -1)"
+  local inject_err="$PB_ROOT/i${instance_id}.inject.err"
+  mkdir -p "$(dirname "$inject_err")"
+  python3 "$PB_HOME/inject.py" --check "$renderer/pine.html" >/dev/null 2>"$inject_err" \
+    || refuse CONFIG_BLOCK_ABSENT "$(sed -E 's/^REFUSED +CONFIG_BLOCK_ABSENT +— +//' "$inject_err" | head -1)"
 }
 
 stage_services() {

@@ -117,12 +117,14 @@ pb_up() {
   week="$(flag week 2026-07-06)"; pair="$(flag pair DXY)"; tf="$(flag tf 1H)"; pine="$(flag pine)"; adapter="$(flag adapter)"
   d="$(pb_dir "$id")"
 
+  # Serialize stale-record reaping and live checks under the SAME per-id lock;
+  # otherwise two ups can both pass the live check before either writes state.
+  exec 7>"$PB_ROOT/.up-$id.lock"; flock -n 7 || refuse INSTANCE_LIVE "an 'up' for pinebox instance $id is already in progress"
   if [ -s "$d/state.json" ]; then
     if pb_instance_live "$id"; then refuse INSTANCE_LIVE "pinebox instance $id is already running - run: pinebox down --id $id"; fi
     echo "  (reaping a stale record for instance $id)" >&2; pb_teardown "$id" >/dev/null
   fi
-  exec 7>"$PB_ROOT/.up-$id.lock"; flock -n 7 || refuse INSTANCE_LIVE "an 'up' for pinebox instance $id is already in progress"
-  pb_preflight "$week"                              # FIXTURE_ABSENT / E1_ABSENT / ENGINE_ABSENT / CONFIG_BLOCK_ABSENT
+  pb_preflight "$week" "$id"
   pb_claim "$id"                                    # PORT_TAKEN:<port> - both before anything starts
   mkdir -p "$d"
   : > "$d/refusals.jsonl"
@@ -142,14 +144,11 @@ pb_up() {
   pb_rec "$id" ".slot = \"$slot\" | .adapter = $(jq -c .adapter <<<"$out") | .host_win = \"$hw\" | .up_at = \"$(date -Is)\""
   printf '  shell     :%s (%s)%s\n' "$slot" "$(jq -r .adapter <<<"$out")" "${hw:+ host window $hw}" >&2
 
-  stage_services "$id" "$d" "$week"                 # STAGE 2
-  stage_page "$id" "$d"                             # STAGE 3
-  stage_frame "$id" "$d"                            # STAGE 4
-  # THE WEEK IS SET BY `up`, NOT BY THE CALLER. The IDE's `.pine-week` control comes up EMPTY, so a
-  # freshly created instance failed its own `verify` with WEEK_MISMATCH while the data was correct
-  # (measured). The fixture's week is already known here, so a correct instance is the DEFAULT.
+  stage_services "$id" "$d" "$week" || exit $?
+  stage_page "$id" "$d" || exit $?
+  stage_frame "$id" "$d" || exit $?
   stage_week_set "$id" "$(pb_iso_week "$week")" >/dev/null 2>&1 || true
-  [ -n "$pine" ] && stage_load "$id" "$d" "$pine" "$pair" "$tf"   # STAGE 5
+  if [ -n "$pine" ]; then stage_load "$id" "$d" "$pine" "$pair" "$tf" || exit $?; fi
 
   # P7: the whole `up` - not just its first stage - must have left the operator's focus alone
   local after; after="$(c3_snapshot)"
