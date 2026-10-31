@@ -23,17 +23,16 @@ PY
 }
 
 stage_week_set() {
-  local id="$1" want="$2" cdp got
+  local id="$1" want="$2" cdp got expr
+  [[ "$want" =~ ^[0-9]{4}-W[0-9]{2}$ ]] || refuse BAD_ARGS "week must be an ISO label YYYY-Www, got '$want'"
   cdp="$(pb_port "$id" cdp)"
-  node "$CORE/cdp.mjs" "$cdp" evaluate \
-    "(()=>{const el=document.querySelector('.pine-week'); if(!el) return 'NO_CONTROL';
-      el.value='$want'; el.dispatchEvent(new Event('input',{bubbles:true}));
-      el.dispatchEvent(new Event('change',{bubbles:true})); return el.value;})()" >/dev/null 2>&1
+  expr="$(jq -nc --arg want "$want" '"(function(){const el=document.querySelector(\".pine-week\"); if(!el) return \"NO_CONTROL\"; el.value="+$want+"; el.dispatchEvent(new Event(\"input\",{bubbles:true})); el.dispatchEvent(new Event(\"change\",{bubbles:true})); return el.value;})()"')"
+  node "$CORE/cdp.mjs" "$cdp" evaluate "$expr" >/dev/null 2>&1
   sleep 1
   got="$(node "$CORE/cdp.mjs" "$cdp" evaluate \
     "(document.querySelector('.pine-week')?.value)||''" 2>/dev/null | jq -r '.value // empty')"
   [ "$got" = "$want" ] || refuse WEEK_SET_FAILED "could not set the IDE week control to $want (it reads '$got') - the control is .pine-week in the renderer"
-  pb_rec "$id" ".week = \"$want\""
+  pb_rec "$id" ".week = $(jq -nc --arg w "$want" '$w')"
   printf '  week      %s (the IDE control now reads %s)\n' "$want" "$got" >&2
 }
 
@@ -104,5 +103,5 @@ PY
   colours="$(jq -r '.colours // 0' <<<"$frame_json")"
   rows="$rows{\"check\":\"frame\",\"ok\":true,\"evidence\":\"$colours colours\"}"
 
-  printf '{"ok":true,"id":%s,"week":"%s","verdict":"WORKS","checks":[%s]}\n' "$id" "$want" "$rows"
+  printf '%s\n' "$(jq -nc --argjson id "$id" --arg want "$want" --arg checks "[${rows%,}]" '{ok:true,id:$id,week:$want,verdict:"WORKS",checks:$checks}')"
 }

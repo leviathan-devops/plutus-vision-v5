@@ -47,9 +47,15 @@ function run(argv) {
   const { promise, resolve: done } = Promise.withResolvers();
   const c = spawn(CLI, argv, { stdio: ["ignore", "pipe", "pipe"] });
   let out = "", err = "";
-  c.stdout.on("data", (d) => (out += d));
-  c.stderr.on("data", (d) => (err += d));
-  c.on("close", (code) => done({ code: code ?? 1, out: out.trim(), err: err.trim() }));
+  const timer = setTimeout(() => { c.kill("SIGKILL"); done({ code: 124, out, err: err + "\nMCP_TIMEOUT" }); }, 120000);
+  const append = (which, chunk) => {
+    if (which === "out") out = (out + chunk).slice(-1048576);
+    else err = (err + chunk).slice(-262144);
+  };
+  c.stdout.on("data", (d) => append("out", d));
+  c.stderr.on("data", (d) => append("err", d));
+  c.on("error", (e) => { clearTimeout(timer); done({ code: 1, out, err: String(e) }); });
+  c.on("close", (code) => { clearTimeout(timer); done({ code: code ?? 1, out: out.trim(), err: err.trim() }); });
   return promise;
 }
 
@@ -68,25 +74,33 @@ async function callTool(p) {
 
 const send = (o) => process.stdout.write(JSON.stringify(o) + "\n");
 let buf = "";
+let chain = Promise.resolve();
 process.stdin.setEncoding("utf8");
-process.stdin.on("data", async (chunk) => {
+process.stdin.on("data", (chunk) => {
   buf += chunk;
   let i;
   while ((i = buf.indexOf("\n")) >= 0) {
     const line = buf.slice(0, i); buf = buf.slice(i + 1);
     if (!line.trim()) continue;
-    let msg; try { msg = JSON.parse(line); } catch { continue; }
-    if (msg.method === "initialize") {
-      send({ jsonrpc: "2.0", id: msg.id, result: { protocolVersion: msg.params?.protocolVersion ?? "2024-11-05", capabilities: { tools: {} }, serverInfo: { name: "pinebox", version: TABLE.version } } });
-    } else if (msg.method === "tools/list") {
-      send({ jsonrpc: "2.0", id: msg.id, result: { tools: [TOOL] } });
-    } else if (msg.method === "tools/call") {
-      const r = await callTool(msg.params?.arguments);
-      send({ jsonrpc: "2.0", id: msg.id, result: { content: [{ type: "text", text: JSON.stringify(r) }], isError: !r.ok } });
-    } else if (msg.method === "ping") {
-      send({ jsonrpc: "2.0", id: msg.id, result: {} });
-    } else if (msg.id !== undefined && !msg.method?.startsWith("notifications/")) {
-      send({ jsonrpc: "2.0", id: msg.id, error: { code: -32601, message: `unknown method ${msg.method}` } });
-    }
+    chain = chain.then(async () => {
+      let msg;
+      try { msg = JSON.parse(line); } catch { return; }
+      try {
+        if (msg.method === "initialize") {
+          send({ jsonrpc: "2.0", id: msg.id, result: { protocolVersion: msg.params?.protocolVersion ?? "2024-11-05", capabilities: { tools: {} }, serverInfo: { name: "pinebox", version: TABLE.version } } });
+        } else if (msg.method === "tools/list") {
+          send({ jsonrpc: "2.0", id: msg.id, result: { tools: [TOOL] } });
+        } else if (msg.method === "tools/call") {
+          const r = await callTool(msg.params?.arguments);
+          send({ jsonrpc: "2.0", id: msg.id, result: { content: [{ type: "text", text: JSON.stringify(r) }], isError: !r.ok } });
+        } else if (msg.method === "ping") {
+          send({ jsonrpc: "2.0", id: msg.id, result: {} });
+        } else if (msg.id !== undefined && !msg.method?.startsWith("notifications/")) {
+          send({ jsonrpc: "2.0", id: msg.id, error: { code: -32601, message: `unknown method ${msg.method}` } });
+        }
+      } catch (e) {
+        if (msg.id !== undefined) send({ jsonrpc: "2.0", id: msg.id, error: { code: -32603, message: String(e?.message || e) } });
+      }
+    }).catch((e) => { console.error("MCP_FRAME_FAILED", String(e)); });
   }
 });
