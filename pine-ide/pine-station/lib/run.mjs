@@ -128,7 +128,7 @@ function anchorTime(bars, x, xloc) {
 
 /** Pine drawings (__labels__ / __lines__ / __boxes__ / …) → time-anchored items. */
 function normalizeDrawings(plots, bars) {
-  const out = { labels: [], lines: [], boxes: [], other: {} };
+  const out = { labels: [], lines: [], boxes: [], polylines: [], other: {} };
   let dropped = 0;
   const seriesOf = (key) => (Array.isArray(plots[key]?.data) ? plots[key].data : []);
 
@@ -158,9 +158,37 @@ function normalizeDrawings(plots, bars) {
       out.boxes.push({ a: { time: t1, price: Number(it.top ?? it.y1) }, b: { time: t2, price: Number(it.bottom ?? it.y2) }, xloc: it.xloc || null, color: it.bgcolor || it.color || undefined, borderColor: it.border_color || undefined });
     }
   }
+  for (const bucket of seriesOf('__polylines__')) {
+    for (const it of (bucket.value || [])) {
+      if (it._deleted) continue;
+      const points = [];
+      const raw = Array.isArray(it.points) && it.points.length ? it.points : null;
+      if (raw) {
+        for (const point of raw) {
+          if (Array.isArray(point)) {
+            const t = anchorTime(bars, point[0], it.xloc);
+            const price = Number(point[1]);
+            if (t !== null && Number.isFinite(price)) points.push({ time: t, price });
+          } else if (point && typeof point === 'object') {
+            const t = anchorTime(bars, point.x ?? point.time, it.xloc);
+            const price = Number(point.y ?? point.price ?? point.value);
+            if (t !== null && Number.isFinite(price)) points.push({ time: t, price });
+          }
+        }
+      } else {
+        const ys = Array.isArray(it.curved?.array) ? it.curved.array : [];
+        ys.forEach((y, i) => {
+          const t = anchorTime(bars, i, it.xloc);
+          const price = Number(y);
+          if (t !== null && Number.isFinite(price)) points.push({ time: t, price });
+        });
+      }
+      if (points.length) out.polylines.push({ points, color: it.line_color || it.color || undefined, width: it.line_width || it.width || 1, style: it.line_style || it.style || undefined, fillColor: it.fill_color || undefined });
+    }
+  }
   for (const key of Object.keys(plots)) {
     if (!key.startsWith('__')) continue;
-    if (['__labels__', '__lines__', '__boxes__', '__polylines__', '__linefills__', '__tables__'].includes(key)) {
+    if (['__labels__', '__lines__', '__boxes__', '__linefills__', '__tables__'].includes(key)) {
       out.other[key] = (plots[key].data || []).filter((d) => Array.isArray(d.value)).reduce((n, d) => n + d.value.filter((v) => !v._deleted).length, 0);
       continue;
     }

@@ -105,6 +105,19 @@ export function renderVision(chart, run, opts = {}) {
   };
 
   const D = run?.drawings || {};
+  // ── polylines: the E2 fine path and any Pine polyline.new geometry. The
+  // station now carries these as time-anchored points; they are NOT plot series.
+  for (const p of (D.polylines || [])) {
+    const pts = (p.points || []).filter((v) => num(v.time) !== null && num(v.price) !== null);
+    if (pts.length < 2) continue;
+    const d = add('polyline', {
+      anchors: pts.map((v) => ({ time: v.time, price: v.price })),
+      style: { lineColor: normColor(p.color, BRASS), lineWidth: Number(p.width) || 1, lineStyle: PINE_LINE_STYLE[p.style] || 'solid' },
+      props: { kind: 'polyline' },
+    }, 'polyline');
+    if (d) out.plotLines++;
+    out.plotSegments += pts.length - 1;
+  }
 
   // ── E1/E3: boxes (the IP zones, LSZ, position boxes) ──
   for (const b of (D.boxes || [])) {
