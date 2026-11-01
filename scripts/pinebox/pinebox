@@ -335,6 +335,28 @@ pb_drive() {   # drive --id N --action VERB [core flags...]
     *) refuse BAD_ARGS "drive --action '$action' is not an input/capture verb (allowed: focus click type key screenshot)" ;;
   esac
   require_id "$id"
+  # The verb was allowlisted but its FLAGS were forwarded verbatim: `drive --action screenshot --out /any/path` wrote
+  # wherever the caller named, and an abbreviated `--i 5` could override the instance. Each action takes a fixed set of
+  # flags, every flag takes one value, and --out must resolve inside THIS instance's directory.
+  local -a allow; local j key val real
+  case "$action" in
+    focus)      allow=(--win --title) ;;
+    click)      allow=(--x --y --button --win --cdp) ;;
+    type)       allow=(--text --win --cdp) ;;
+    key)        allow=(--key --win --cdp) ;;
+    screenshot) allow=(--out --win --cdp) ;;
+  esac
+  j=0
+  while [ "$j" -lt "${#rest[@]}" ]; do
+    key="${rest[$j]}"; val="${rest[$((j+1))]:-}"
+    [[ " ${allow[*]} " == *" $key "* ]] || refuse BAD_ARGS "drive $action takes only ${allow[*]}, got '$key'"
+    [ "$((j+1))" -lt "${#rest[@]}" ] || refuse BAD_ARGS "drive $action: flag '$key' has no value"
+    if [ "$key" = --out ]; then
+      real="$(realpath -m -- "$val")"
+      case "$real" in "$(pb_dir "$ID")"/*.png) ;; *) refuse BAD_ARGS "drive screenshot --out must be a .png inside this instance's directory $(pb_dir "$ID")/, got '$val'" ;; esac
+    fi
+    j=$((j+2))
+  done
   pb_c3 "drive $action" "$COMPUTER" "$action" --id "$ID" "${rest[@]}"
 }
 

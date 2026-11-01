@@ -35,6 +35,9 @@ pb_ports_json() {
 
 pb_port() {
   local json
+  # the name is interpolated into a jq FILTER: `pb_port 0 'station,server'` or `'station // "x"'` returned arbitrary jq
+  # output instead of one fixed key. Only the seven known family names are accepted.
+  case "${2:-}" in station|rail|server|cdp|ws|vnc|room) ;; *) echo "REFUSED  BAD_ARGS  —  pb_port: unknown port family '${2:-}'" >&2; return 2 ;; esac
   json="$(pb_ports_json "$1")" || return $?
   printf '%s' "$json" | jq -er ".$2"
 }
@@ -80,6 +83,9 @@ pb_claim() {
   [[ "$id" =~ ^(0|[1-9])$ ]] || refuse BAD_ID "pinebox instance id must be a canonical decimal 0..9, got '$id'"
   [ -n "${PB_ROOT:-}" ] || refuse PB_ROOT_UNAVAILABLE "pb_claim needs PB_ROOT"
   mkdir -p -- "$PB_ROOT" || refuse CLAIM_LOCK_FAILED "cannot create the instance root $PB_ROOT"
+  # fd 6 is a fixed descriptor: a nested claim would silently replace the outer lock (and its release would drop the OTHER
+  # claim's exclusion). An fd 6 that is already open is refused, never clobbered.
+  if [ -e "/proc/$$/fd/6" ]; then refuse CLAIM_REENTRANT "pb_claim is not re-entrant: fd 6 is already open in this shell"; fi
   exec 6>"$PB_ROOT/.claim-$id.lock" || refuse CLAIM_LOCK_FAILED "cannot open $PB_ROOT/.claim-$id.lock"
   flock -w 30 6 || { exec 6>&-; refuse CLAIM_LOCK_FAILED "another claim for instance $id has held the lock for 30s"; }
   for name in station rail server cdp ws vnc room; do

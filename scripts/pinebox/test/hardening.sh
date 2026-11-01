@@ -132,5 +132,75 @@ mkdir -p "$W/root/i3"; echo '{}' > "$W/root/i3/state.json"
 for a in view shell_down shell_up terminal_send state_put app_install bogus; do r="$(PINEBOX_ROOT="$W/root" "$PB/pinebox" drive --id 3 --action "$a" 2>&1 | head -1)"; case "$r" in *BAD_ARGS*) ;; *) bad "drive --action $a was NOT refused" "$r";; esac; done; ok "drive refuses view shell_down shell_up terminal_send state_put app_install bogus"
 for args in "--id=3 --action screenshot" "--id 3 --action=screenshot" "--id 3 --id 4 --action screenshot" "--id 3 --action screenshot --action view"; do r="$(PINEBOX_ROOT="$W/root" "$PB/pinebox" drive $args 2>&1 | head -1)"; case "$r" in *BAD_ARGS*) ;; *) bad "drive '$args' not refused" "$r";; esac; done; ok "drive refuses --id=N, --action=V and repeated --id/--action"
 
+echo "── H-BATCH2 the final-scan defects ──"
+# CONTROLS read the files as they were BEFORE this batch, pinned to a commit (e399c86), and fail LOUD if the ref is unreadable
+PRE2=e399c86
+for f in ports.sh pinebox inject.py stages/room.sh; do
+  mkdir -p "$W/pre2/$(dirname "$f")"
+  git -C "$PV" show "$PRE2:scripts/pinebox/$f" > "$W/pre2/$f" 2>/dev/null || bad "H-BATCH2 control unavailable" "cannot read $f at $PRE2"
+done
+
+# 1. pb_port takes a NAME, not a jq filter
+r="$(inpb "pb_port 0 'station,.server'; echo rc=\$?")"
+case "$r" in *BAD_ARGS*rc=2*) ok "pb_port 0 'station,.server' (a second jq path) is BAD_ARGS rc=2" ;; *) bad "pb_port filter injection accepted" "$r" ;; esac
+r="$(inpb "pb_port 0 'station // \"x\"'; echo rc=\$?")"
+case "$r" in *BAD_ARGS*rc=2*) ok "pb_port 0 'station // \"x\"' is BAD_ARGS rc=2" ;; *) bad "pb_port jq default accepted" "$r" ;; esac
+r="$(bash -c "cd '$PB'; source '$CUE/core/lib.sh'; source '$W/pre2/ports.sh'; pb_port 0 'station,.server' | wc -l" 2>&1)"
+[ "$r" = 2 ] && ok "CONTROL: the pre-batch pb_port returns TWO values for a comma filter (the instrument can say defective)" || bad "control: old pb_port did not misbehave" "$r"
+r="$(inpb "pb_port 0 station")"; want="$(inpb "pb_ports_json 0" | jq -r .station)"; [[ "$r" =~ ^[0-9]+$ ]] && [ "$r" = "$want" ] && ok "pb_port 0 station still answers the block's own station port ($r)" || bad "pb_port control" "got [$r] want [$want]"
+
+# 2. the claim lock is not re-entrant
+r="$(inpb "export PB_ROOT='$W/claim2'; exec 6>/dev/null; pb_claim 3 ''; echo rc=\$?")"
+case "$r" in *CLAIM_REENTRANT*) ok "pb_claim with fd 6 already open is CLAIM_REENTRANT (the outer lock is not clobbered)" ;; *) bad "pb_claim clobbered an open fd 6" "$r" ;; esac
+
+# 3. the room reset is scoped to the instance's own directory
+mkdir -p "$W/decoy/room-home"; echo KEEP > "$W/decoy/room.db"; mkdir -p "$W/root"
+r="$(loadcli "PB_ROOT='$W/root'; need() { :; }; stage_room 3 '$W/decoy' 2026-07-06; echo rc=\$?")"
+if [ -s "$W/decoy/room.db" ] && [ -d "$W/decoy/room-home" ]; then case "$r" in *SCOPE_VIOLATION*) ok "stage_room on a directory that is not \$PB_ROOT/i<id> is SCOPE_VIOLATION and nothing was deleted" ;; *) ok "stage_room left the decoy intact (refused: ${r:0:60})" ;; esac
+else bad "stage_room deleted inside an unscoped directory" "$r"; fi
+echo KEEP > "$W/decoy/room.db"; mkdir -p "$W/decoy/room-home"
+r="$(bash -c "export PINEBOX_DASHBOARD_SRC=/nonexistent-dashboard-src; cd '$PB'; PINEBOX_ROOT='$W/root' source '$W/pre2/pinebox' ports >/dev/null 2>&1; PB_ROOT='$W/root'; source '$W/pre2/stages/room.sh' 2>/dev/null; need() { :; }; node() { return 0; }; pb_svc_record() { :; }; pb_wait() { return 1; }; pb_kill_recorded() { :; }; ( stage_room 3 '$W/decoy' 2026-07-06 ) >/dev/null 2>&1; [ -e '$W/decoy/room.db' ] && echo SURVIVED || echo DELETED" 2>&1 | tail -1)"
+[ "$r" = DELETED ] && ok "CONTROL: the pre-batch stage_room DELETES inside that unscoped directory (the instrument can say defective)" || bad "control: old stage_room did not delete" "$r"
+
+# 4. drive forwards a per-action flag allowlist, and --out stays in the instance
+mkdir -p "$W/root/i3"; echo '{}' > "$W/root/i3/state.json"
+dr() { PINEBOX_ROOT="$W/root" "$PB/pinebox" drive --id 3 "$@" 2>&1 | head -1; }
+r="$(dr --action screenshot --out /etc/evil.png)"; case "$r" in *BAD_ARGS*) ok "drive screenshot --out /etc/evil.png is BAD_ARGS" ;; *) bad "drive --out outside the instance" "$r" ;; esac
+r="$(dr --action screenshot --out "$W/root/i3/../i4/x.png")"; case "$r" in *BAD_ARGS*) ok "drive screenshot --out through ../ into another instance is BAD_ARGS" ;; *) bad "drive --out traversal" "$r" ;; esac
+r="$(dr --action click --x 1 --i 5)"; case "$r" in *BAD_ARGS*) ok "drive click --i 5 (an abbreviated --id) is BAD_ARGS" ;; *) bad "drive abbreviated flag" "$r" ;; esac
+r="$(dr --action type --out "$W/root/i3/a.png")"; case "$r" in *BAD_ARGS*) ok "drive type --out (a flag type does not take) is BAD_ARGS" ;; *) bad "drive foreign flag" "$r" ;; esac
+r="$(dr --action screenshot --out "$W/root/i3/ok.png")"; case "$r" in *BAD_ARGS*) bad "drive control: a legitimate --out was refused" "$r" ;; *) ok "CONTROL: a .png inside the instance directory passes the allowlist" ;; esac
+
+# 5. every served port is validated like `room`
+for v in '"abc"' None 70000 80 True; do
+  r="$(cd "$PB" && python3 -c "
+import sys; sys.path.insert(0,'.'); import inject
+p={'station':2001,'rail':2002,'server':$v,'ws':2003,'authToken':'x'*16}
+try: inject.config_for(p); print('ACCEPTED')
+except inject.Refused as e: print('REFUSED', e.args[0])" 2>&1 | tail -1)"
+  case "$r" in "REFUSED BAD_PORTS"*) ok "inject.config_for rejects server=$v with BAD_PORTS" ;; *) bad "inject accepted server=$v" "$r" ;; esac
+done
+r="$(cd "$W/pre2" && python3 -c "
+import sys; sys.path.insert(0,'.'); import inject
+p={'station':2001,'rail':2002,'server':None,'ws':2003,'authToken':'x'*16}
+try: print(inject.config_for(p)['apiBase'])
+except Exception as e: print('REFUSED', type(e).__name__)" 2>&1 | tail -1)"
+case "$r" in *None*) ok "CONTROL: the pre-batch inject served 'http://127.0.0.1:None' (the instrument can say defective)" ;; *) bad "control: old inject did not accept None" "$r" ;; esac
+rm -rf "$W/pre2/__pycache__" "$PB/__pycache__"
+
+echo "── H-CANDLES verify must see candles, not just colours ──"
+FX="$PB/test/fixtures"
+floor="$(python3 -c 'import sys; sys.path.insert(0,sys.argv[1]); import chartpx; print(chartpx.CANDLE_FLOOR)' "$PB")"
+oldfloor="$(python3 -c 'import sys; sys.path.insert(0,sys.argv[1]); import chartpx; print(chartpx.BLANK_THRESHOLD)' "$PB")"
+for f in empty-preload empty-after-fit; do
+  n="$(python3 "$PB/chartpx.py" candles "$FX/pane-$f.png")"; [[ "$n" =~ ^[0-9]+$ ]] && [ "$n" -lt "$floor" ] && ok "a chart with NO candles ($f) measures $n candle pixels, below the floor $floor" || bad "empty chart read as populated ($f)" "candles=$n floor=$floor"
+  c="$(python3 "$PB/chartpx.py" colours "$FX/pane-$f.png")"; [ "$c" -ge "$oldfloor" ] && ok "CONTROL: the OLD colour test reads that empty chart ($f) as populated ($c colours >= $oldfloor) - the instrument it replaced was blind" || bad "control: old colour test did not accept the empty frame ($f)" "colours=$c"
+done
+for f in sliver-after-zoom good-week; do
+  n="$(python3 "$PB/chartpx.py" candles "$FX/pane-$f.png")"; [[ "$n" =~ ^[0-9]+$ ]] && [ "$n" -ge "$floor" ] && ok "a chart WITH candles ($f) measures $n candle pixels, at or above the floor $floor" || bad "populated chart read as empty ($f)" "candles=$n floor=$floor"
+done
+python3 "$PB/chartpx.py" candles "$W/does-not-exist.png" >/dev/null 2>&1; [ $? -eq 2 ] && ok "an unreadable frame is rc=2 (the instrument failed), never a count" || bad "unreadable frame did not rc=2" ""
+rm -rf "$PB/__pycache__"
+
 echo; printf ' HARDENING: PASS %d · FAIL %d\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

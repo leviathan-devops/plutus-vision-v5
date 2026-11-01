@@ -69,8 +69,12 @@ pb_v3_run() {
   pb_v3_insert >/dev/null || exit $?
   stage_load "$id" "$d" "$pine" "$pair" "$tf" || exit $?
   result="$(pb_rec_get "$id" .load.result)"
-  [ -n "$result" ] || refuse NO_DRAWINGS "the run produced no measured result"
+  # `[ -n "$result" ]` accepted the literal `null` (and {} / 0 / false): a failed load was coerced by `bars//0` into an
+  # ok:true run with zero bars. A result is an object that names a positive bar count.
+  jq -e 'type == "object" and ((.bars // 0) > 0)' <<<"${result:-null}" >/dev/null 2>&1 \
+    || refuse NO_DRAWINGS "the run produced no measured result (got '${result:-nothing}')"
   frame="$(pb_rec_get "$id" .frame.path)"
+  [ -n "$frame" ] && [ -s "$frame" ] || refuse FRAME_ABSENT "the run recorded no frame on disk (path '${frame:-none}')"
   jq -nc --argjson id "$id" --argjson r "$result" --arg f "$frame" \
     '{ok:true,id:$id,verb:"run",bars:($r.bars//0),onChart:($r.onChart//0),counts:($r.counts//{}),frame:$f}'
 }

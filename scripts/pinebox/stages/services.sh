@@ -60,6 +60,7 @@ pb_preflight() {
 
 stage_services() {
   local id="$1" d="$2" week="$3"
+  local rtok
   local st rail srv fix renderer
   # (the ws port, server+80, is RESERVED in the block and claimed by pb_claim, but nothing in this
   # stage serves on it - it is not read here so no one mistakes it for a wired service)
@@ -88,8 +89,12 @@ stage_services() {
   else
     # the face is the one service the IDE honestly runs without: the page's own
     # "workspaces: offline" state is shown, and the record says so
+    # a rail that missed its deadline may still bind seconds later and own this instance's port and directories while the
+    # record says "down": stop the recorded rail (by its start-time token - the group leader this function just started)
+    rtok="$(pb_rec_get "$id" ".toks.rail")"
+    if [ -n "$rtok" ] && tok_group_ours "$rtok"; then kill_tok "$rtok" || refuse TEARDOWN_INCOMPLETE "the rail that never answered on :$rail could not be stopped"; fi
     pb_rec "$id" '.rail = "down"'
-    echo "  rail      DOWN on :$rail (the IDE opens without its face) - $d/rail.log" >&2
+    echo "  rail      DOWN on :$rail (stopped; the IDE opens without its face) - $d/rail.log" >&2
   fi
 
   # ── server: the static host + the API, with THIS instance's port block to inject ──

@@ -67,11 +67,17 @@ pb_room_preflight() {   # refuses by name BEFORE anything is started
 stage_room() {
   local id="$1" d="$2" week="$3" room srv fix home
   [[ "$week" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || pb_fail "$id" BAD_ARGS "week must be a date YYYY-MM-DD naming a fixture, got '$week'"
+  need curl ROOM_UNAVAILABLE; need jq ROOM_UNAVAILABLE   # pb_room_health needs both: without them a healthy room read as ROOM_DOWN
   room="$(pb_port "$id" room)" && srv="$(pb_port "$id" server)" || pb_fail "$id" BAD_ID "could not derive the room port for instance '$id'"
+  [[ "$room" =~ ^[0-9]+$ && "$srv" =~ ^[0-9]+$ ]] || pb_fail "$id" BAD_ID "the derived ports are not numbers (room '$room', server '$srv')"
   fix="$PV_ROOT/fixtures/bars/$week.json"
   [ -f "$fix" ] || pb_fail "$id" FIXTURE_ABSENT "no bars fixture for week '$week': $fix"
 
   # a fresh, instance-scoped database and HOME on every up; the room refuses to init without the base table
+  # `rm -rf` on a caller-supplied $d: with $d empty this expanded to /room-home and /room.db. The reset only runs on the
+  # instance's OWN directory - exactly $PB_ROOT/i<id> - that exists and is not a symlink.
+  [ -n "$d" ] && [ -n "${PB_ROOT:-}" ] && [ "$d" = "$PB_ROOT/i$id" ] && [ -d "$d" ] && [ ! -L "$d" ] \
+    || pb_fail "$id" SCOPE_VIOLATION "instance dir '$d' is not an existing $PB_ROOT/i$id - refusing to reset a room database under it"
   home="$d/room-home"; rm -rf -- "$home" "$d"/room.db "$d"/room.db-wal "$d"/room.db-shm; mkdir -p "$home"
   node --no-warnings -e "const {DatabaseSync}=require('node:sqlite'); const fs=require('node:fs'); const db=new DatabaseSync(process.argv[1]); db.exec(fs.readFileSync(process.argv[2],'utf8')); db.close();" \
       "$d/room.db" "$PB_HOME/room/base-schema.sql" 2>"$d/room-seed.err" \

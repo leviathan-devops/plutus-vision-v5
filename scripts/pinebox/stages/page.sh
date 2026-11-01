@@ -19,6 +19,7 @@ stage_page() {
   local id="$1" d="$2"
   local srv cdp profile url
   srv="$(pb_port "$id" server)"; cdp="$(pb_port "$id" cdp)"
+  [[ "$srv" =~ ^[0-9]+$ && "$cdp" =~ ^[0-9]+$ ]] || refuse BAD_ID "could not derive numeric server/cdp ports for instance '$id' (server '$srv', cdp '$cdp')"
   profile="$d/chrome"; url="http://127.0.0.1:$srv/pine.html"
   need google-chrome-stable WINDOW_NOT_MAPPED
   # The profile is rm -rf'd, so its scope check must be REAL. "$d/chrome" always matches "$d"/*

@@ -67,9 +67,20 @@ stage_verify() {
   add_check ports "apiBase+rail are this instance's"
 
   # 4 · THE WEEK. The operator's named failure: an indicator read on the wrong week.
-  got="$(node "$CORE/cdp.mjs" "$cdp" evaluate \
+  # two steps, and the instrument's failure is named: `2>/dev/null | jq ... // empty` turned a dead CDP socket, a missing
+  # control or a jq failure into the empty string, and the empty string into "WEEK_MISMATCH" - a verdict about the CHART
+  # reported for a failure of the READER
+  local wk_out wk_err wk_rc
+  wk_err="$(mktemp)"
+  wk_out="$(node "$CORE/cdp.mjs" "$cdp" evaluate \
         "(()=>{const el=document.querySelector('.pine-week');return (el&&el.value)||(document.body.innerText.match(/\\d{4}-W\\d{2}/)||[''])[0]})()" \
-        2>/dev/null | jq -r '.value // empty')"
+        2>"$wk_err")"; wk_rc=$?
+  if [ "$wk_rc" -ne 0 ]; then
+    wk_out="$(grep -m1 '^REFUSED' "$wk_err" | cut -c1-200)"; rm -f "$wk_err"
+    refuse CDP_UNREADABLE "could not read the week from the page over CDP :$cdp - ${wk_out:-no refusal line from cdp.mjs}"
+  fi
+  rm -f "$wk_err"
+  got="$(jq -r '.value // empty' <<<"$wk_out")" || refuse CDP_UNREADABLE "cdp.mjs answered non-JSON while reading the week: $(printf '%s' "$wk_out" | head -c 120)"
   [ "$got" = "$want" ] || refuse WEEK_MISMATCH "the IDE is set to '${got:-<none>}' but the loaded bars are week $want (fixture $week) - an indicator read here would be read on the wrong week"
   add_check week "$got == $want"
 
@@ -115,6 +126,17 @@ stage_verify() {
   [[ "$pane_n" =~ ^[0-9]+$ ]] && [ "$pane_n" -ge "$pane_min" ] \
     || refuse CHART_BLANK "the chart pane has ${pane_n:-no} distinct colours, below the measured floor of $pane_min (a populated pane measures 1493..4153): the chart did not draw"
   add_check chart "$pane_n chart-pane colours (floor $pane_min)"
+
+  # CANDLES, not colours: the colour count above cannot tell a chart from an empty one (gridlines and axis labels alone
+  # measure 1617 colours; a pane with NO candles passed it and `verify` answered WORKS). The candle count is measured on the
+  # same frame and refuses below its measured floor - see chartpx.py for the four real frames the floor comes from.
+  local candles_n candles_min
+  candles_min="$(python3 -c 'import sys; sys.path.insert(0,sys.argv[1]); import chartpx; print(chartpx.CANDLE_FLOOR)' "$PB_HOME")"
+  candles_n="$(python3 "$PB_HOME/chartpx.py" candles "$fresh" 2>"$d/chartpx.err")" \
+    || refuse FRESHNESS_CHECK_FAILED "could not measure the candles in the chart pane: $(tail -1 "$d/chartpx.err") - this is NOT a verdict about the frame"
+  [[ "$candles_n" =~ ^[0-9]+$ ]] && [ "$candles_n" -ge "$candles_min" ] \
+    || refuse CHART_NO_CANDLES "the chart pane shows ${candles_n:-no} candle pixels, below the measured floor of $candles_min (a drawn week measures 4371; none measures 0..352): there is nothing on the chart to read"
+  add_check candles "$candles_n candle pixels (floor $candles_min)"
 
   [[ "$id" =~ ^(0|[1-9])$ ]] || refuse BAD_ID "verdict for a non-canonical instance id '$id'"   # the function's OWN id, not the global $ID that require_id happened to set
   jq -nc --argjson id "$id" --arg want "$want" --argjson checks "$checks" '{ok:true,id:$id,week:$want,verdict:"WORKS",checks:$checks}'

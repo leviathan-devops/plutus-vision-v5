@@ -46,6 +46,9 @@ stage_load() {
     local line tok; line="$(grep -m1 -E '^[A-Z_]+:' "$d/load.err" || tail -1 "$d/load.err")"
     [ -n "$line" ] || line="PINE_LOAD_FAILED: pv-load exited $lrc with no message on stderr (is bun runnable from $PV_ROOT?)"
     tok="$(printf '%s' "$line" | sed -nE 's/^([A-Z_]+):.*/\1/p')"
+    # a compiler/bun log level at the head of a stderr line (`ERROR: ...`, `WARNING: ...`) is not pv-load's token and must
+    # not be minted into the refusal ledger as one
+    case "$tok" in ERROR|WARNING|WARN|INFO|DEBUG|FATAL|NOTE|TRACE) tok="" ;; esac
     refuse "${tok:-PINE_LOAD_FAILED}" "$(printf '%s' "$line" | sed -E 's/^[A-Z_]+: *//') (source $abs, $pair $tf)"
   fi
   result="$(jq -c . <<<"$out")" || refuse PINE_LOAD_FAILED "pv-load returned non-JSON output, so no successful load can be recorded: $(printf '%s' "$out" | tail -1)"

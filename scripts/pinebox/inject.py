@@ -115,6 +115,12 @@ def config_for(ports: dict) -> dict:
     missing = [k for k in REQUIRED_PORTS if k not in ports]
     if missing:
         raise Refused("PORTS_INCOMPLETE", "the port block lacks " + ", ".join(missing))
+    # a port is an int 1024..65535 - the same rule `room` always had. A str, None or out-of-range value was interpolated
+    # into the served URLs and produced a malformed config that still parsed.
+    for k in REQUIRED_PORTS:
+        v = ports[k]
+        if isinstance(v, bool) or not isinstance(v, int) or not (1024 <= v <= 65535):
+            raise Refused("BAD_PORTS", "the port block's `%s` is not an integer in 1024..65535: %r" % (k, v))
     host = "127.0.0.1"
     return {
         "apiBase": f"http://{host}:{ports['server']}",
