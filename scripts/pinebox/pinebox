@@ -9,6 +9,8 @@
 #
 #   pinebox ports   --id N                         the derived ports + a claim verdict
 #   pinebox up      --id N [--week W] [--pair P] [--tf T] [--pine F] [--adapter A]
+#   pinebox spawn   --id N [--cmd "PROGRAM ARGS"] [up's flags]   a NEW instance (refuses INSTANCE_LIVE), then PROGRAM runs inside it
+#   pinebox attach  [--id N]                        re-open a PERSISTENT instance: its live state (ports, week, services, a fresh frame sha); NOT_UP if it is not up
 #   pinebox down    --id N | --all
 #   pinebox list                                    every instance
 #   pinebox status  --id N [--project K]            the record, the last 5 refusals, measured memory
@@ -256,9 +258,67 @@ pb_up() {
   local after; after="$(c3_snapshot)"
   c3_check "$before" "$after" "pinebox up" "$hw"
 
+  if [ -n "${PB_SPAWN_CMD:-}" ]; then
+    local sp
+    sp="$("$COMPUTER" shell spawn --id "$id" --cmd "$PB_SPAWN_CMD" 2>"$d/spawn.err")" || pb_forward_refusal "$d/spawn.err"
+    pb_rec "$id" ".spawned = $(jq -c . <<<"$sp")"
+    printf '  spawned   %s\n' "$PB_SPAWN_CMD" >&2
+  fi
+
   PB_UP_OK=1
   echo "  READY     instance $id  slot :$slot" >&2
-  jq -c '{ok:true, id, slot, adapter, ports, frame, load}' "$d/state.json"
+  jq -c '{ok:true, id, slot, adapter, ports, frame, load, spawned}' "$d/state.json"
+}
+
+# spawn: a NEW instance. The program is checked BEFORE anything is claimed or started (a missing program leaves nothing behind),
+# then `up` runs its five stages on an id that must not be live (INSTANCE_LIVE) and the program is started INSIDE the new instance
+# before it reports READY - if the program cannot start, pb_up_cleanup tears the whole new instance down.
+pb_spawn() {
+  local cmd exe; cmd="$(flag cmd)"
+  if [ -n "$cmd" ]; then
+    exe="${cmd%% *}"
+    command -v -- "$exe" >/dev/null 2>&1 || refuse CMD_NOT_FOUND "exec: '$exe': executable file not found in PATH - nothing was claimed or started"
+  fi
+  PB_SPAWN_CMD="$cmd"
+  pb_up
+}
+
+# attach: re-open a persistent instance this session owns. The instance must be CLAIMED, RECORDED, ALIVE and its three services listening;
+# the answer is read from the running thing (a fresh CDP capture, the page's own week control), never from the record alone.
+pb_attach() {
+  session_resolve
+  local want errf out rc id d slot svc name port holder live shot sha week_rec week_live cdp
+  want="$(flag id)"
+  if [ -n "$want" ]; then
+    pb_need_id "$want"
+    errf="$(mktemp)"; out="$(bun "$REGISTRY_CLI" "$ROOT" check "$SESSION" "$want" 2>"$errf")"; rc=$?
+    if [ "$rc" -ne 0 ]; then
+      if grep -q 'REFUSED  *NOT_CLAIMED' "$errf"; then rm -f "$errf"; refuse NOT_UP "pinebox instance $want is not up - nobody has claimed it; run: pinebox up --id $want"; fi
+      pb_forward_refusal "$errf"
+    fi
+    rm -f "$errf"
+    [ "$(jq -r '.kind' <<<"$out")" = pinebox ] || refuse WRONG_ECOSYSTEM "instance $want is a '$(jq -r '.kind' <<<"$out")' instance, not a pinebox - attach to it with \`computer\`"
+    ID="$want"; CU_CTX_ID="$ID"
+  else
+    pb_bind
+  fi
+  id="$ID"; d="$(pb_dir "$id")"
+  [ -s "$d/state.json" ] || refuse NOT_UP "pinebox instance $id is claimed but has no record - it is not up; run: pinebox up --id $id"
+  pb_instance_live "$id" || refuse NOT_UP "pinebox instance $id has a record but its compositor is gone - run: pinebox down --id $id, then pinebox up --id $id"
+  svc=""
+  for name in station rail server; do
+    port="$(pb_rec_get "$id" ".ports.$name")"; holder="$(pb_port_holder "$port")"
+    [ -n "$holder" ] || refuse NOT_UP "pinebox instance $id: its $name (:$port) is not listening - the instance is half-dead; run: pinebox down --id $id, then pinebox up --id $id"
+    svc="${svc:+$svc,}\"$name\":$port"
+  done
+  cdp="$(pb_rec_get "$id" .ports.cdp)"
+  shot="$(pb_c3 "pinebox attach" "$COMPUTER" screenshot --id "$id" --out "$d/frame.png")" || exit $?
+  sha="$(sha256sum "$d/frame.png" | cut -d' ' -f1)"
+  week_rec="$(pb_rec_get "$id" .week)"
+  week_live="$(node "$CORE/cdp.mjs" "$cdp" evaluate "(document.querySelector('.pine-week')?.value)||''" 2>/dev/null | jq -r '.value // empty')"
+  [ -n "$week_live" ] || refuse NOT_UP "pinebox instance $id: its page did not answer over CDP :$cdp (no .pine-week control) - the IDE is not running"
+  jq -c --arg sha "$sha" --arg wl "$week_live" --arg wr "$week_rec" --argjson bytes "$(stat -c %s "$d/frame.png")" --argjson svc "{$svc}" --arg path "$d/frame.png" \
+     '{ok:true, attached:true, id, slot, adapter, ports, services:$svc, week:{recorded:$wr, live:$wl}, frame:{path:$path, sha256:$sha, bytes:$bytes}, pids}' "$d/state.json"
 }
 
 pb_down() {
@@ -466,6 +526,8 @@ parse_flags "$@"
 case "$PB_VERB" in
   ports)    pb_ports ;;
   up)       pb_up ;;
+  spawn)    pb_spawn ;;
+  attach)   pb_attach ;;
   down)     pb_down ;;
   list)     pb_list ;;
   status)   pb_status ;;

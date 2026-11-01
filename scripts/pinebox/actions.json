@@ -161,6 +161,28 @@
         "adapter"
       ]
     },
+    "spawn": {
+      "argv": [
+        "spawn"
+      ],
+      "flags": [
+        "id",
+        "cmd",
+        "week",
+        "pair",
+        "tf",
+        "pine",
+        "adapter"
+      ]
+    },
+    "attach": {
+      "argv": [
+        "attach"
+      ],
+      "flags": [
+        "id"
+      ]
+    },
     "down": {
       "argv": [
         "down"
