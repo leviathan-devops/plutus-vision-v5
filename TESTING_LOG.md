@@ -2383,3 +2383,20 @@ forecast direction (rise to the resistance, fall to the support) matches.
 - **RAM (PSS, through the tool):** one bare computer 73.7 MB (weston --use-pixman 26.2, Xwayland 33.0, desktop-shell 10.4, keyboard 4.1); the same with the GL renderer 155.3 MB. One Pinebox 635 MB total: Chrome 434 (11 processes), Xwayland 70, three node services 84, weston/shell/keyboard 47.
 - **The verdict:** PASS for session scope; the Pinebox RAM is 6% over the operator's 600 MB target.
 - **The artifacts:** `reports/overnight-2026-11-01/visual/session-{alpha,bravo,charlie}-id*.png`, `pinebox-session-{one,two,three}-id*.png`. Opened and read: each dialog shows only its own typed text; the three Pinebox frames show rail :9754 / room :9643 / rail :9854.
+
+## TEST RESULT - 2026-11-01 - T-47 · render-device playtest (the running tool, headed, pixels)
+### HOST
+- **The run:** `computer shell up --session trial-*` x3 with `CU_RENDERER=pixman | gl+renderD129 (Intel i915) | gl+renderD128 (NVIDIA)`, an `xev` client, then an animating GTK client; every call through the tool; operator focus read before/after (`active=0x0`, top unchanged).
+- **The raw output:** see RULINGS.md 2026-11-01 (late). Positive control for the CPU probe: two captures 0.4 s apart differ (`frames differ: yes`) on every renderer.
+- **The verdict:** PASS - pixman chosen as default; pixels equal (frames `gpu-anim-pixman.png`, `gpu-anim-nvidia.png` opened).
+- **The artifacts:** `reports/overnight-2026-11-01/visual/gpu-trial-{pixman,intel,nvidia}.png`, `gpu-anim-{pixman,intel,nvidia}.png`.
+
+## TEST RESULT - 2026-11-01 - T-48 - `ta` audit of the two tools: HARD-BLOCKED at the instrument's own preconditions (not a pass, not a fail of the tools)
+- **What ran:** `ta register --worker cu-pinebox` (ok: base 31ebf65), then `ta plan --worker cu-pinebox --scope ready` in a scratch project dir `/tmp/ta-pinebox` (the repo was not modified). Three routes, each with the verbatim outcome:
+  1. minimal manifest (workflow = NEXT_STEPS.md): `FAIL TA_WORKER_NOT_IN_WORKFLOW no '## WORKER cu-pinebox' in .../NEXT_STEPS.md` (`ta/docs.py:44`).
+  2. a one-task workflow in the grammar `ta/docs.py:23-35` parses (task T1.1, `evidence: task-dir`): plan opened round 2 (code graph 446 nodes, 845 edges), then `BLOCKED TA_KG_STALE: 1 knowledge-graph inconsistencies` - `T1.1: no card task-cu-pinebox-t1-1` (`ta/plan.py:9-13`; PLAN.md lines 6-8). `ta stage1` repeats `FAIL TA_KG_STALE`.
+  3. read of the remaining preconditions: a task is proven by a `done-when` gate command (`ta/docs.py:task_gates`, default regex `G-...`), Stage 2 re-runs gates from a sealed copy and counts a probe only if it ran inside the worker's docker container (references/STAGE2.md rule 3), Stage 1 compares an `installed` and a `built` artifact inside that container.
+- **The mechanism:** `ta` judges a worker whose proof channel is gate scripts and `docker exec` captures. This build's proof channel is the headed tool and opened pixels on a host display (RULINGS.md testing doctrine), and the gate scripts were retired by the operator (rules/no-script-tests-no-code-review.md). Satisfying `ta` would mean writing task cards for tasks I authored, gate scripts the operator forbade, and docker probes that cannot see the host display - i.e. fabricating the structure the audit certifies.
+- **What this does NOT show:** nothing about whether the tools work. No claim of the build was audited. `ta selftest` (earlier, PASS, 42 lies / 0 missed) proves the auditor, not this build.
+- **The verdict:** BLOCKED (named). Owed to the operator: what audit shape fits a headed-display tool (a `ta` evidence mode that accepts an opened-frame capture as the proof channel, or a different auditor). Recorded as N10.
+- **The artifacts:** `~/.ta/pinebox/cu-pinebox/ready/round-2/PLAN.md`; `/tmp/ta-pinebox/{ta.project.json,WORKFLOW.md}`.
