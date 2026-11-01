@@ -32,7 +32,7 @@
     },
     "action": {
       "type": "string",
-      "description": "drive: a computer-use verb (screenshot, click, type, key, focus ...)"
+      "description": "widget: list, open or close"
     },
     "x": {
       "type": "number",
@@ -89,6 +89,38 @@
     "mode": {
       "type": "string",
       "description": "editor: get or set"
+    },
+    "to": {
+      "type": "string",
+      "description": "tab: pine or backtest"
+    },
+    "op": {
+      "type": "string",
+      "description": "chart: pan, zoom, fit, view, resize"
+    },
+    "dx": {
+      "type": "number",
+      "description": "chart pan: horizontal fraction"
+    },
+    "dy": {
+      "type": "number",
+      "description": "chart pan: vertical fraction"
+    },
+    "dir": {
+      "type": "string",
+      "description": "chart zoom: IN or OUT"
+    },
+    "size": {
+      "type": "string",
+      "description": "chart resize: WxH"
+    },
+    "symbol": {
+      "type": "string",
+      "description": "asset: DXY, EURUSD or GBPUSD"
+    },
+    "name": {
+      "type": "string",
+      "description": "widget: its name"
     }
   },
   "actions": {
@@ -258,6 +290,56 @@
       "flags": [
         "id",
         "out"
+      ]
+    },
+    "tab": {
+      "argv": [
+        "tab"
+      ],
+      "flags": [
+        "id",
+        "to"
+      ]
+    },
+    "chart": {
+      "argv": [
+        "chart"
+      ],
+      "flags": [
+        "id",
+        "op",
+        "dx",
+        "dy",
+        "dir",
+        "size"
+      ]
+    },
+    "asset": {
+      "argv": [
+        "asset"
+      ],
+      "flags": [
+        "id",
+        "symbol"
+      ]
+    },
+    "tf": {
+      "argv": [
+        "tf"
+      ],
+      "flags": [
+        "id",
+        "tf"
+      ]
+    },
+    "widget": {
+      "argv": [
+        "widget"
+      ],
+      "flags": [
+        "id",
+        "action",
+        "name"
       ]
     }
   }
