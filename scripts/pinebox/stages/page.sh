@@ -43,6 +43,13 @@ stage_page() {
   rm -rf -- "$real_d/chrome" || refuse SCOPE_VIOLATION "could not remove the previous browser profile $real_d/chrome"
 
   local out
+  # PB_CHROME_FLAGS: extra browser flags (a MEASUREMENT knob for the RAM work, W6): only `--name[=value]` words, space separated; anything else is refused
+  local extra="${PB_CHROME_FLAGS:-}"
+  if [ -n "$extra" ] && ! [[ "$extra" =~ ^(--[A-Za-z0-9._=,:/+-]+)( --[A-Za-z0-9._=,:/+-]+)*$ ]]; then refuse BAD_CONFIG "PB_CHROME_FLAGS must be space-separated --flag[=value] words, got '$extra'"; fi
+  # RAM (W6, measured through this tool: reports/goal-2026-11-02/raw/w6-census-*.txt, T-56): `--enable-features=NetworkServiceInProcess2
+  # --renderer-process-limit=1` took a lone instance from 784.5 MB (three baselines 768.7 / 783.4 / 801.5) to 747.7 / 747.6 MB at 70 s, frames identical
+  # apart from the clock, verify WORKS. REJECTED by the same measurement: --no-zygote --no-sandbox (+80 MB), --in-process-gpu (no change), site isolation
+  # off (no change), a lean-flag set (-8 MB, inside the +-17 MB noise). PB_CHROME_FLAGS appends more flags for the next measurement.
   # the flags and WHY each is there: blueprint section 7E. --ozone-platform=x11 pins it to
   # this instance's X display (the core also strips the operator's Wayland socket).
   out="$("$COMPUTER" shell spawn --id "$id" --cdp "$cdp" -- google-chrome-stable \
@@ -51,7 +58,8 @@ stage_page() {
         --remote-allow-origins="http://127.0.0.1:$cdp" \
         --window-size=1626,931 --window-position=0,0 \
         --disable-gpu --disable-gpu-compositing --disable-accelerated-2d-canvas \
-        --use-gl=swiftshader --enable-unsafe-swiftshader --ozone-platform=x11 2>"$d/spawn.err")" \
+        --use-gl=swiftshader --enable-unsafe-swiftshader --ozone-platform=x11 \
+        --enable-features=NetworkServiceInProcess2 --renderer-process-limit=1 $extra 2>"$d/spawn.err")" \
     || {
       local tok; tok="$(sed -nE 's/^REFUSED +([A-Z_]+) +—.*/\1/p' "$d/spawn.err" | head -1)"
       case "$tok" in
