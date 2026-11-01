@@ -128,3 +128,27 @@ constant. Without the control, a scene read of `0` would be indistinguishable fr
 - note: the same load on the operator's real desktop (:1) produced the identical frame with
   `active=0x0 top=0xa0000a` unchanged before/after — cited in TESTING_LOG T-34, not stored here
   because it is the operator's screen content.
+
+## 2026-11-01 · computer-use-v2 + pinebox live frames (PINEBOX repo, `reports/overnight-2026-11-01/visual/`)
+
+| frame | sha16 | what it depicts (opened and read) | caveat |
+|---|---|---|---|
+| pinebox-live-works.png | 75cb315960cb4f5b | Pine IDE, DXY 1h, week 2026-W28, status row "FIXTURE . DXY . 1H . 508 bars", candles, `plutus-vision-v2.pine` loaded | no Plutus overlay visible although the station reports 32 drawings (F-158) |
+| pinebox-verify-judged.png | 2fee35dd9c193a32 | the frame `verify` accepted: candles, 4,989 candle pixels | |
+| pinebox-live-ema.png | de92c03b6fa05bb6 | EMA Ribbon: candles, EMA20 (yellow), EMA50 (blue), green crossover triangles | the tools' acceptance fixture |
+| pinebox-after-load-prezoom.png | 8f64957ef8977bf0 | a full week of candles after load | |
+| pinebox-final-chart.png | 43fcd47233377452 | an EMPTY chart (gridlines and axis only) that the old `verify` accepted | the defect frame of F-157 |
+| cu-live-typed.png | 32bcb0c41b6487a9 | a GTK zenity dialog with "typed by computer-use v2" in its entry | driven on the headless xvfb adapter |
+| cu-live-xev.png | 54ed8ee3ddd65be7 | the xev window (178x178, white, hollow square) | byte-identical to guest-xev.png and cu-live-xterm.png |
+| cu-live-xterm.png | 54ed8ee3ddd65be7 | NOT an xterm: a duplicate of the xev frame (xterm is not installed, APP_EXITED) | MISLABELED (F-163) |
+| guest-xev.png | 54ed8ee3ddd65be7 | xev inside the Alpine guest (ssh-side uname Linux 6.12.114-0-virt) | same hash as a host frame; guest provenance rests on the ssh evidence |
+| cu-shell-up-xev.png | f10d2ed194c3b8bc | the first `shell up` + xev frame (02:51) | |
+| room-up.png / room-session.png / room-replay.png | 323f53549256aadc / ba11d4cac9c6465b / 3dc52d0811c65737 | the per-instance Backtest room up, a REPLAY-DXY session, 3 step-clicks 216 -> 219 | |
+
+### 2026-11-02 - N3 / N4 checkpoint (headed, through the tool, opened)
+| frame | sha256 (16) | what it shows | ruling |
+|---|---|---|---|
+| n3-9-c0.png (and c1..c4) | 2da539dd25e013e4 | a computer's own dialog, its session name as the title and its own typed text only (9-session run) | |
+| n3-9-p0-chart.png (and p1..p3) | 3b5616b33b76bb57 | the chart section: candles, EMA20 yellow, EMA50 blue, crossover triangles, legend EMA Ribbon (9-session run) | |
+| n4-persistent-computer-id10.png | 69d29f199d14f6a1 | the persistent computer's dialog naming id 10 and its owning session | |
+| n4-persistent-pinebox-id0.png | 287660c24d27a167 | the persistent Pinebox's full IDE: editor, run bar FIXTURE DXY 1H 508 bars, rail :9754 station UP, chart | |
