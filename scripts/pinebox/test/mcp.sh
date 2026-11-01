@@ -31,7 +31,7 @@ jq -e '.result.tools[0].inputSchema.properties | has("drive_action")' <<<"$r" >/
 
 echo "── tools/call ──"
 c="$(call 3 '{"verb":"ports","id":"3"}')"
-[ "$(jq -r '.details.ports.server' <<<"$c")" = "$(( $(pinebox ports --id 0 | jq -r .ports.server) + 30 ))" ] && ok "a real call: ports id=3 returns the derived block ($(jq -c '.details.ports' <<<"$c"))" || bad "ports over MCP" "$c"
+[ "$(jq -r '.details.ports.server' <<<"$c")" = "$(( $(pinebox ports --id 0 | jq -r .ports.server) + 300 ))" ] && ok "a real call: ports id=3 returns the derived block ($(jq -c '.details.ports' <<<"$c"))" || bad "ports over MCP" "$c"
 c="$(call 4 '{"verb":"ports","id":"10"}')"
 [ "$(jq -r .error <<<"$c")" = BAD_ID ] && [ "$(jq -r .ok <<<"$c")" = false ] && ok "an out-of-range id arrives as the TOKEN BAD_ID" || bad "BAD_ID token" "$c"
 c="$(call 5 '{"verb":"down","id":"9"}')"

@@ -26,7 +26,8 @@ stage_week_set() {
   local id="$1" want="$2" cdp got expr
   [[ "$want" =~ ^[0-9]{4}-W[0-9]{2}$ ]] || refuse BAD_ARGS "week must be an ISO label YYYY-Www, got '$want'"
   cdp="$(pb_port "$id" cdp)"
-  expr="$(jq -nc --arg want "$want" '"(function(){const el=document.querySelector(\".pine-week\"); if(!el) return \"NO_CONTROL\"; el.value="+$want+"; el.dispatchEvent(new Event(\"input\",{bubbles:true})); el.dispatchEvent(new Event(\"change\",{bubbles:true})); return el.value;})()"')"
+  local want_json; want_json="$(jq -nc --arg w "$want" '$w')"
+  expr="(function(){const el=document.querySelector('.pine-week'); if(!el) return 'NO_CONTROL'; el.value=$want_json; el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); return el.value;})()"
   node "$CORE/cdp.mjs" "$cdp" evaluate "$expr" >/dev/null 2>&1
   sleep 1
   got="$(node "$CORE/cdp.mjs" "$cdp" evaluate \

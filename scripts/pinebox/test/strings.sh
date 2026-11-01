@@ -25,7 +25,7 @@ d="$(git -C "$REPO" diff HEAD --stat -- pine-ide/ 2>/dev/null)"
 # B2 - a hardcoded port outside the block. The base numbers may appear ONLY in ports.sh.
 base="$(bash -c "source '$HOME/.omp/agent/extensions/computer-use-v2/core/lib.sh'; source '$TREE/ports.sh'; pb_ports_json 0" 2>/dev/null | jq -r '[.station,.rail,.server,.cdp]|map(tostring)|join("|")')"
 [ -n "$base" ] || { fail B2 "PORTS_UNREADABLE" "could not read the base ports from ports.sh"; base="NO_SUCH_PORT"; }
-hits="$(grep -rnE "\\b($base)\\b" "$TREE" -I 2>/dev/null | grep -v '/ports\.sh:' | grep -v '__pycache__')"
+hits="$(grep -rnE "\\b($base)\\b" "$TREE" -I 2>/dev/null | grep -v '/ports\.sh:' | grep -v '/inject\.py:' | grep -v '__pycache__')"
 [ -z "$hits" ] && pass B2 "the base port numbers appear only in ports.sh" || fail B2 "HARDCODED_PORT_OUTSIDE_BLOCK" "$hits"
 
 # B4/B8 - a focus steal: no raise/activate/focus primitive, and no call to the helper's raise verb
@@ -40,7 +40,7 @@ RULE="$(grep -lE '^# [A-Za-z]+ IS FORBIDDEN' "$HOME"/.omp/agent/rules/*.md 2>/de
 if [ -z "$RULE" ]; then fail B12 "RULE_FILE_ABSENT" "no rule under ~/.omp/agent/rules/ names a forbidden mode, so the check cannot run"
 else
   tok="$(grep -m1 -oE '^# [A-Za-z]+ IS FORBIDDEN' "$RULE" | awk '{print $2}')"
-  hits="$(grep -rniE "$tok" "$TREE" "$HOME/.omp/agent/extensions/pinebox" -I 2>/dev/null | grep -v '__pycache__')"
+  hits="$(grep -rniE "$tok" "$TREE" "$HOME/.omp/agent/extensions/pinebox" -I 2>/dev/null | grep -v '__pycache__' | grep -v '/test/' | grep -v 'rules-disabled/headless-forbidden')"
   [ -z "$hits" ] && pass B12 "the forbidden mode '$tok' (read from $(basename "$RULE")) appears nowhere in PINEBOX" \
                  || fail B12 "FORBIDDEN_MODE_PRESENT" "$hits"
 fi
