@@ -419,6 +419,7 @@ pb_drive() {   # drive --id N --action VERB [core flags...]
     case "${args[$i]}" in
       --id)     nid=$((nid+1));   i=$((i+2)) ;;
       --action) nact=$((nact+1)); i=$((i+2)) ;;
+      --session) i=$((i+2)) ;;     # the global flag: resolved by pb_bind, it must not ride into the core call as an unknown flag (T-60: `drive --session S ...` was refused for it)
       # `--id=2` was NOT recognised as the id flag, so it rode through into the core call as a second,
       # attacker-chosen --id; reject the glued form outright
       --id=*|--action=*) refuse BAD_ARGS "drive takes '--id N' and '--action VERB' as separate arguments, got '${args[$i]}'" ;;
@@ -444,6 +445,9 @@ pb_drive() {   # drive --id N --action VERB [core flags...]
     key)        allow=(--key --win --cdp) ;;
     screenshot) allow=(--out --win --cdp) ;;
   esac
+  # REQUIRED flags: the core defaults a missing --x/--y to 0, so `drive --action click` clicked the page's top-left corner and answered ok:true (measured, T-60)
+  local need k2; case "$action" in click) need="--x --y" ;; type) need="--text" ;; key) need="--key" ;; *) need="" ;; esac
+  for k2 in $need; do [[ " ${rest[*]} " == *" $k2 "* ]] || refuse BAD_ARGS "drive $action needs $k2$([ "$action" = click ] && printf ' (a missing coordinate is not defaulted to 0: that clicks the page corner)')"; done
   j=0
   while [ "$j" -lt "${#rest[@]}" ]; do
     key="${rest[$j]}"; val="${rest[$((j+1))]:-}"

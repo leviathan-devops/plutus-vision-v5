@@ -2838,3 +2838,34 @@ verdict on 2026-11-01, after a full day: "you spent the whole day accomplishing 
 - **What happened:** `pinebox week --set 2026-W99` answered `{"ok":true,"week":"2026-W99"}` and the IDE control read `2026-W99`.
 - **Root cause:** MECHANISM: `stages/verify.sh` `stage_week_set` validated only the SHAPE `^[0-9]{4}-W[0-9]{2}$`.
 - **Disposition:** FIXED: `datetime.date.fromisocalendar` decides existence; W99, W00 and 2027-W53 are `BAD_ARGS`; 2026-W53 (2026 is a long ISO year) is accepted. RESIDUAL: what the chart does for a week with no bars in the fixture was not measured.
+
+### F-181 - `pinebox chart --op fit` did not frame all loaded bars (2026-11-02, goal V9 per-verb hot-seat)
+
+- **What happened:** with 508 bars loaded, `fit` answered `ok:true` and left 201 in view; the chart opens with 382 in view, so "fit" showed FEWER bars than before. The blueprint line is "`chart --id N --fit`: frame all loaded bars (the 'I cannot see anything' fix)".
+- **Found:** by reading the renderer's own visible range with `chartprobe.js` before and after (`inView` 382 -> 201) instead of the verb's before/after range alone.
+- **Root cause:** MECHANISM: `stages/v3_nav.sh` (old HEAD) `fit) js="r.fitContent();"`, and the page's `fitContent` is `workbench.bundle.js:37916` - `const visibleBars = Math.min(n, 200);` - it frames the last 200 bars. A first rewrite asked for the style's right margin of 10 bars; the page's `clampViewport` (`:36982`, `minBs = ... W / ((n + ZOOM_OUT_MARGIN_BARS) * scale)` with `ZOOM_OUT_MARGIN_BARS = 6`, `:35102`) cannot zoom out that far: wanted barSpacing 1.8031, got 1.8171, 505 of 508 in view.
+- **Disposition:** FIXED: the verb reduces the right margin until the renderer's own visible range reaches the first bar (508 of 508 in view, frame opened), reads that back (`FIT_INCOMPLETE` when it does not: it caught my first rewrite), refuses `NO_BARS` when nothing is loaded; `zoom --dir` is case-insensitive. RESIDUAL: `fit` on a chart wider than the page's zoom-out limit would still end in `FIT_INCOMPLETE` (refused, not faked).
+
+### F-182 - `deploy.sh push` copied a bash file with a syntax error into the live install (2026-11-02, goal V9)
+
+- **What happened:** my edit to `stages/v3_nav.sh` deleted the `;;` ending the `fit)` case; `deploy.sh push` deployed it (`PUSH: OK`), and every `chart`, `tab`, `tf`, `asset` and `widget` call then failed with `syntax error near unexpected token ')'` for the minutes until I noticed.
+- **Root cause:** MECHANISM: `deploy.sh` (op_push) compared and copied; it parsed nothing. My habit of running `bash -n` before the push was a habit, not a gate.
+- **Disposition:** FIXED: `op_push` refuses `SYNTAX_ERROR` (`bash -n` for shell, `ast.parse` for Python, `node --check` for JS/MJS, `jq` for JSON) before anything is copied. Negative control: a deliberately broken source was committed and pushed - refused by name, rc 1, nothing copied; positive control: the real tree pushed `DEPLOY: OK sealed=101`.
+
+### F-183 - `pinebox widget --action open|close` could never succeed on this page (2026-11-02, goal V9)
+
+- **What happened:** the verb listed two panes (`pine-shell-root`, `page-backtest-room`) and its open/close selector `[data-widget="NAME"],details[name="NAME"]` matches 0 elements on the page (measured), so every open/close was `WIDGET_NOT_FOUND`. The operator's first ask was "open and close all of the widgets".
+- **Root cause:** MECHANISM: the blueprint left the selectors "TO DISCOVER" (design/DESIGN_BLUEPRINT_PINEBOX_v3_EXPANSION.md:139) and the first build guessed.
+- **Disposition:** FIXED: the discovered toggles are the Pine shell's `.pine-lay-btn` buttons (editor, face, verdict, focus) with `aria-pressed`; the verb drives them and reads `aria-pressed` back; pixels confirm (VERDICT strip appears; FACE section disappears and the editor fills the column). RESIDUAL: the chart's own widgets (`vela-widget-panel-dataWindow`, `-objects`) and the Backtest room's panels (sessions, journal, ticket) are not driven.
+
+### F-184 - a refused `tf`/`asset` load left the page on the refused axes (2026-11-02, goal V9)
+
+- **What happened:** `pinebox tf --tf 4H` refused `TF_SET_FAILED` (the fixture carries DXY 1H only) and the page stayed on 4h: an empty chart under a `FIXTURE_CELL_ABSENT` toast, while the record said `1H` and later `shot`/`verify` read a broken page.
+- **Root cause:** MECHANISM: `pb_nav_load_axes` calls `P.loadBars({pair,timeframe})` first and checks the bar count after; the failure path refused without loading the previous axes back.
+- **Disposition:** FIXED: the failure path loads the previous axes back and says whether it worked in the refusal text (`the page was put back on DXY 1H (508 bars)`); frame opened. RESIDUAL: the viewport is reset to the last bars by the reload.
+
+### F-185 - `pinebox drive --action click` with no coordinates clicked (0,0) and said ok:true (2026-11-02, goal V9)
+
+- **What happened:** `drive --action click` -> `{"ok":true,"verb":"click","x":0,"y":0,...}`; `type` with no `--text` and `key` with no `--key` were accepted too; and `drive --session S ...` was refused (`drive click takes only --x --y --button --win --cdp, got '--session'`).
+- **Root cause:** MECHANISM: `pb_drive` (`pinebox-cli/pinebox`) validated the flags that were present, never that the required ones were; the core defaults a missing coordinate to 0; and the global `--session` rode through `PB_ARGS` into the core call.
+- **Disposition:** FIXED: `BAD_ARGS` naming the missing flag; `--session` is consumed by the binding. Frames and refusals recorded in ST-85.
