@@ -7,4 +7,5 @@ interface Env {
   WEEK_SEAL: DurableObjectNamespace;
   LEDGER: DurableObjectNamespace;
   PV_WEEK: Workflow;
+  BUILD_SHA?: string;
 }

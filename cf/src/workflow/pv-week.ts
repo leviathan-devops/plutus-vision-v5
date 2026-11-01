@@ -25,9 +25,10 @@ export interface PvParams {
   pair: string;
   week: string;          // YYYY-MM-DD, the Monday
   optionsUrl: string;    // investinglive options-expiry page for that week
-  calendarUrl: string;   // the week's economic calendar
-  siblings: { pair: string; inverse: boolean }[];
-  knownBadSha: string[];
+  barsR2Key: string;     // R2 object key for the uploaded bar fixture
+  calendarUrl?: string;   // the week's economic calendar
+  siblings?: { pair: string; inverse: boolean }[];
+  knownBadSha?: string[];
 }
 
 type BarSet = Record<"4H" | "1H" | "30m", Bars>;
@@ -84,10 +85,13 @@ async function readBars(env: Env, pair: string, week: string, anchor: number): P
 export class PvWeek extends WorkflowEntrypoint<Env, PvParams> {
   override async run(event: WorkflowEvent<PvParams>, step: WorkflowStep): Promise<{ sha: string; created: boolean }> {
     const p = event.payload;
+    const siblings = p.siblings ?? [];
+    const knownBadSha = p.knownBadSha ?? [];
+    const calendarUrl = p.calendarUrl ?? p.optionsUrl;
     const runId = `pv-${p.week}-${p.pair}`;
     const w = weekWindow(p.week);
     const legs = must(LEGS[p.pair], "W0_PAIR_UNKNOWN", { pair: p.pair });
-    if (p.siblings.length < 2) throw new Fatal("W0_SIBLINGS_SHORT", { have: p.siblings.length });
+    if (siblings.length < 2) throw new Fatal("W0_SIBLINGS_SHORT", { have: siblings.length });
 
     // S0 · ARM — the rulings gate first: an unruled constant refuses the whole run.
     const rulings = await step.do("arm", async () => {
@@ -108,13 +112,13 @@ export class PvWeek extends WorkflowEntrypoint<Env, PvParams> {
     const bars = await step.do("harvest", { retries: { limit: 3, delay: "5 seconds", backoff: "linear" } },
       async () => readBars(this.env, p.pair, p.week, w.anchor));
     const siblingBars = await step.do("harvest.siblings", { retries: { limit: 3, delay: "5 seconds", backoff: "linear" } },
-      async () => Promise.all(p.siblings.map(async (s) => ({ ...s, bars: await readBars(this.env, s.pair, p.week, w.anchor) }))));
+      async () => Promise.all(siblings.map(async (s) => ({ ...s, bars: await readBars(this.env, s.pair, p.week, w.anchor) }))));
 
     // S2/S3 · CAPTURE — Browser Run; bytes to R2, the step returns key + sha.
     const optCap: Capture = await step.do("capture.options", { retries: { limit: 3, delay: "10 seconds", backoff: "linear" } },
-      async () => capturePage(this.env, p.optionsUrl, `captures/${p.week}/${p.pair}/options.png`, "table", p.knownBadSha));
+      async () => capturePage(this.env, p.optionsUrl, `captures/${p.week}/${p.pair}/options.png`, "table", knownBadSha));
     const calCap: Capture = await step.do("capture.calendar", { retries: { limit: 3, delay: "10 seconds", backoff: "linear" } },
-      async () => capturePage(this.env, p.calendarUrl, `captures/${p.week}/calendar.png`, "table", p.knownBadSha));
+      async () => capturePage(this.env, calendarUrl, `captures/${p.week}/calendar.png`, "table", knownBadSha));
 
     // S4/S5 · EXTRACT — Clairic; every invariant is a named fatal.
     const walls: Walls = await step.do("extract.options", { retries: { limit: 2, delay: "5 seconds", backoff: "constant" } },
@@ -181,11 +185,11 @@ export class PvWeek extends WorkflowEntrypoint<Env, PvParams> {
         zones: attested,
         chain: chain.chain,
         days: chain.chain.map((l) => l.day),
-        alternative: {
+        alternative: chain.alternative ? {
           decision_zone: must(chain.alternative[0], "E2_ALTERNATIVE_EMPTY", {}).target,
           flip_at: 45,
           chain: chain.alternative.map((l) => l.shape),
-        },
+        } : null,
         setups: result.setups,
         refusals: result.refusals,
         count: { emitted: result.setups.length, ceiling: 8, evicted: 0 },

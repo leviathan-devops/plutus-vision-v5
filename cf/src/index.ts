@@ -17,7 +17,11 @@ export default {
     const url = new URL(request.url);
     try {
       if (url.pathname === "/health") {
-        return Response.json({ ok: true, bindings: ["AI", "BROWSER", "R2", "D1", "WEEK_SEAL", "LEDGER", "PV_WEEK"] });
+        return Response.json({
+          ok: true,
+          build_sha: env.BUILD_SHA ?? "dev-local",
+          bindings: Object.fromEntries(["AI", "BROWSER", "R2", "D1", "WEEK_SEAL", "LEDGER", "PV_WEEK"].map((name) => [name, "ok"])),
+        });
       }
 
       if (url.pathname === "/run" && request.method === "POST") {

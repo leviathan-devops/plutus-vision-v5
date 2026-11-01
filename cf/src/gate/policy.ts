@@ -15,7 +15,7 @@ export interface PolicySet {
 /** Placeholder thresholds are NOT allowed at runtime: source+rows are checked. */
 function policy(act: number, flag: number, source: string, rows: number, perQuestion: Record<string, number> = {}): Policy {
   if (!source || rows < 1) throw new Error(`E_UNCALIBRATED:${source}`);
-  return { act, flag, fail: "closed", perQuestion, source, rows };
+  return { act, flag, perQuestion, source, rows };
 }
 
 export const POLICY: PolicySet = {
