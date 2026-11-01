@@ -59,8 +59,8 @@
       "description": "terminal: read the pane"
     },
     "get": {
-      "type": "string",
-      "description": "state: the key to read"
+      "type": "boolean",
+      "description": "week | tf | asset: read the current value from the page instead of setting it"
     },
     "put": {
       "type": "string",
@@ -290,7 +290,8 @@
       ],
       "flags": [
         "id",
-        "set"
+        "set",
+        "get"
       ]
     },
     "verify": {
@@ -375,7 +376,9 @@
       "flags": [
         "id",
         "symbol",
-        "tf"
+        "tf",
+        "set",
+        "get"
       ]
     },
     "tf": {
@@ -385,7 +388,9 @@
       "flags": [
         "id",
         "tf",
-        "symbol"
+        "symbol",
+        "set",
+        "get"
       ]
     },
     "widget": {

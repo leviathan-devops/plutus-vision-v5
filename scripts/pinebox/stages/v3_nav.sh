@@ -47,7 +47,7 @@ pb_nav_chart() {
       size="$(flag size)"; [[ "$size" =~ ^[0-9]+x[0-9]+$ ]] || refuse RESIZE_FAILED "resize needs --size WxH (digits only)"
       w="${size%x*}"; h="${size#*x}"
       pb_v3_num width "$w" 200 4000; pb_v3_num height "$h" 200 4000
-      js="r.resize($w,$h);" ;;
+      refuse RESIZE_UNSUPPORTED "the renderer's resize() takes no size: it is 'resize() { this.syncSize(); }' (workbench.bundle.js:36404-36405), the chart always fills its container (measured: 934x686 in a 998x708 mount before and after resize 900x600); to change the chart's size change the window, not the chart" ;;
     view) js="" ;;
     *) refuse BAD_ARGS "unknown chart op '$op' (pan|zoom|fit|view|resize)" ;;
   esac
@@ -101,16 +101,25 @@ pb_nav_load_axes() {   # VERB SYMBOL TF
     '{ok:true,id:$id,verb:$v,symbol:$s,timeframe:$t,bars:$r.bars,market:$r.market}'
 }
 
+# `--get`: what the page ITSELF holds now (the loaded market and bar count), next to what the record says
+pb_nav_get() {
+  local id="$PB_ID" res
+  res="$(pb_v3_eval "$id" "(function(){const P=window.PlutusPineShell; if(!P) return {absent:true}; return {bars:(P.workbench.getBars()||[]).length,market:P.workbench.market||null};})()")" || exit $?
+  [ "$(jq -r '.absent // false' <<<"$res")" = false ] || refuse EDITOR_ABSENT "the Pine shell is not mounted"
+  jq -nc --argjson id "$id" --arg s "$(pb_rec_get "$id" .nav.symbol)" --arg t "$(pb_rec_get "$id" .nav.tf)" --argjson r "$res" '{ok:true,id:$id,recorded:{symbol:($s|if .=="" then "DXY" else . end),timeframe:($t|if .=="" then "1H" else . end)},page:$r}'
+}
 pb_nav_asset() {
   pb_v3_begin; local sym tf
-  sym="$(flag symbol)"; [ -n "$sym" ] || refuse ASSET_ABSENT "asset needs --symbol DXY|EURUSD|GBPUSD"
+  [ -n "$(flag get)" ] && { pb_nav_get; return; }
+  sym="$(flag symbol)"; [ -n "$sym" ] || sym="$(flag set)"; [ -n "$sym" ] || refuse ASSET_ABSENT "asset needs --symbol DXY|EURUSD|GBPUSD"
   tf="$(flag tf)"; [ -n "$tf" ] || tf="$(pb_rec_get "$PB_ID" .nav.tf)"; tf="${tf:-1H}"
   pb_nav_load_axes asset "$sym" "$tf"
 }
 
 pb_nav_tf() {
   pb_v3_begin; local sym tf
-  tf="$(flag tf)"; [ -n "$tf" ] || refuse TF_SET_FAILED "tf needs --tf 15m|30m|1H|4H"
+  [ -n "$(flag get)" ] && { pb_nav_get; return; }
+  tf="$(flag tf)"; [ -n "$tf" ] || tf="$(flag set)"; [ -n "$tf" ] || refuse TF_SET_FAILED "tf needs --tf 15m|30m|1H|4H"
   sym="$(flag symbol)"; [ -n "$sym" ] || sym="$(pb_rec_get "$PB_ID" .nav.symbol)"; sym="${sym:-DXY}"
   pb_nav_load_axes tf "$sym" "$tf"
 }

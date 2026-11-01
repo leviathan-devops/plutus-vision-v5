@@ -117,14 +117,20 @@ stage_services() {
 
   # B10: the SERVED bytes must name THIS instance's own ports, or the instance would talk
   # to another instance's server
-  local served; served="$(curl -s -m 3 "http://127.0.0.1:$srv/pine.html")"
+  # pb_fetch URL SECONDS: the body on stdout; a FAILED fetch (curl rc != 0, or an empty body) is retried 3 times and then refused as SERVICE_DOWN. An empty string used to flow
+  # on to the `grep -q` below and be reported as CONFIG_NOT_INJECTED - "the served bytes do not name this instance" - when nothing had been read at all (the silent-drop class:
+  # could-not-read must never become not-present). Seen once in crash round 4 on a loaded host; the cause of THAT failure is unproven, the conflation is not.
+  pb_fetch() { local body rc n; for n in 1 2 3; do body="$(curl -s -m "$2" "$1")"; rc=$?; [ "$rc" -eq 0 ] && [ -n "$body" ] && { printf '%s' "$body"; return 0; }; sleep 1; done; return 1; }
+  local served; served="$(pb_fetch "http://127.0.0.1:$srv/pine.html" 6)" \
+    || pb_fail "$id" "SERVICE_DOWN:server" "pine.html on :$srv could not be read (3 tries): the server answered the readiness probe and then not a body - $d/server.log: $(tail -2 "$d/server.log" | tr '\n' ' ')"
   printf '%s' "$served" | grep -q "\"apiBase\": \"http://127.0.0.1:$srv\"" \
     || pb_fail "$id" CONFIG_NOT_INJECTED "the page served on :$srv does not name apiBase :$srv - the instance would use another instance's server"
   printf '%s' "$served" | grep -q "\"pineStation\": \"http://127.0.0.1:$st\"" \
     || pb_fail "$id" CONFIG_NOT_INJECTED "the page served on :$srv does not name pineStation :$st"
   printf '%s' "$served" | grep -qE "PlutusPineShellConfig *= *\{[^}]*\"railBases\": *\[\"http://127\.0\.0\.1:$rail\"\]" \
     || pb_fail "$id" CONFIG_NOT_INJECTED "the page served on :$srv does not name this instance's rail :$rail in PlutusPineShellConfig - the engine would fall back to the default rail"
-  local wb; wb="$(curl -s -m 5 "http://127.0.0.1:$srv/charts/workbench.bundle.js")"
+  local wb; wb="$(pb_fetch "http://127.0.0.1:$srv/charts/workbench.bundle.js" 20)" \
+    || pb_fail "$id" "SERVICE_DOWN:server" "workbench.bundle.js on :$srv could not be read (3 tries of 20 s): a fetch failure is not 'the config was not injected' - $d/server.log: $(tail -2 "$d/server.log" | tr '\n' ' ')"
   printf '%s' "$wb" | grep -qF "var MAIN_API = \"http://127.0.0.1:$srv\";" \
     || pb_fail "$id" CONFIG_NOT_INJECTED "the workbench served on :$srv does not name this instance's MAIN_API - its fixture feed would use another instance"
   printf '  services  station :%s · rail :%s (%s) · server :%s  (apiBase/pineStation verified in the served bytes)\n' \

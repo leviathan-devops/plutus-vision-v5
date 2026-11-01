@@ -88,6 +88,22 @@ stage_verify() {
   [ "$got" = "$want" ] || refuse WEEK_MISMATCH "the IDE is set to '${got:-<none>}' but the loaded bars are week $want (fixture $week) - an indicator read here would be read on the wrong week"
   add_check week "$got == $want"
 
+  # 4b · THE BARS COVER THAT WEEK. The check above compares the control with the RECORDED week, so `week --set 2026-W29` over unchanged bars read "2026-W29 == 2026-W29" and
+  # WORKS (measured, T-61): the operator's failure, the requested week shown on another week's price action. Ask the page's own bars: those inside the requested ISO week (UTC,
+  # Monday..next Monday) must exist and must MOVE (range > 0). Measured on the fixture: 2026-W28 119 of 119 bars move (1.00); 2026-W29 25 of 151 (0.17: the rest is flat padding
+  # after the data ends on Jul 14). The floor is the midpoint of those two, 0.5, recorded here; it is a policy for this fixture's character, not a law of markets.
+  local wk_mon wk_end cov covn covm
+  wk_mon="$(python3 -c 'import datetime,sys; y,w=sys.argv[1].split("-W"); d=datetime.datetime.combine(datetime.date.fromisocalendar(int(y),int(w),1), datetime.time(0), datetime.timezone.utc); print(int(d.timestamp()*1000))' "$want" 2>/dev/null)" \
+    || refuse BAD_ARGS "cannot compute the bounds of week $want"
+  wk_end=$((wk_mon + 7*86400000))
+  cov="$(node "$CORE/cdp.mjs" "$cdp" evaluate "(()=>{const r=window.PlutusPineShell?.chart?.rendererControl?.renderer; if(!r) return null; let n=0,m=0; for(const b of r.bars){ if(b.time>=$wk_mon && b.time<$wk_end){ n++; if(b.high>b.low||b.open!==b.close) m++; } } return JSON.stringify({n,m,first:r.bars[0].time,last:r.bars[r.bars.length-1].time});})()" 2>/dev/null | jq -r '.value // empty')"
+  [ -n "$cov" ] || refuse CDP_UNREADABLE "could not read the loaded bars from the page over CDP :$cdp to check they cover week $want"
+  covn="$(jq -r '.n' <<<"$cov")"; covm="$(jq -r '.m' <<<"$cov")"
+  [ "$covn" -gt 0 ] || refuse WEEK_MISMATCH "no loaded bar falls in week $want (Monday $(date -u -d @$((wk_mon/1000)) +%F) to Sunday): the bars span $(date -u -d @$(( $(jq -r '.first' <<<"$cov")/1000 )) +%F) .. $(date -u -d @$(( $(jq -r '.last' <<<"$cov")/1000 )) +%F) - an indicator read here would be read on another week's price action"
+  python3 -c 'import sys; sys.exit(0 if int(sys.argv[1]) >= 0.5*int(sys.argv[2]) else 1)' "$covm" "$covn" \
+    || refuse WEEK_MISMATCH "week $want holds $covn loaded bars but only $covm of them move (range > 0): the data does not cover that week, the rest is flat padding - an indicator read here would be read on another week's price action"
+  add_check weekbars "$covm of $covn bars in $want move"
+
   # 5 · DID ANYTHING ACTUALLY DRAW? counts from the load the instance recorded.
   bars="$(pb_rec_get "$id" ".load.result.bars")"; onchart="$(pb_rec_get "$id" ".load.result.onChart")"
   [ "${bars:-0}" -gt 0 ] 2>/dev/null || refuse NO_BARS "no bars are loaded (bars=${bars:-0}) - the chart has nothing to draw"

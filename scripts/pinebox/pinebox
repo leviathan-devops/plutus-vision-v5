@@ -480,7 +480,12 @@ pb_state() {
 
 pb_week() {
   pb_bind; [ -s "$(pb_dir "$ID")/state.json" ] || refuse NOT_UP "pinebox instance $ID is not up"
-  [ -n "$(flag set)" ] || refuse BAD_ARGS "week needs --set YYYY-Www"
+  if [ -n "$(flag get)" ]; then
+    local live; live="$(node "$CORE/cdp.mjs" "$(pb_port "$ID" cdp)" evaluate "(document.querySelector('.pine-week')?.value)||''" 2>/dev/null | jq -r '.value // empty')"
+    [ -n "$live" ] || refuse WEEK_SET_FAILED "the page has no .pine-week value to read (is the IDE rendered?)"
+    printf '{"ok":true,"id":%s,"week":"%s","recorded":"%s"}\n' "$ID" "$live" "$(pb_rec_get "$ID" .week)"; return
+  fi
+  [ -n "$(flag set)" ] || refuse BAD_ARGS "week needs --set YYYY-Www or --get"
   stage_week_set "$ID" "$(flag set)"
   printf '{"ok":true,"id":%s,"week":"%s"}\n' "$ID" "$(flag set)"
 }
@@ -538,8 +543,7 @@ done
 set -- "${_argv[@]}"
 PB_ARGS=("$@")
 case "$PB_VERB" in help|-h|--help) usage; exit 2 ;; esac
-BOOL_FLAGS="$BOOL_FLAGS --judge "     # `verify --judge` is a boolean beside the core's own (set here: the shared core is not edited for one verb)
-BOOL_FLAGS="$BOOL_FLAGS --judge "     # `verify --judge` is a boolean beside the core's own (set here: the shared core is not edited for one verb)
+BOOL_FLAGS="$BOOL_FLAGS --judge --get "     # `verify --judge` and `--get` (week|tf|asset) are booleans beside the core's own (set here: the shared core is not edited for one verb)
 parse_flags "$@"
 # a bare positional after --put K is the value; booleans the parser needs to know
 case "$PB_VERB" in

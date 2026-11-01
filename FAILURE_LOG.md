@@ -2869,3 +2869,21 @@ verdict on 2026-11-01, after a full day: "you spent the whole day accomplishing 
 - **What happened:** `drive --action click` -> `{"ok":true,"verb":"click","x":0,"y":0,...}`; `type` with no `--text` and `key` with no `--key` were accepted too; and `drive --session S ...` was refused (`drive click takes only --x --y --button --win --cdp, got '--session'`).
 - **Root cause:** MECHANISM: `pb_drive` (`pinebox-cli/pinebox`) validated the flags that were present, never that the required ones were; the core defaults a missing coordinate to 0; and the global `--session` rode through `PB_ARGS` into the core call.
 - **Disposition:** FIXED: `BAD_ARGS` naming the missing flag; `--session` is consumed by the binding. Frames and refusals recorded in ST-85.
+
+### F-186 - the blueprint's `week|tf|asset --get/--set` and a `chart resize` that could never work (2026-11-02, goal V9)
+
+- **What happened:** `week --get` failed (`flag --get needs a value`), `tf --set 1H` and `asset --set DXY` failed (the verbs only knew `--tf` and `--symbol`), and `chart --op resize --size 900x600` always answered `NAV_NO_EFFECT`, which reads like "the page ignored it for some reason".
+- **Root cause:** MECHANISM (resize): the page's `resize()` is `resize() { this.syncSize(); }` (`workbench.bundle.js:36404-36405`) - it takes no size, the chart always fills its container; measured 934x686 in a 998x708 mount before and after.
+- **Disposition:** FIXED: `--get` (reads the page's `.pine-week` value, or the loaded market and bar count) and `--set` aliases added to `week`, `tf`, `asset`; `actions.json` params gained `get`; `resize` refuses `RESIZE_UNSUPPORTED` naming the mechanism.
+
+### F-187 - `verify` read WORKS for a week the loaded bars do not cover - the operator's own failure class (2026-11-02, goal V9)
+
+- **What happened:** `pinebox week --set 2026-W29` then `pinebox verify` -> `"week":"2026-W29"`, `{"check":"week","evidence":"2026-W29 == 2026-W29"}`, `"verdict":"WORKS"` while the renderer still held the same 508 bars (W26-W28 data plus flat padding after Jul 14).
+- **Root cause:** MECHANISM: `stages/verify.sh:52` `want="$(pb_iso_week "$week")"` takes the week from the instance RECORD, and `:88-89` `[ "$got" = "$want" ]` / `add_check week "$got == $want"` compares the page's control with that same record; nothing reads the bars. Measured per ISO week on the bars (UTC): 06-22 119/119 bars move, 06-29 119/119, 07-06 119/119, 07-13 25 of 151.
+- **Disposition:** FIXED: check 4b requires bars in the requested week and at least half of them moving (floor 0.5 = midpoint of 1.00 and 0.17, recorded as fixture policy): W26/W27/W28 WORKS, W29 `WEEK_MISMATCH` (25 of 151 move), W30/W25 `WEEK_MISMATCH` (no bar in the week). RESIDUAL: the bars carry no week label of their own, so "covers the week" is derived from their times and movement; a real market with genuinely zero-range bars would need another rule.
+
+### F-188 - an unreadable fetch was reported as `CONFIG_NOT_INJECTED` (2026-11-02, goal V9, crash round 4)
+
+- **What happened:** crash round 4 failed 38 of 41: the race for pinebox id 5 had 0 winners; the session that held the claim refused `CONFIG_NOT_INJECTED - the workbench served on :10351 does not name this instance's MAIN_API`. Rounds 1-3 and 5-7 passed that scenario, and three manual races passed.
+- **Root cause:** MECHANISM (the conflation, proven): `stages/services.sh:126` `local wb; wb="$(curl -s -m 5 ".../charts/workbench.bundle.js")"` then `:128` `grep -qF "var MAIN_API = ..."`: a failed or timed-out fetch gives an empty string, and the grep reads empty as "not named" - could-not-read became not-present. The CAUSE of the one failure is UNPROVEN: a warm fetch of the 2,026,469-byte bundle took 7 ms; a slow first fetch under load is a hypothesis.
+- **Disposition:** FIXED (the conflation): `pb_fetch` retries 3 times; a failed or empty body is `SERVICE_DOWN:server` naming the fetch, and `CONFIG_NOT_INJECTED` is reserved for bytes that were read and do not name the instance. Evidence: three consecutive clean rounds (5, 6, 7) and a clean 9-session regression round after the change. The failed round is kept (`raw/w6-crash-r4-FAILED-E1-config-not-injected.txt`), not renamed away.
