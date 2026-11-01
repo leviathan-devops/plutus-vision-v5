@@ -95,6 +95,22 @@ def inject_dashboard_config(body: bytes, ports: dict) -> bytes:
     if len(s) != 1 or json.dumps(shell["railBases"][0]) not in s[0]:
         raise Refused("INJECT_FAILED", "the rewritten page does not carry exactly one PlutusPineShellConfig naming the instance's rail")
     return out.encode("utf-8")
+# The Backtest tab finds its room by probing a hardcoded port list. Left alone, EVERY instance's tab
+# would find instance 0's room (or whichever answers first) - the same cross-instance leak the
+# workbench constant had. Rewritten in served bytes only; absence is loud.
+BACKTEST_PORTS = re.compile(rb"var PORTS = \[9443, 9446, 9447\];")
+
+
+def inject_backtest_ports(body: bytes, ports: dict) -> bytes:
+    room = ports.get("room")
+    if not isinstance(room, int) or not (1024 <= room <= 65535):
+        raise Refused("BAD_PORTS", "the instance port block has no valid `room` port: %r" % (room,))
+    out, n = BACKTEST_PORTS.subn(b"var PORTS = [%d];" % room, body)
+    if n != 1:
+        raise Refused("BACKTEST_PORTS_ABSENT", "backtest.js has no canonical `var PORTS = [9443, 9446, 9447];` to rewrite (found %d)" % n)
+    return out
+
+
 def inject_workbench_base(body: bytes, ports: dict) -> bytes:
     """Rewrite the frozen workbench's MAIN_API in served bytes only.
     Absence is loud: the canonical server would cross-contaminate instances.

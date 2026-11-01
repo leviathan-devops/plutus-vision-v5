@@ -21,6 +21,7 @@ run "strings        (B1 B2 B4 B12 B13)" bash "$HERE/strings.sh"
 run "mutate         (detectors bite)"   bash "$HERE/mutate.sh"
 run "inject         (P0 P1 B3 B10)"     bash "$HERE/inject.sh"
 run "mcp            (P11 P12)"          bash "$HERE/mcp.sh"
+run "room           (ST-2 ST-3)"        bash "$HERE/room.sh"
 run "multi N=2      (P8 P10 B5-B7)"     bash "$HERE/multi.sh" 2
 [ "${1:-}" = "--full" ] && run "multi N=7      (P9)"          bash "$HERE/multi.sh" 7
 run "leak-check     (nothing left)"     bash "${CU_EXT:-$HOME/.omp/agent/extensions/computer-use-v2}/test/leak-check.sh"

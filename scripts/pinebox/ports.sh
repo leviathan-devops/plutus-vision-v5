@@ -27,8 +27,10 @@ pb_ports_json() {
     || refuse BAD_ID "pinebox instance id must be a canonical decimal 0..$PB_MAX_ID so the derived port blocks cannot overlap, got '$n'"
   # A 100-port stride is REQUIRED, not cosmetic: ws is server+80, so a stride
   # of 10 made id 0's ws collide with id 8's server. 100 separates every family.
-  printf '{"station":%d,"rail":%d,"server":%d,"cdp":%d,"ws":%d,"vnc":%d}' \
-    $((9741 + n * 100)) $((9754 + n * 100)) $((9851 + n * 100)) $((9222 + n * 100)) $((9851 + n * 100 + 80)) $((5900 + n))
+  # room = the Backtest room's control surface; 9443 is its canonical port (id 0), so a stride of 100
+  # keeps it clear of every other family (their last two digits are 41/54/51/22/31)
+  printf '{"station":%d,"rail":%d,"server":%d,"cdp":%d,"ws":%d,"vnc":%d,"room":%d}' \
+    $((9741 + n * 100)) $((9754 + n * 100)) $((9851 + n * 100)) $((9222 + n * 100)) $((9851 + n * 100 + 80)) $((5900 + n)) $((9443 + n * 100))
 }
 
 pb_port() {
@@ -67,7 +69,7 @@ pb_claim() {
   local own=" $* " name port holder pid rc
   mkdir -p "${PB_ROOT:-/tmp/pinebox}" 2>/dev/null
   exec 6>"${PB_ROOT:-/tmp/pinebox}/.claim-$id.lock"; flock -x 6
-  for name in station rail server cdp ws vnc; do
+  for name in station rail server cdp ws vnc room; do
     port="$(pb_port "$id" "$name")" || { exec 6>&-; refuse BAD_ID "could not derive the $name port for instance '$id'"; }
     [ -n "$port" ] || { exec 6>&-; refuse BAD_ID "empty $name port for instance '$id'"; }
     holder="$(pb_port_holder "$port")"; rc=$?

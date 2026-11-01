@@ -563,7 +563,9 @@ class Handler(SimpleHTTPRequestHandler):
         if PINEBOX_PORTS is not None and u.path in ("/", "/pine.html"):
             return self._pinebox_page(u.path)
         if PINEBOX_PORTS is not None and u.path == "/charts/workbench.bundle.js":
-            return self._pinebox_workbench(u.path)
+            return self._pinebox_js(u.path, _pinebox_inject.inject_workbench_base)
+        if PINEBOX_PORTS is not None and u.path == "/tabs/backtest.js":
+            return self._pinebox_js(u.path, _pinebox_inject.inject_backtest_ports)
         return super().do_GET()
 
     def _pinebox_page(self, path):
@@ -584,12 +586,12 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(out)
-    def _pinebox_workbench(self, path):
-        """Serve the frozen workbench with this instance's MAIN_API, bytes only."""
+    def _pinebox_js(self, path, injector):
+        """Serve a frozen script with this instance's port block applied by INJECTOR, bytes only."""
         fs_path = self.translate_path(path)
         try:
             body = open(fs_path, "rb").read()
-            out, code = _pinebox_inject.inject_workbench_base(body, PINEBOX_PORTS), 200
+            out, code = injector(body, PINEBOX_PORTS), 200
         except _pinebox_inject.Refused as e:
             sys.stderr.write("[pv-server] REFUSED %s: %s (%s)\n" % (e.token, e.detail, fs_path))
             out, code = ("%s: %s" % (e.token, e.detail)).encode(), 500

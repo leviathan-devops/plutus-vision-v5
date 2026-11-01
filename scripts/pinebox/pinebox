@@ -62,6 +62,7 @@ ledger_row() {
 
 . "$PB_HOME/ports.sh"
 . "$PB_HOME/stages/services.sh"
+. "$PB_HOME/stages/room.sh"
 . "$PB_HOME/stages/page.sh"
 . "$PB_HOME/stages/load.sh"
 . "$PB_HOME/stages/verify.sh"
@@ -118,7 +119,7 @@ pb_svc_record() {
 
 pb_kill_recorded() {
   local id="$1" k p tok killed=""
-  for k in station rail server; do
+  for k in station rail server room; do
     p="$(pb_rec_get "$id" ".pids.$k")"; tok="$(pb_rec_get "$id" ".toks.$k")"
     if [ -n "$tok" ]; then
       tok_group_ours "$tok" && { kill_tok "$tok"; killed="$killed $p"; }
@@ -172,6 +173,7 @@ pb_up() {
     echo "  (reaping a stale record for instance $id)" >&2; pb_teardown "$id" >/dev/null
   fi
   pb_preflight "$week" "$id"
+  pb_room_preflight      # the room substrate is checked BEFORE anything is started: a refusal here leaves nothing behind
   pb_claim "$id"                                    # PORT_TAKEN:<port> - both before anything starts
   mkdir -p "$d"
   : > "$d/refusals.jsonl"
@@ -194,6 +196,7 @@ pb_up() {
   printf '  shell     :%s (%s)%s\n' "$slot" "$(jq -r .adapter <<<"$out")" "${hw:+ host window $hw}" >&2
 
   stage_services "$id" "$d" "$week" || exit $?
+  stage_room "$id" "$d" "$week" || exit $?
   stage_page "$id" "$d" || exit $?
   stage_frame "$id" "$d" || exit $?
   stage_week_set "$id" "$(pb_iso_week "$week")" >/dev/null 2>&1 || true
@@ -243,7 +246,7 @@ pb_status() {
   [ -s "$d/state.json" ] || refuse NOT_UP "pinebox instance $id is not up"
   local k_ comp_ r kb bad name total=0 unread="" parts="" t
   # name:leader-pid, one per recorded process group (the browser's pids are core tokens: pid:start)
-  local groups="station:$(pb_rec_get "$id" .pids.station) rail:$(pb_rec_get "$id" .pids.rail) server:$(pb_rec_get "$id" .pids.server) compositor:$(rec_get "$id" comp_pid 2>/dev/null || true)"
+  local groups="station:$(pb_rec_get "$id" .pids.station) rail:$(pb_rec_get "$id" .pids.rail) server:$(pb_rec_get "$id" .pids.server) room:$(pb_rec_get "$id" .pids.room) compositor:$(rec_get "$id" comp_pid 2>/dev/null || true)"
   for t in $(rec_get "$id" app_pids 2>/dev/null || true); do groups="$groups browser:$(tok_pid "$t")"; done
   local -A mb=() ; local entry
   for entry in $groups; do
@@ -354,7 +357,7 @@ pb_ports() {
   require_id "$(flag id 0)"
   local json; json="$(pb_ports_json "$ID")" || exit $?
   local name port holder status="" rows=""
-  for name in station rail server cdp ws; do
+  for name in station rail server cdp ws vnc room; do
     port="$(pb_port "$ID" "$name")"; holder="$(pb_port_holder "$port")"
     status="free"; [ -n "$holder" ] && status="held by pid ${holder%% *}"
     rows="${rows:+$rows,}\"$name\":\"$status\""

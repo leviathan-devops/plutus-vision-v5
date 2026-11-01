@@ -1,0 +1,7 @@
+EXPECTED RENDER (written from the spec BEFORE the capture) - instance 2, Backtest tab, room on :9643
+ - the header status shows the room UP; the text BACKTEST_ROOM_DOWN and "TRIED 9443 DOWN" are ABSENT
+ - the centre pane no longer says "BACKTEST_ROOM_DOWN - TRIED ..."; it shows the chart/empty-session area
+ - the NEW SESSION form has NO red line "the control surface is down (127.0.0.1:9443/9446/9447)"
+ - SYMBOL / TIMEFRAME inputs may be populated from the room's fixture cells (DXY, 1H)
+ - no overlapping error modal; the Pine tab is still reachable
+FAIL TOKENS: BACKTEST_ROOM_DOWN, "control surface is down"
