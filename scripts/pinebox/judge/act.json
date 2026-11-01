@@ -1,0 +1,306 @@
+{
+ "clauses": {
+  "C1.1": {
+   "act": 0.558,
+   "bad": [
+    {
+     "file": "w5-good-4h.png",
+     "image_tokens": 1201,
+     "p": 0.1128,
+     "sha256": "8f2954f4c5a527c0"
+    },
+    {
+     "file": "w5-bad-candles-only.png",
+     "image_tokens": 1201,
+     "p": 0.2075,
+     "sha256": "486896953d627dcd"
+    },
+    {
+     "file": "w5-bad-one-ma.png",
+     "image_tokens": 1201,
+     "p": 0.3387,
+     "sha256": "6d49f6690b28874c"
+    },
+    {
+     "file": "w5-bad-hidden.png",
+     "image_tokens": 1201,
+     "p": 0.1674,
+     "sha256": "65c1ba27e2c2c145"
+    }
+   ],
+   "clause_text": "a price chart with candlestick bars and two overlaid coloured moving-average lines",
+   "derived_at": "2026-11-02T01:41:47+0400",
+   "good": [
+    {
+     "file": "w5-good-default.png",
+     "image_tokens": 1201,
+     "p": 0.7835,
+     "sha256": "192a4c694ec98fc5"
+    },
+    {
+     "file": "w5-good-recoloured.png",
+     "image_tokens": 1201,
+     "p": 0.7773,
+     "sha256": "0833f375f04d3f82"
+    },
+    {
+     "file": "w5-good-reload.png",
+     "image_tokens": 1201,
+     "p": 0.7932,
+     "sha256": "4c0c5b9ca6ff8b68"
+    },
+    {
+     "file": "w5-good-panned-small.png",
+     "image_tokens": 1201,
+     "p": 0.8302,
+     "sha256": "883cbd58d0952530"
+    },
+    {
+     "file": "w5-bad-off-data.png",
+     "image_tokens": 1201,
+     "p": 0.8093,
+     "sha256": "20266466e5ccc831"
+    }
+   ],
+   "image_tokens_measured": [
+    1201
+   ],
+   "max_bad": 0.3387,
+   "min_good": 0.7773,
+   "rule": "midpoint(min(good p), max(bad p))",
+   "spread": 0.4386,
+   "sweep": [
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.5
+    },
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.6
+    },
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.7
+    },
+    {
+     "precision": 1.0,
+     "recall": 0.4,
+     "threshold": 0.8
+    },
+    {
+     "precision": null,
+     "recall": 0.0,
+     "threshold": 0.9
+    }
+   ]
+  },
+  "C1.2": {
+   "act": 0.5348,
+   "bad": [
+    {
+     "file": "w5-good-4h.png",
+     "image_tokens": 1198,
+     "p": 0.1926,
+     "sha256": "8f2954f4c5a527c0"
+    },
+    {
+     "file": "w5-bad-hidden.png",
+     "image_tokens": 1198,
+     "p": 0.2159,
+     "sha256": "65c1ba27e2c2c145"
+    }
+   ],
+   "clause_text": "a price axis with numeric labels down the right-hand side of the chart",
+   "derived_at": "2026-11-02T01:43:18+0400",
+   "good": [
+    {
+     "file": "w5-good-default.png",
+     "image_tokens": 1198,
+     "p": 0.8653,
+     "sha256": "192a4c694ec98fc5"
+    },
+    {
+     "file": "w5-good-recoloured.png",
+     "image_tokens": 1198,
+     "p": 0.862,
+     "sha256": "0833f375f04d3f82"
+    },
+    {
+     "file": "w5-good-reload.png",
+     "image_tokens": 1198,
+     "p": 0.8537,
+     "sha256": "4c0c5b9ca6ff8b68"
+    },
+    {
+     "file": "w5-good-panned-small.png",
+     "image_tokens": 1198,
+     "p": 0.8704,
+     "sha256": "883cbd58d0952530"
+    },
+    {
+     "file": "w5-bad-off-data.png",
+     "image_tokens": 1198,
+     "p": 0.8652,
+     "sha256": "20266466e5ccc831"
+    },
+    {
+     "file": "w5-bad-candles-only.png",
+     "image_tokens": 1198,
+     "p": 0.8723,
+     "sha256": "486896953d627dcd"
+    },
+    {
+     "file": "w5-bad-one-ma.png",
+     "image_tokens": 1198,
+     "p": 0.8586,
+     "sha256": "6d49f6690b28874c"
+    }
+   ],
+   "image_tokens_measured": [
+    1198
+   ],
+   "max_bad": 0.2159,
+   "min_good": 0.8537,
+   "rule": "midpoint(min(good p), max(bad p))",
+   "spread": 0.6378,
+   "sweep": [
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.5
+    },
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.6
+    },
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.7
+    },
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.8
+    },
+    {
+     "precision": null,
+     "recall": 0.0,
+     "threshold": 0.9
+    }
+   ]
+  }
+ },
+ "health_at_calibration": {
+  "backend": "llama:200",
+  "image_contract": "multipart/form-data: image[] + request",
+  "log_dir": "/home/leviathan/imajev-runtime/log",
+  "modalities": [
+   "text",
+   "image"
+  ],
+  "model": "imajev-4b-Q6_K",
+  "ok": true,
+  "runtime": "gguf",
+  "slot_ctx": 49152,
+  "slots": 3,
+  "state_cap_unit": "tokens (POST /tokenize vs GET /slots n_ctx)",
+  "state_char_cap": 24000
+ },
+ "unobservable": {
+  "C1.3": {
+   "bad": [
+    {
+     "file": "w5-bad-candles-only.png",
+     "image_tokens": 1204,
+     "p": 0.1345,
+     "sha256": "486896953d627dcd"
+    },
+    {
+     "file": "w5-bad-one-ma.png",
+     "image_tokens": 1204,
+     "p": 0.1832,
+     "sha256": "6d49f6690b28874c"
+    },
+    {
+     "file": "w5-good-4h.png",
+     "image_tokens": 1204,
+     "p": 0.1435,
+     "sha256": "8f2954f4c5a527c0"
+    },
+    {
+     "file": "w5-bad-hidden.png",
+     "image_tokens": 1204,
+     "p": 0.166,
+     "sha256": "65c1ba27e2c2c145"
+    }
+   ],
+   "clause_text": "small green upward-pointing triangles sitting on top of some of the candlestick bars",
+   "derived_at": "2026-11-02T01:44:39+0400",
+   "good": [
+    {
+     "file": "w5-good-default.png",
+     "image_tokens": 1204,
+     "p": 0.6487,
+     "sha256": "192a4c694ec98fc5"
+    },
+    {
+     "file": "w5-good-recoloured.png",
+     "image_tokens": 1204,
+     "p": 0.602,
+     "sha256": "0833f375f04d3f82"
+    },
+    {
+     "file": "w5-good-reload.png",
+     "image_tokens": 1204,
+     "p": 0.6272,
+     "sha256": "4c0c5b9ca6ff8b68"
+    },
+    {
+     "file": "w5-good-panned-small.png",
+     "image_tokens": 1204,
+     "p": 0.705,
+     "sha256": "883cbd58d0952530"
+    },
+    {
+     "file": "w5-bad-off-data.png",
+     "image_tokens": 1204,
+     "p": 0.5759,
+     "sha256": "20266466e5ccc831"
+    }
+   ],
+   "sweep": [
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.5
+    },
+    {
+     "precision": 1.0,
+     "recall": 0.8,
+     "threshold": 0.6
+    },
+    {
+     "precision": 1.0,
+     "recall": 0.2,
+     "threshold": 0.7
+    },
+    {
+     "precision": null,
+     "recall": 0.0,
+     "threshold": 0.8
+    },
+    {
+     "precision": null,
+     "recall": 0.0,
+     "threshold": 0.9
+    }
+   ],
+   "would_be_act": 0.3795
+  }
+ }
+}

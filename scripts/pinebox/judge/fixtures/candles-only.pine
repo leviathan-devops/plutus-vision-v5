@@ -1,0 +1,3 @@
+//@version=5
+indicator("Candles only", overlay=true)
+// no plot, no marker: the chart shows bars and nothing else (a planted MISSING_ELEMENT for C1.1 and C1.3)

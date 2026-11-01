@@ -1,0 +1,4 @@
+//@version=5
+indicator("One MA", overlay=true)
+plot(ta.ema(close, 20), "EMA 20", color=color.new(color.yellow, 0), linewidth=2)
+// one moving-average line, no second line, no markers (a planted MISSING_ELEMENT for C1.1 and C1.3)

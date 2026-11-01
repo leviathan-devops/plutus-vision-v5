@@ -1,0 +1,8 @@
+# The judge's requirement table (blueprint section 5.3): one OBSERVABLE per clause, one id per clause.
+# A clause is a noun phrase a picture can show or not show; the question put to the judge is "Does this image show <clause>?" - one claim, nothing compound.
+# The table is extracted mechanically (the line shape `- <observable> (<ID>)`), never hand-copied into a prompt.
+
+## C1 - the chart pane of the Pine IDE (the element `pinebox shot --section chart` captures; nothing is cropped out of it)
+- a price chart with candlestick bars and two overlaid coloured moving-average lines (C1.1)
+- a price axis with numeric labels down the right-hand side of the chart (C1.2)
+- small green upward-pointing triangles sitting on top of some of the candlestick bars (C1.3)

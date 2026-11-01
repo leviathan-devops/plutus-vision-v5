@@ -287,7 +287,9 @@
       ],
       "flags": [
         "id",
-        "week"
+        "week",
+        "judge",
+        "clause"
       ]
     },
     "insert": {
