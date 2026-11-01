@@ -26,7 +26,7 @@ run "multi N=2      (P8 P10 B5-B7)"     bash "$HERE/multi.sh" 2
 run "leak-check     (nothing left)"     bash "${CU_EXT:-$HOME/.omp/agent/extensions/computer-use-v2}/test/leak-check.sh"
 run "deploy verify  (seal/helpers/mcp/probe)" bash "${CU_EXT:-$HOME/.omp/agent/extensions/computer-use-v2}/deploy.sh" verify
 # A18/A19: every design blueprint must carry its mandatory sections and no duration-sized phase.
-run "blueprint-gate (A18 A19)"     bash -c 'PV="$(cd "$HERE/../.." && pwd)"; for f in "$PV"/design/DESIGN_BLUEPRINT_AGENT_DESK_v3.md "$PV"/design/DESIGN_BLUEPRINT_v2.0_AUTHORITATIVE.md "$PV"/design/DESIGN_BLUEPRINT_P3_EVIDENCE_TICKET_JUDGE.md; do [ -f "$f" ] && bash "$PV"/gates/blueprint-gate.sh "$f" || exit 1; done'
+run "blueprint-gate (A18 A19)"     env HERE="$HERE" bash -c 'PV="$(cd "$HERE/../../.." && pwd)"; for f in "$PV"/design/DESIGN_BLUEPRINT_AGENT_DESK_v3.md "$PV"/design/DESIGN_BLUEPRINT_v2.0_AUTHORITATIVE.md "$PV"/design/DESIGN_BLUEPRINT_P3_EVIDENCE_TICKET_JUDGE.md; do [ -f "$f" ] && bash "$PV"/gates/blueprint-gate.sh "$f" || exit 1; done'
 
 fail=0; for rc in "${RCS[@]}"; do [ "$rc" -ne 0 ] && fail=$((fail+1)); done
 echo "══ ${#NAMES[@]} gates · $fail failed ══"
