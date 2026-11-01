@@ -30,9 +30,9 @@ stage_week_set() {
   local want_json; want_json="$(jq -nc --arg w "$want" '$w')"
   expr="(function(){const el=document.querySelector('.pine-week'); if(!el) return 'NO_CONTROL'; el.value=$want_json; el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); return el.value;})()"
   node "$CORE/cdp.mjs" "$cdp" evaluate "$expr" >/dev/null 2>&1
-  sleep 1
-  got="$(node "$CORE/cdp.mjs" "$cdp" evaluate \
-    "(document.querySelector('.pine-week')?.value)||''" 2>/dev/null | jq -r '.value // empty')"
+  # poll for the control to read back what was set (a fixed sleep asserts a timing, not the result)
+  pb_week_reads() { got="$(node "$CORE/cdp.mjs" "$cdp" evaluate "(document.querySelector('.pine-week')?.value)||''" 2>/dev/null | jq -r '.value // empty')"; [ "$got" = "$want" ]; }
+  pb_wait 15 pb_week_reads || true
   [ "$got" = "$want" ] || refuse WEEK_SET_FAILED "could not set the IDE week control to $want (it reads '$got') - the control is .pine-week in the renderer"
   pb_rec "$id" ".week = $(jq -nc --arg w "$want" '$w')"
   printf '  week      %s (the IDE control now reads %s)\n' "$want" "$got" >&2

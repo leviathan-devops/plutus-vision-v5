@@ -247,7 +247,9 @@ pb_up() {
   stage_room "$id" "$d" "$week" || exit $?
   stage_page "$id" "$d" || exit $?
   stage_frame "$id" "$d" || exit $?
-  stage_week_set "$id" "$(pb_iso_week "$week")" >/dev/null 2>&1 || true
+  # NOT swallowed: `refuse` ends in `exit 1`, so the old `>/dev/null 2>&1 || true` could never run its `|| true` - a failing week-set killed this
+  # whole start with its message sent to /dev/null (lib.sh:41-47; measured 2026-11-02, 1 of 9 concurrent starts exited 1 with no refusal line)
+  stage_week_set "$id" "$(pb_iso_week "$week")" || exit $?
   if [ -n "$pine" ]; then stage_load "$id" "$d" "$pine" "$pair" "$tf" || exit $?; fi
 
   # P7: the whole `up` - not just its first stage - must have left the operator's focus alone

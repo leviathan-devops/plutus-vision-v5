@@ -77,7 +77,20 @@ stage_page() {
     targets="$(node "$CORE/cdp.mjs" "$cdp" targets 2>&1 | head -c 400)"
     refuse NO_PAGE "CDP :$cdp has no pine.html target for :$srv; targets: $targets"
   fi
+  # THE APP, not just the target: CDP names pine.html as soon as the tab exists, long before the IDE has rendered. On a loaded host the
+  # first frame was 37 colours and `.pine-week` did not exist yet (measured 2026-11-02: 1 of 9 concurrent starts). Wait, bounded, until
+  # the week control AND the chart renderer are in the DOM, so every later stage acts on a page that is there.
+  if ! pb_wait 90 pb_app_ready "$cdp"; then
+    refuse APP_NOT_READY "pine.html is open on CDP :$cdp but the IDE did not render within 90s (no .pine-week control and chart renderer) - the host is starved or the page failed; nothing was driven"
+  fi
   printf '  page      chrome in a window on :%s · CDP :%s · profile %s\n' "$(pb_rec_get "$id" .slot)" "$cdp" "$profile" >&2
+}
+
+# the IDE has rendered: its week control exists and its chart has a renderer (what stage_week_set and verify act on)
+pb_app_ready() {
+  local v
+  v="$(node "$CORE/cdp.mjs" "$1" evaluate "(()=>!!(document.querySelector('.pine-week')&&window.PlutusPineShell&&window.PlutusPineShell.chart&&window.PlutusPineShell.chart.rendererControl&&window.PlutusPineShell.chart.rendererControl.renderer))()" 2>/dev/null | jq -r '.value // empty' 2>/dev/null)"
+  [ "$v" = true ]
 }
 
 pb_cdp_names_page() {
