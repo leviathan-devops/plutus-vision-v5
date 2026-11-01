@@ -21,7 +21,14 @@ stage_page() {
   srv="$(pb_port "$id" server)"; cdp="$(pb_port "$id" cdp)"
   profile="$d/chrome"; url="http://127.0.0.1:$srv/pine.html"
   need google-chrome-stable WINDOW_NOT_MAPPED
-  case "$profile" in "$d"/*) ;; *) refuse SCOPE_VIOLATION "chrome profile $profile escapes instance dir $d" ;; esac
+  # The profile is rm -rf'd, so its scope check must be REAL. "$d/chrome" always matches "$d"/*
+  # by construction (and "/chrome" matches /* when $d is empty), so that test could never fail.
+  # Require: a non-empty instance dir that sits directly under the instance root, and a profile
+  # that is exactly <dir>/chrome and is not a symlink.
+  [ -n "$d" ] && [ -n "${PB_ROOT:-}" ] && [ "$d" = "$PB_ROOT/i$id" ] \
+    || refuse SCOPE_VIOLATION "instance dir '$d' is not $PB_ROOT/i$id - refusing to delete a browser profile under it"
+  [ "$profile" = "$d/chrome" ] && [ ! -L "$profile" ] && [ ! -L "$d" ] \
+    || refuse SCOPE_VIOLATION "chrome profile '$profile' is not a plain <instance>/chrome directory (symlink or escape)"
   rm -rf -- "$profile"
 
   local out
@@ -29,7 +36,8 @@ stage_page() {
   # this instance's X display (the core also strips the operator's Wayland socket).
   out="$("$COMPUTER" shell spawn --id "$id" --cdp "$cdp" -- google-chrome-stable \
         --app="$url" --user-data-dir="$profile" --no-first-run --no-default-browser-check \
-        --remote-debugging-port="$cdp" --remote-allow-origins='*' \
+        --remote-debugging-port="$cdp" --remote-debugging-address=127.0.0.1 \
+        --remote-allow-origins="http://127.0.0.1:$cdp" \
         --window-size=1626,931 --window-position=0,0 \
         --disable-gpu --disable-gpu-compositing --disable-accelerated-2d-canvas \
         --use-gl=swiftshader --enable-unsafe-swiftshader --ozone-platform=x11 2>"$d/spawn.err")" \
@@ -60,7 +68,15 @@ pb_cdp_names_page() {
 
 stage_frame() {
   local id="$1" d="$2" out
+  local colours frame_rec
   out="$("$COMPUTER" screenshot --id "$id" --out "$d/frame.png" 2>"$d/shot.err")" || pb_forward_refusal "$d/shot.err"
-  pb_rec "$id" ".frame = $(jq -c '{path, bytes, colours}' <<<"$out")"
+  # the tool already refuses a 1-colour frame; this re-checks the CONTRACT we record, so a
+  # malformed/empty tool reply can never be stored as a successful frame
+  frame_rec="$(jq -c '{path, bytes, colours}' <<<"$out" 2>/dev/null)" \
+    || refuse FRAME_UNREADABLE "the screenshot reply was not JSON: $(printf '%s' "$out" | head -c 200)"
+  colours="$(jq -r '.colours // 0' <<<"$frame_rec")"
+  [[ "$colours" =~ ^[0-9]+$ ]] && [ "$colours" -gt 1 ] \
+    || refuse FRAME_BLANK "the captured frame has ${colours:-no} colour(s) - a blank frame is not a frame"
+  pb_rec "$id" ".frame = $frame_rec"
   printf '  frame     %s  (%s bytes, %s colours, CDP capture)\n' "$d/frame.png" "$(jq -r .bytes <<<"$out")" "$(jq -r .colours <<<"$out")" >&2
 }

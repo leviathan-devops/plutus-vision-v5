@@ -1,81 +1,112 @@
 #!/usr/bin/env bash
-. "$PB_HOME/stages/load.sh"
-# v3.sh - the user-intent verbs (P1): run, insert, editor, look.
-# Every verb either performs the action and returns measured evidence, or refuses
-# with a token. No verb reports a render it did not capture.
+# v3.sh - the user-intent verbs (P1): run, insert, editor, look; plus the helpers every v3 verb
+# shares (pb_v3_begin / pb_v3_eval / pb_v3_num / pb_v3_ident).
+#
+# CONTRACT. A verb either performs the action and prints ONE JSON line of measured evidence,
+# or REFUSES with a named token (rc 1). Nothing a caller passes is ever spliced raw into the
+# page's JavaScript: numbers are range-checked, names are allowlisted, text is jq-encoded.
 
-pb_v3_eval() {
-  local id="$1" expr="$2" cdp result
-  cdp="$(pb_port "$id" cdp)"
-  result="$(node "$CORE/cdp.mjs" "$cdp" evaluate "$expr" 2>"$PINEBOX_ROOT/i$id/v3-eval.err")" \
-    || refuse EVAL_FAILED "$(tail -1 "$PINEBOX_ROOT/i$id/v3-eval.err")"
-  printf '%s\n' "$result" | jq -c '.value // empty'
+# pb_v3_begin: parse --id (a canonical decimal), set PB_ID, and require the instance to be up.
+pb_v3_begin() {
+  require_id "$(flag id 0)"
+  PB_ID="$ID"
+  [ -s "$(pb_dir "$PB_ID")/state.json" ] || refuse NOT_UP "pinebox instance $PB_ID is not up"
 }
 
-pb_v3_up_guard() {
-  local id="$1"
-  [ -s "$(pb_dir "$id")/state.json" ] || refuse NOT_UP "pinebox instance $id is not up"
+# pb_v3_eval ID EXPRESSION -> the expression's value as one JSON line on stdout.
+# Refuses EVAL_FAILED on a dead CDP, a thrown exception, or a null result (every expression
+# these verbs send returns an object/number/string, so null means "the page gave no answer").
+# Callers MUST write:   v="$(pb_v3_eval ...)" || exit $?
+# (a refusal inside $(...) only ends the substitution - the caller propagates it.)
+pb_v3_eval() {
+  local id="$1" expr="$2" cdp raw val err
+  cdp="$(pb_port "$id" cdp)" || exit $?
+  err="$(pb_dir "$id")/v3-eval.err"
+  raw="$(node "$CORE/cdp.mjs" "$cdp" evaluate "$expr" 2>"$err")" \
+    || refuse EVAL_FAILED "$(tail -1 "$err" | cut -c1-300)"
+  val="$(jq -c 'select(has("value")) | .value' <<<"$raw" 2>/dev/null)"
+  if [ -z "$val" ] || [ "$val" = null ]; then refuse EVAL_FAILED "the page returned no value for the expression"; fi
+  printf '%s\n' "$val"
+}
+
+# pb_v3_num NAME VALUE MIN MAX: a decimal number inside [MIN,MAX], or refuse BAD_ARGS.
+pb_v3_num() {
+  [[ "$2" =~ ^-?[0-9]+(\.[0-9]+)?$ ]] || refuse BAD_ARGS "$1 must be a number, got '$2'"
+  awk -v v="$2" -v lo="$3" -v hi="$4" 'BEGIN{exit !(v+0>=lo+0 && v+0<=hi+0)}' \
+    || refuse BAD_ARGS "$1 must be within [$3,$4], got '$2'"
+}
+
+# pb_v3_ident NAME VALUE: [A-Za-z0-9_-]{1,64}, or refuse BAD_ARGS (used wherever a name
+# becomes part of a CSS selector).
+pb_v3_ident() {
+  [[ "$2" =~ ^[A-Za-z0-9_-]{1,64}$ ]] || refuse BAD_ARGS "$1 must match [A-Za-z0-9_-]{1,64}, got '$2'"
 }
 
 pb_v3_insert() {
-  local id d pine pair tf
-  id="$(flag id 0)"; d="$(pb_dir "$id")"; pb_v3_up_guard "$id"
-  pine="$(flag pine)"; pair="$(flag pair DXY)"; tf="$(flag tf 1H)"
+  pb_v3_begin; local id="$PB_ID" pine src_json res chars absent
+  pine="$(flag pine)"
   [ -n "$pine" ] || refuse PINE_ABSENT "insert needs --pine FILE"
+  case "$pine" in /*) ;; *) pine="$PWD/$pine" ;; esac
   [ -f "$pine" ] || refuse PINE_ABSENT "no such pine source: $pine"
-  local abs="$pine"; case "$abs" in /*) ;; *) abs="$PWD/$abs" ;; esac
-  local src_json
-  src_json="$(jq -Rs . "$abs")"
-  pb_v3_eval "$id" "(function(){const P=window.PlutusPineShell; if(!P||!P.editor) return 'EDITOR_ABSENT'; P.editor.setSource($src_json); P.editor.flush(); return P.editor.getSource().length;})()"
-  local result
-  result="$(pb_v3_eval "$id" "(function(){const P=window.PlutusPineShell; return {chars:P.editor.getSource().length, source:P.editor.getSource()};})()")"
-  [ "$(jq -r '.chars // 0' <<<"$result")" -gt 0 ] || refuse EDITOR_ABSENT "the editor did not accept the source"
-  pb_rec "$id" ".editor = $(jq -nc --argjson result "$result" '{chars:$result.chars}')"
-  printf '{"ok":true,"id":%s,"verb":"insert","chars":%s}\n' "$id" "$(jq -r '.chars' <<<"$result")"
+  src_json="$(jq -Rs . "$pine")" || refuse PINE_UNREADABLE "could not encode $pine"
+  res="$(pb_v3_eval "$id" "(function(){const P=window.PlutusPineShell; if(!P||!P.editor) return {absent:true}; P.editor.setSource($src_json); P.editor.flush(); return {chars:P.editor.getSource().length};})()")" || exit $?
+  absent="$(jq -r '.absent // false' <<<"$res")"
+  [ "$absent" = false ] || refuse EDITOR_ABSENT "the Pine editor is not mounted on this page"
+  chars="$(jq -r '.chars // 0' <<<"$res")"
+  [[ "$chars" =~ ^[0-9]+$ ]] && [ "$chars" -gt 0 ] || refuse EDITOR_ABSENT "the editor accepted the source but reads back empty"
+  pb_rec "$id" ".editor = $(jq -nc --argjson c "$chars" '{chars:$c}')"
+  jq -nc --argjson id "$id" --argjson c "$chars" '{ok:true,id:$id,verb:"insert",chars:$c}'
 }
 
 pb_v3_run() {
-  local id d pine pair tf
-  id="$(flag id 0)"; d="$(pb_dir "$id")"; pb_v3_up_guard "$id"
+  pb_v3_begin; local id="$PB_ID" d pine pair tf result frame
+  d="$(pb_dir "$id")"
   pine="$(flag pine)"; pair="$(flag pair DXY)"; tf="$(flag tf 1H)"
   [ -n "$pine" ] || refuse PINE_ABSENT "run needs --pine FILE"
+  case "$pine" in /*) ;; *) pine="$PWD/$pine" ;; esac
   [ -f "$pine" ] || refuse PINE_ABSENT "no such pine source: $pine"
-  pb_v3_insert "$id" >/dev/null || exit $?
+  pb_v3_insert >/dev/null || exit $?
   stage_load "$id" "$d" "$pine" "$pair" "$tf" || exit $?
-  local result frame
   result="$(pb_rec_get "$id" .load.result)"
   [ -n "$result" ] || refuse NO_DRAWINGS "the run produced no measured result"
   frame="$(pb_rec_get "$id" .frame.path)"
-  printf '{"ok":true,"id":%s,"verb":"run","bars":%s,"onChart":%s,"counts":%s,"frame":%s}\n' \
-    "$id" "$(jq -r '.bars // 0' <<<"$result")" "$(jq -r '.onChart // 0' <<<"$result")" \
-    "$(jq -c '.counts // {}' <<<"$result")" "$(jq -nc --arg f "$frame" '$f')"
+  jq -nc --argjson id "$id" --argjson r "$result" --arg f "$frame" \
+    '{ok:true,id:$id,verb:"run",bars:($r.bars//0),onChart:($r.onChart//0),counts:($r.counts//{}),frame:$f}'
 }
 
 pb_v3_editor() {
-  local id="$1" mode text
-  id="$(flag id 0)"; pb_v3_up_guard "$id"
+  pb_v3_begin; local id="$PB_ID" mode text res absent
   mode="$(flag mode get)"; text="$(flag text)"
   case "$mode" in
     get)
-      local result; result="$(pb_v3_eval "$id" "(function(){const P=window.PlutusPineShell; return {source:P.editor.getSource()};})()")"
-      printf '%s\n' "$(jq -nc --argjson result "$result" '{ok:true,verb:"editor",source:$result.source}')" ;;
+      res="$(pb_v3_eval "$id" "(function(){const P=window.PlutusPineShell; if(!P||!P.editor) return {absent:true}; return {source:P.editor.getSource()};})()")" || exit $?
+      absent="$(jq -r '.absent // false' <<<"$res")"
+      [ "$absent" = false ] || refuse EDITOR_ABSENT "the Pine editor is not mounted on this page"
+      jq -nc --argjson r "$res" '{ok:true,verb:"editor",source:$r.source}' ;;
     set)
-      [ -n "$text" ] || refuse EDITOR_ABSENT "editor --set needs --text"
-      local result; result="$(pb_v3_eval "$id" "(function(){const P=window.PlutusPineShell; P.editor.setSource($(jq -nc --arg t "$text" '$t')); P.editor.flush(); return {chars:P.editor.getSource().length};})()")"
-      printf '%s\n' "$(jq -nc --argjson result "$result" '{ok:true,verb:"editor",chars:$result.chars}')" ;;
-    *) refuse BAD_ARGS "editor needs --mode get or --mode set" ;;
+      [ -n "$text" ] || refuse BAD_ARGS "editor --mode set needs --text"
+      res="$(pb_v3_eval "$id" "(function(){const P=window.PlutusPineShell; if(!P||!P.editor) return {absent:true}; P.editor.setSource($(jq -nc --arg t "$text" '$t')); P.editor.flush(); return {chars:P.editor.getSource().length};})()")" || exit $?
+      absent="$(jq -r '.absent // false' <<<"$res")"
+      [ "$absent" = false ] || refuse EDITOR_ABSENT "the Pine editor is not mounted on this page"
+      jq -nc --argjson r "$res" '{ok:true,verb:"editor",chars:$r.chars}' ;;
+    *) refuse BAD_ARGS "editor needs --mode get|set (got '$mode')" ;;
   esac
 }
 
 pb_v3_look() {
-  local id="$1" d out frame
-  id="$(flag id 0)"; pb_v3_up_guard "$id"
+  pb_v3_begin; local id="$PB_ID" d name out frame sha colours
   d="$(pb_dir "$id")"
-  out="$(flag out "$d/look.png")"
+  # --out is a FILE NAME inside the instance dir, never a path: an absolute or escaping value
+  # (~/.ssh/authorized_keys, ../../x) would overwrite arbitrary files with image bytes
+  name="$(flag out look.png)"
+  [[ "$name" =~ ^[A-Za-z0-9._-]{1,64}\.png$ ]] \
+    || refuse SCOPE_VIOLATION "look --out must be a bare file name ending .png (it is written inside the instance dir), got '$name'"
+  out="$d/$name"
   frame="$("$COMPUTER" screenshot --id "$id" --out "$out" 2>"$d/look.err")" \
     || refuse CAPTURE_FAILED "$(tail -1 "$d/look.err")"
-  [ "$(jq -r '.colours // 0' <<<"$frame")" -gt 1 ] || refuse FRAME_BLANK "the captured frame is blank"
-  local sha; sha="$(sha256sum "$out" | cut -c1-16)"
+  colours="$(jq -r '.colours // 0' <<<"$frame")"
+  [[ "$colours" =~ ^[0-9]+$ ]] && [ "$colours" -gt 1 ] || refuse FRAME_BLANK "the captured frame has ${colours:-no} colour(s)"
+  sha="$(sha256sum "$out" | cut -c1-16)"
   pb_rec "$id" ".look = $(jq -nc --argjson f "$frame" --arg sha "$sha" '{path:$f.path,bytes:$f.bytes,colours:$f.colours,sha:$sha}')"
-  printf '{"ok":true,"id":%s,"verb":"look","frame":%s}\n' "$id" "$(jq -c '{path,bytes,colours,via}' <<<"$frame")"
+  jq -nc --argjson id "$id" --argjson f "$frame" --arg sha "$sha" '{ok:true,id:$id,verb:"look",frame:($f|{path,bytes,colours,via}),sha:$sha}'
 }

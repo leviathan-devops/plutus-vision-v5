@@ -69,7 +69,13 @@ def shell_config_for(ports: dict) -> dict:
 def inject_dashboard_config(body: bytes, ports: dict) -> bytes:
     """Rewrite ONLY the dashboardConfig block. Exactly one substitution, and the result
     must re-parse: the substituted block is checked before it is returned."""
-    text = body.decode("utf-8", "replace")
+    # STRICT decode. errors="replace" turned any invalid byte into U+FFFD and then served the
+    # MUTATED page as if it were the original - exactly the silent corruption this file's
+    # fail-loud contract forbids. A page that is not valid UTF-8 is refused by name.
+    try:
+        text = body.decode("utf-8")
+    except UnicodeDecodeError as e:
+        raise Refused("PAGE_NOT_UTF8", f"the page is not valid UTF-8 ({e.reason} at byte {e.start}); refusing to serve a lossy re-encoding of it")
     m = BLOCK.search(text)
     if not m:
         raise Refused("CONFIG_BLOCK_ABSENT",

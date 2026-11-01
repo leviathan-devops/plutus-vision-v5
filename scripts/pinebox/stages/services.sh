@@ -35,6 +35,9 @@ pb_preflight() {
   local week="$1" instance_id="${2:-0}" fix renderer
   fix="$PV_ROOT/fixtures/bars/$week.json"
   renderer="${PINEBOX_RENDERER_ROOT:-$PV_ROOT/pine-ide/ide/renderer}"
+  # the week names a FILE: only a real date may reach the path (--week ../../x resolved outside
+  # the fixtures tree and would have been loaded as the bars fixture)
+  [[ "$week" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || refuse BAD_ARGS "week must be a date YYYY-MM-DD naming a fixture, got '$week'"
   [ -f "$fix" ] || refuse FIXTURE_ABSENT "no bars fixture for week '$week': $fix"
   [ -d "$PV_ROOT/pine-ide/pine-station/node_modules/pinets" ] || refuse ENGINE_ABSENT "run npm install in $PV_ROOT/pine-ide/pine-station"
   local inject_err="$PB_ROOT/i${instance_id}.inject.err"
@@ -45,26 +48,30 @@ pb_preflight() {
 
 stage_services() {
   local id="$1" d="$2" week="$3"
-  local st rail srv ws fix renderer
-  st="$(pb_port "$id" station)"; rail="$(pb_port "$id" rail)"; srv="$(pb_port "$id" server)"; ws="$(pb_port "$id" ws)"
+  local st rail srv fix renderer
+  # (the ws port, server+80, is RESERVED in the block and claimed by pb_claim, but nothing in this
+  # stage serves on it - it is not read here so no one mistakes it for a wired service)
+  st="$(pb_port "$id" station)" && rail="$(pb_port "$id" rail)" && srv="$(pb_port "$id" server)" \
+    || refuse BAD_ID "could not derive the port block for instance '$id'"
   fix="$PV_ROOT/fixtures/bars/$week.json"
   renderer="${PINEBOX_RENDERER_ROOT:-$PV_ROOT/pine-ide/ide/renderer}"
   # ── station: supervised with a bounded memory cap, exactly as pv-ide.sh does ──
   # (the 2026-10-11 incident: an unsupervised station leaked to ~33 GB RSS+swap)
   env -C "$PV_ROOT/pine-ide/pine-station" PINE_STATION_PORT="$st" PINE_STATION_HOST=127.0.0.1 \
       PLUTUS_BARS_FIXTURE="$fix" PLUTUS_LIVE_ROOT="$PV_ROOT" PINE_STATION_RSS_CAP_MB=2560 \
-      setsid bash -c 'while :; do node --max-old-space-size=1536 server.mjs; c=$?; echo "[pinebox] station exited ($c) - restarting in 1s"; sleep 1; done' \
-      >> "$d/station.log" 2>&1 < /dev/null &
-  pb_rec "$id" ".pids.station = $!"
+      setsid bash -c 'n=0; while [ "$n" -lt 20 ]; do node --max-old-space-size=1536 server.mjs; c=$?; n=$((n+1)); echo "[pinebox] station exited ($c) - restart $n/20 in 1s"; sleep 1; done; echo "[pinebox] station gave up after 20 restarts"' \
+      >> "$d/station.log" 2>&1 < /dev/null 6>&- 7>&- 8>&- &
+  pb_svc_record "$id" station "$!"
   pb_wait 60 pb_station_compiles "$st" \
-    || refuse STATION_WILL_NOT_COMPILE "POST /run on :$st never answered success:true - $d/station.log: $(tail -2 "$d/station.log" | tr '\n' ' ')"
+    || { pb_kill_recorded "$id" >/dev/null   # do not leave the supervisor loop running behind a refusal
+         refuse STATION_WILL_NOT_COMPILE "POST /run on :$st never answered success:true - $d/station.log: $(tail -2 "$d/station.log" | tr '\n' ' ')"; }
 
   # ── rail: its ledger and evidence live INSIDE the instance, never in the live tree ──
   mkdir -p "$d/vil" "$d/evidence"
   env PLUTUS_VIL_PORT="$rail" PLUTUS_STATION_URL="http://127.0.0.1:$st" \
       PLUTUS_VIL_DIR="$d/vil" PLUTUS_VIL_EVIDENCE="$d/evidence" \
-      setsid node "$PV_ROOT/pine-ide/pine-ide/vil-rail.mjs" >> "$d/rail.log" 2>&1 < /dev/null &
-  pb_rec "$id" ".pids.rail = $!"
+      setsid node "$PV_ROOT/pine-ide/pine-ide/vil-rail.mjs" >> "$d/rail.log" 2>&1 < /dev/null 6>&- 7>&- 8>&- &
+  pb_svc_record "$id" rail "$!"
   if pb_wait 15 pb_http_answers "http://127.0.0.1:$rail/"; then pb_rec "$id" '.rail = "up"'
   else
     # the face is the one service the IDE honestly runs without: the page's own
@@ -76,8 +83,8 @@ stage_services() {
   # ── server: the static host + the API, with THIS instance's port block to inject ──
   local ports; ports="$(pb_ports_json "$id")"
   env PYTHONDONTWRITEBYTECODE=1 PV_FIXTURE="$fix" PINEBOX_PORTS="$ports" \
-      setsid python3 "$PV_ROOT/scripts/pv-server.py" "$srv" "$renderer" >> "$d/server.log" 2>&1 < /dev/null &
-  pb_rec "$id" ".pids.server = $!"
+      setsid python3 "$PV_ROOT/scripts/pv-server.py" "$srv" "$renderer" >> "$d/server.log" 2>&1 < /dev/null 6>&- 7>&- 8>&- &
+  pb_svc_record "$id" server "$!"
   pb_wait 20 pb_http_ok "http://127.0.0.1:$srv/pine.html" \
     || refuse "SERVICE_DOWN:server" "pine.html never answered 200 on :$srv - $d/server.log: $(tail -2 "$d/server.log" | tr '\n' ' ')"
 

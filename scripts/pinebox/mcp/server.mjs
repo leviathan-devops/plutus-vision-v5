@@ -2,9 +2,14 @@
 // server.mjs - the PINEBOX MCP surface. A THIN FORWARDER over the CLI (blueprint section 9).
 //
 // It reads ../actions.json, turns a tools/call into `pinebox` argv, runs it, and returns
-// { ok, text, details } - or, on a refusal, { ok:false, error:"<TOKEN>", detail }. It
+// { ok, text, details } - or, on a failure, { ok:false, error:"<TOKEN>", detail }. It
 // implements no verb, so a fix in the CLI is a fix here, and a foreign runtime can branch on
-// `error` because it is a token (PORT_TAKEN:<port>, INSTANCE_LIVE, CONFIG_BLOCK_ABSENT, ...).
+// `error` because it is ALWAYS a token:
+//   a CLI refusal   -> its own token (PORT_TAKEN:<port>, INSTANCE_LIVE, CONFIG_BLOCK_ABSENT, ...)
+//   BAD_ARGS        -> the arguments failed validation here, before anything was spawned
+//   MCP_TIMEOUT     -> the verb did not answer within the deadline and was killed
+//   CLI_SPAWN_FAILED-> the CLI could not be started at all
+//   FAILED          -> the CLI exited non-zero WITHOUT a refusal (a crash); detail has stderr
 //
 // stdio, newline-delimited JSON-RPC 2.0. No dependencies.
 import { spawn } from "node:child_process";
@@ -14,7 +19,19 @@ import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CLI = process.env.PINEBOX_CLI ?? resolve(HERE, "..", "pinebox");
-const TABLE = JSON.parse(readFileSync(resolve(HERE, "..", "actions.json"), "utf8"));
+const RUN_TIMEOUT_MS = Number(process.env.PINEBOX_MCP_TIMEOUT_MS ?? 120000);
+const MAX_LINE = 1 << 20;   // a JSON-RPC line over 1 MiB is refused, not buffered forever
+
+// A missing or malformed action table is a startup failure with a clear message - not an
+// uncaught exception with no JSON-RPC error and no hint.
+let TABLE;
+try {
+  TABLE = JSON.parse(readFileSync(resolve(HERE, "..", "actions.json"), "utf8"));
+  if (!TABLE || typeof TABLE.actions !== "object" || typeof TABLE.params !== "object") throw new Error("missing `actions` or `params`");
+} catch (e) {
+  console.error(`PINEBOX_MCP_STARTUP_FAILED: cannot load actions.json: ${e.message}`);
+  process.exit(2);
+}
 
 // The verb is `verb`; drive's own computer-use verb (the table's `action` param) is `drive_action`.
 const properties = { verb: { type: "string", enum: Object.keys(TABLE.actions), description: "the PINEBOX verb" } };
@@ -30,14 +47,33 @@ const TOOL = {
   inputSchema: { type: "object", properties, required: ["verb"], additionalProperties: false },
 };
 
+// Validate against the table BEFORE spawning: unknown keys, wrong types and non-finite numbers
+// are BAD_ARGS. (Silently String()-coercing an object to "[object Object]" or an array to
+// "a,b" forwarded garbage to the CLI.)
+function validate(p) {
+  if (p === null || typeof p !== "object" || Array.isArray(p)) return "arguments must be an object";
+  if (typeof p.verb !== "string") return "`verb` is required and must be a string";
+  if (!Object.prototype.hasOwnProperty.call(TABLE.actions, p.verb)) return `unknown verb '${p.verb}'`;
+  for (const [k, v] of Object.entries(p)) {
+    if (k === "verb") continue;
+    const spec = Object.prototype.hasOwnProperty.call(properties, k) ? properties[k] : null;   // own keys only: "constructor" must not pass
+    if (!spec) return `unknown argument '${k}' (additionalProperties is false)`;
+    if (v === undefined || v === null) continue;
+    if (spec.type === "number" && !(typeof v === "number" && Number.isFinite(v))) return `'${k}' must be a finite number`;
+    if (spec.type === "boolean" && typeof v !== "boolean") return `'${k}' must be a boolean`;
+    if (spec.type === "string" && typeof v !== "string") return `'${k}' must be a string`;
+    if (spec.type === "array" && !Array.isArray(v)) return `'${k}' must be an array`;
+  }
+  return null;
+}
+
 function argvFor(p) {
   const row = TABLE.actions[p.verb];
-  if (!row) return null;
   const argv = [...row.argv];
   for (const f of row.flags) {
     // the table's `action` flag is drive's computer-use verb; MCP names it drive_action
     const v = f === "action" ? p.drive_action : p[f];
-    if (v === undefined || v === null || v === false) continue;
+    if (v === undefined || v === null || v === false || v === "") continue;
     if (v === true) argv.push("--" + f); else argv.push("--" + f, String(v));
   }
   return argv;
@@ -45,62 +81,90 @@ function argvFor(p) {
 
 function run(argv) {
   const { promise, resolve: done } = Promise.withResolvers();
-  const c = spawn(CLI, argv, { stdio: ["ignore", "pipe", "pipe"] });
-  let out = "", err = "";
-  const timer = setTimeout(() => { c.kill("SIGKILL"); done({ code: 124, out, err: err + "\nMCP_TIMEOUT" }); }, 120000);
-  const append = (which, chunk) => {
-    if (which === "out") out = (out + chunk).slice(-1048576);
-    else err = (err + chunk).slice(-262144);
-  };
-  c.stdout.on("data", (d) => append("out", d));
-  c.stderr.on("data", (d) => append("err", d));
-  c.on("error", (e) => { clearTimeout(timer); done({ code: 1, out, err: String(e) }); });
-  c.on("close", (code) => { clearTimeout(timer); done({ code: code ?? 1, out: out.trim(), err: err.trim() }); });
+  // detached => the CLI leads its OWN process group, so a timeout can signal the whole tree. Killing
+  // only the CLI left its grandchildren holding the stdout pipe, `close`
+  // never fired, and the call never answered.
+  const c = spawn(CLI, argv, { stdio: ["ignore", "pipe", "pipe"], detached: true });
+  let out = "", err = "", settled = false, timedOut = false;
+  const settle = (r) => { if (settled) return; settled = true; clearTimeout(timer); done(r); };
+  const killTree = (sig) => { try { process.kill(-c.pid, sig); } catch { try { c.kill(sig); } catch { /* already gone */ } } };
+  const timer = setTimeout(() => {
+    timedOut = true;
+    killTree("SIGTERM");                                  // lets the CLI's own EXIT cleanup run first
+    setTimeout(() => killTree("SIGKILL"), 5000).unref();  // then force it
+    settle({ code: 124, timedOut: true, out: out.trim(), err: err.trim() });   // answer NOW, do not wait for a pipe
+  }, RUN_TIMEOUT_MS);
+  const cap = (s, chunk, max) => { s += chunk; return s.length > max ? s.slice(-max) : s; };
+  c.stdout.on("data", (d) => { out = cap(out, d, 1 << 20); });
+  c.stderr.on("data", (d) => { err = cap(err, d, 1 << 18); });
+  c.on("error", (e) => settle({ code: 127, spawnError: String(e), out, err }));
+  c.on("close", (code) => settle({ code: code ?? 1, timedOut, out: out.trim(), err: err.trim() }));
   return promise;
 }
 
+// A refusal line is `REFUSED  <TOKEN>  <dash>  <detail>`. The dash may be an em/en dash or a
+// hyphen and the token may carry `:` `.` `-`; parse the shape, not one exact punctuation, and
+// keep every detail line (a multi-line detail was cut to its first line).
+const REFUSAL = /REFUSED\s+([A-Za-z0-9_:.\-]+)\s+[\u2014\u2013-]+\s*([\s\S]*)/;
+
 async function callTool(p) {
-  const argv = argvFor(p ?? {});
-  if (!argv) return { ok: false, error: "BAD_VERB", detail: `unknown verb '${p?.verb}'` };
-  const r = await run(argv);
+  const bad = validate(p);
+  if (bad) return { ok: false, error: "BAD_ARGS", detail: bad };
+  const r = await run(argvFor(p));
+  if (r.spawnError) return { ok: false, error: "CLI_SPAWN_FAILED", detail: `${r.spawnError} (CLI=${CLI})` };
+  if (r.timedOut) return { ok: false, error: "MCP_TIMEOUT", detail: `verb '${p.verb}' did not answer within ${RUN_TIMEOUT_MS}ms and was killed` };
   if (r.code === 0) {
     let details = null;
     try { details = JSON.parse(r.out.split("\n").pop()); } catch { /* text */ }
     return { ok: true, text: r.out, details };
   }
-  const m = r.err.match(/REFUSED\s+([A-Za-z_:0-9]+)\s+—\s+([\s\S]*)/);
-  return { ok: false, error: m ? m[1] : "FAILED", detail: m ? m[2].split("\n")[0].trim() : (r.err || r.out) };
+  const m = r.err.match(REFUSAL);
+  if (m) return { ok: false, error: m[1], detail: m[2].trim().slice(0, 1200) };
+  return { ok: false, error: "FAILED", detail: (r.err || r.out || `exit ${r.code}`).slice(0, 1200) };
 }
 
 const send = (o) => process.stdout.write(JSON.stringify(o) + "\n");
+
+async function handle(msg) {
+  try {
+    if (msg.method === "initialize") {
+      send({ jsonrpc: "2.0", id: msg.id, result: { protocolVersion: msg.params?.protocolVersion ?? "2024-11-05", capabilities: { tools: {} }, serverInfo: { name: "pinebox", version: TABLE.version } } });
+    } else if (msg.method === "tools/list") {
+      send({ jsonrpc: "2.0", id: msg.id, result: { tools: [TOOL] } });
+    } else if (msg.method === "tools/call") {
+      const r = await callTool(msg.params?.arguments);
+      send({ jsonrpc: "2.0", id: msg.id, result: { content: [{ type: "text", text: JSON.stringify(r) }], isError: !r.ok } });
+    } else if (msg.method === "ping") {
+      send({ jsonrpc: "2.0", id: msg.id, result: {} });
+    } else if (msg.id !== undefined && !String(msg.method ?? "").startsWith("notifications/")) {
+      send({ jsonrpc: "2.0", id: msg.id, error: { code: -32601, message: `unknown method ${msg.method}` } });
+    }
+  } catch (e) {
+    if (msg.id !== undefined) send({ jsonrpc: "2.0", id: msg.id, error: { code: -32603, message: String(e?.message || e) } });
+  }
+}
+
+// Only tools/call is SERIALIZED (instances share a display and a port space). initialize,
+// tools/list and ping answer immediately: queueing them behind a 120 s verb made a healthy
+// server look hung.
+let callChain = Promise.resolve();
 let buf = "";
-let chain = Promise.resolve();
 process.stdin.setEncoding("utf8");
 process.stdin.on("data", (chunk) => {
   buf += chunk;
+  if (buf.length > MAX_LINE && buf.indexOf("\n") < 0) {
+    buf = "";
+    send({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "parse error: line exceeds 1 MiB" } });
+    return;
+  }
   let i;
   while ((i = buf.indexOf("\n")) >= 0) {
     const line = buf.slice(0, i); buf = buf.slice(i + 1);
     if (!line.trim()) continue;
-    chain = chain.then(async () => {
-      let msg;
-      try { msg = JSON.parse(line); } catch { return; }
-      try {
-        if (msg.method === "initialize") {
-          send({ jsonrpc: "2.0", id: msg.id, result: { protocolVersion: msg.params?.protocolVersion ?? "2024-11-05", capabilities: { tools: {} }, serverInfo: { name: "pinebox", version: TABLE.version } } });
-        } else if (msg.method === "tools/list") {
-          send({ jsonrpc: "2.0", id: msg.id, result: { tools: [TOOL] } });
-        } else if (msg.method === "tools/call") {
-          const r = await callTool(msg.params?.arguments);
-          send({ jsonrpc: "2.0", id: msg.id, result: { content: [{ type: "text", text: JSON.stringify(r) }], isError: !r.ok } });
-        } else if (msg.method === "ping") {
-          send({ jsonrpc: "2.0", id: msg.id, result: {} });
-        } else if (msg.id !== undefined && !msg.method?.startsWith("notifications/")) {
-          send({ jsonrpc: "2.0", id: msg.id, error: { code: -32601, message: `unknown method ${msg.method}` } });
-        }
-      } catch (e) {
-        if (msg.id !== undefined) send({ jsonrpc: "2.0", id: msg.id, error: { code: -32603, message: String(e?.message || e) } });
-      }
-    }).catch((e) => { console.error("MCP_FRAME_FAILED", String(e)); });
+    let msg;
+    try { msg = JSON.parse(line); }
+    catch { send({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "parse error: not valid JSON" } }); continue; }
+    if (msg.method === "tools/call") callChain = callChain.then(() => handle(msg)).catch((e) => console.error("MCP_CALL_FAILED", String(e)));
+    else handle(msg);
   }
 });

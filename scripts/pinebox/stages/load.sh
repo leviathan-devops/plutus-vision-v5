@@ -31,12 +31,19 @@ stage_load() {
   result="$(jq -c . <<<"$out")" || refuse PINE_LOAD_FAILED "pv-load returned non-JSON output, so no successful load can be recorded: $(printf '%s' "$out" | tail -1)"
   [ "$(jq -r '.bars // 0' <<<"$result")" -gt 0 ] || refuse NO_BARS "pv-load returned success-shaped output with zero bars"
   [ "$(jq -r '.onChart // 0' <<<"$result")" -gt 0 ] || refuse NO_DRAWINGS "pv-load returned zero chart objects"
-  sleep 1
-  stage_frame "$id" "$d"
+  # stage_frame waits for and measures the frame itself; its failure is OURS to propagate -
+  # falling through recorded a successful load over a blank frame
+  stage_frame "$id" "$d" || exit $?
 
-  # the page's OWN status row: what the page itself says it loaded
+  # the page's OWN status row: what the page itself says it loaded. It is an ASSERTION, not a
+  # log line: empty, "(no FIXTURE row)", a CDP failure or a different pair/timeframe all refuse.
   local row
-  row="$(node "$CORE/cdp.mjs" "$cdp" evaluate "(document.body.innerText.match(/FIXTURE[^\\n]*/)||['(no FIXTURE row)'])[0]" 2>/dev/null | jq -r '.value // empty')"
+  row="$(node "$CORE/cdp.mjs" "$cdp" evaluate "(document.body.innerText.match(/FIXTURE[^\\n]*/)||['(no FIXTURE row)'])[0]" 2>"$d/status.err" | jq -r '.value // empty')" \
+    || refuse STATUS_ROW_UNREADABLE "could not read the page's status row over CDP: $(tail -1 "$d/status.err")"
+  [ -n "$row" ] && [ "$row" != "(no FIXTURE row)" ] \
+    || refuse STATUS_ROW_ABSENT "the page shows no FIXTURE status row - it did not report loading this fixture"
+  case "$row" in *"$pair"*) ;; *) refuse STATUS_ROW_MISMATCH "the page's status row '$row' does not name pair $pair" ;; esac
+  case "$row" in *"$tf"*) ;; *) refuse STATUS_ROW_MISMATCH "the page's status row '$row' does not name timeframe $tf" ;; esac
   pb_rec "$id" ".load = $(jq -nc --arg pine "$abs" --arg pair "$pair" --arg tf "$tf" --arg row "$row" --argjson result "$result" '{pine:$pine,pair:$pair,tf:$tf,status_row:$row,result:$result}')"
   printf '  load      %s  %s %s  -> %s\n' "$(basename "$abs")" "$pair" "$tf" "$(printf '%s' "$out" | jq -c '{bars,onChart,counts}' 2>/dev/null)" >&2
   printf '  status    %s\n' "$row" >&2

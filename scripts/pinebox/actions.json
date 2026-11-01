@@ -332,7 +332,8 @@
       ],
       "flags": [
         "id",
-        "symbol"
+        "symbol",
+        "tf"
       ]
     },
     "tf": {
@@ -341,7 +342,8 @@
       ],
       "flags": [
         "id",
-        "tf"
+        "tf",
+        "symbol"
       ]
     },
     "widget": {

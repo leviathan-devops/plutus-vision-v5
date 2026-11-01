@@ -30,11 +30,26 @@ PV_ROOT="$(cd "$PB_HOME/../.." && pwd)"
 CU_EXT="${CU_EXT:-$HOME/.omp/agent/extensions/computer-use-v2}"
 CORE="$CU_EXT/core"
 [ -f "$CORE/lib.sh" ] || { printf 'REFUSED  CORE_ABSENT  —  the computer-use v2 core was not found at %s (set CU_EXT to its directory)\n' "$CORE" >&2; exit 1; }
-COMPUTER="$(dirname "$CORE")/computer"
+PB_CORE_BIN="$(dirname "$CORE")/computer"
+# bash `exec N>file` is INHERITED by every child (measured: no FD_CLOEXEC), and flock is released only
+# when EVERY holder of the open file closes. The compositor, Xwayland and the browser the core
+# spawns would each keep this instance's up/down lock (fds 6,7,8) alive for as long as they run -
+# so a live instance held its own lock forever and `down` could never take it. Every call into the
+# core therefore runs with the lock fds closed.
+pb_computer() { "$PB_CORE_BIN" "$@" 6>&- 7>&- 8>&-; }
+COMPUTER=pb_computer
 . "$CORE/lib.sh"
 . "$CORE/govern.sh"
+export PYTHONDONTWRITEBYTECODE=1   # never leave a __pycache__ in the tree (B13)
 PB_ROOT="${PINEBOX_ROOT:-/tmp/pinebox}"
-mkdir -p "$PB_ROOT"
+# A predictable /tmp path is attacker-pre-creatable: a symlink at $PB_ROOT (or $PB_ROOT/iN)
+# would redirect every mkdir/truncate/rm below into an arbitrary directory. Refuse symlinks,
+# require our own uid, and keep it private.
+[ -L "$PB_ROOT" ] && refuse SCOPE_VIOLATION "$PB_ROOT is a symlink - refusing to use it as the instance root"
+mkdir -p -m 0700 "$PB_ROOT" 2>/dev/null || true
+[ -d "$PB_ROOT" ] || refuse SCOPE_VIOLATION "$PB_ROOT could not be created as a directory"
+[ "$(stat -c %u "$PB_ROOT" 2>/dev/null)" = "$(id -u)" ] || refuse SCOPE_VIOLATION "$PB_ROOT is not owned by uid $(id -u) - refusing to use another user's directory"
+chmod 0700 "$PB_ROOT" 2>/dev/null || true
 
 # every refusal is recorded per instance too: { token, verb, at }
 eval "$(declare -f ledger_row | sed '1s/ledger_row/cu_ledger_row/')"
@@ -86,20 +101,47 @@ pb_c3() {
 }
 
 # ── teardown: by the RECORDED process group, never by a pattern ──────────────────────────
+# Record a service we just backgrounded. A recorded pid is only a safe teardown target if it
+# is its OWN process-group leader (setsid made it so), and it is stored with its start time so
+# a pid reused after the service dies is never signalled (the C5 guarantee).
+pb_svc_record() {
+  local id="$1" name="$2" pid="$3" pg tok
+  [[ "$pid" =~ ^[0-9]+$ ]] && [ "$pid" -gt 1 ] || refuse SERVICE_NOT_STARTED "$name: no valid pid ('$pid')"
+  pg="$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ')"
+  if [ "$pg" != "$pid" ]; then
+    pb_rec "$id" ".pids.$name = $pid"
+    refuse SERVICE_NOT_LEADER "$name pid $pid is not its own process-group leader (pgid '${pg:-gone}') - a group teardown would not reach it"
+  fi
+  tok="$(pid_token "$pid")"
+  pb_rec "$id" ".pids.$name = $pid | .toks.$name = $(jq -nc --arg t "$tok" '$t')"
+}
+
 pb_kill_recorded() {
-  local id="$1" k p killed=""
+  local id="$1" k p tok killed=""
   for k in station rail server; do
-    p="$(pb_rec_get "$id" ".pids.$k")"
-    if pid_alive "$p"; then kill_group "$p" && killed="$killed $p"; fi
+    p="$(pb_rec_get "$id" ".pids.$k")"; tok="$(pb_rec_get "$id" ".toks.$k")"
+    if [ -n "$tok" ]; then
+      tok_group_ours "$tok" && { kill_tok "$tok"; killed="$killed $p"; }
+    elif [[ "$p" =~ ^[0-9]+$ ]] && [ "$p" -gt 1 ] && [ "$(ps -o pgid= -p "$p" 2>/dev/null | tr -d ' ')" = "$p" ]; then
+      kill_group "$p" && killed="$killed $p"       # legacy record with no start-time token
+    fi
   done
   printf '%s' "${killed# }"
 }
 
 pb_teardown() {
   local id="$1" killed d; d="$(pb_dir "$id")"
+  [ -L "$d" ] && refuse SCOPE_VIOLATION "$d is a symlink - refusing to tear down through it"
+  # `down` must not run mid-`up`: it would kill the groups and delete state.json under a
+  # half-started instance. `up` holds this same lock; its own cleanup passes PB_LOCK_HELD=1.
+  if [ "${PB_LOCK_HELD:-0}" != 1 ]; then
+    exec 8>"$PB_ROOT/.up-$id.lock"
+    flock -w 120 8 || refuse INSTANCE_BUSY "an 'up' for instance $id still holds the lock after 120s - not tearing down under it"
+  fi
   killed="$(pb_kill_recorded "$id")"
   "$COMPUTER" shell down --id "$id" >/dev/null 2>&1 || true   # compositor + the browser the core spawned
-  rm -rf "$d/chrome" "$d/state.json"
+  rm -rf -- "$d/chrome" "$d/state.json"
+  exec 8>&- 2>/dev/null || true
   printf '%s' "$killed"
 }
 
@@ -122,7 +164,9 @@ pb_up() {
 
   # Serialize stale-record reaping and live checks under the SAME per-id lock;
   # otherwise two ups can both pass the live check before either writes state.
+  [ -L "$d" ] && refuse SCOPE_VIOLATION "$d is a symlink - refusing to start an instance through it"
   exec 7>"$PB_ROOT/.up-$id.lock"; flock -n 7 || refuse INSTANCE_LIVE "an 'up' for pinebox instance $id is already in progress"
+  PB_LOCK_HELD=1     # this process owns the per-id lock: its own teardowns must not re-take it
   if [ -s "$d/state.json" ]; then
     if pb_instance_live "$id"; then refuse INSTANCE_LIVE "pinebox instance $id is already running - run: pinebox down --id $id"; fi
     echo "  (reaping a stale record for instance $id)" >&2; pb_teardown "$id" >/dev/null
@@ -144,7 +188,9 @@ pb_up() {
   out="$("$COMPUTER" shell up --id "$id" ${adapter:+--adapter "$adapter"} 2>"$d/shell.err")" || pb_forward_refusal "$d/shell.err"
   slot="$(jq -r .x_slot <<<"$out")"
   hw="$(jq -r '.instance.host_win // empty' <<<"$out")"
-  pb_rec "$id" ".slot = \"$slot\" | .adapter = $(jq -c .adapter <<<"$out") | .host_win = \"$hw\" | .up_at = \"$(date -Is)\""
+  # every value enters the record as a jq-ENCODED literal: a quote, backslash or newline in
+  # core output must not break (or inject into) the filter
+  pb_rec "$id" ".slot = $(jq -nc --arg v "$slot" '$v') | .adapter = $(jq -c .adapter <<<"$out") | .host_win = $(jq -nc --arg v "$hw" '$v') | .up_at = $(jq -nc --arg v "$(date -Is)" '$v')"
   printf '  shell     :%s (%s)%s\n' "$slot" "$(jq -r .adapter <<<"$out")" "${hw:+ host window $hw}" >&2
 
   stage_services "$id" "$d" "$week" || exit $?
@@ -257,7 +303,14 @@ pb_drive() {   # drive --id N --action VERB [core flags...]
     case "${args[$i]}" in --id|--action) i=$((i+2)) ;; *) rest+=("${args[$i]}"); i=$((i+1)) ;; esac
   done
   [ -s "$(pb_dir "$id")/state.json" ] || refuse NOT_UP "pinebox instance $id is not up"
-  "$COMPUTER" "$action" --id "$id" "${rest[@]}"
+  # an ALLOWLIST: drive forwards INPUT/CAPTURE verbs only. `view` raises a window, and
+  # shell_*/terminal_*/state_*/app_* change the instance itself - none may ride in here.
+  case "$action" in
+    focus|click|type|key|screenshot) ;;
+    *) refuse BAD_ARGS "drive --action '$action' is not an input/capture verb (allowed: focus click type key screenshot)" ;;
+  esac
+  require_id "$id"
+  pb_c3 "drive $action" "$COMPUTER" "$action" --id "$ID" "${rest[@]}"
 }
 
 pb_terminal() {

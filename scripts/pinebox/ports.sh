@@ -20,8 +20,11 @@ PB_MAX_ID=9
 
 pb_ports_json() {
   local n="$1"
-  [[ "$n" =~ ^[0-9]+$ ]] && [ "$n" -le "$PB_MAX_ID" ] \
-    || refuse BAD_ID "pinebox instance id must be 0..$PB_MAX_ID so the derived port blocks cannot overlap, got '$n'"
+  # Decimal only: a leading zero makes bash arithmetic read the id as OCTAL
+  # (08/09 abort, 010 becomes 8), so a syntactically valid id would silently
+  # name the wrong block. Canonical form is the only accepted form.
+  [[ "$n" =~ ^(0|[1-9])$ ]] \
+    || refuse BAD_ID "pinebox instance id must be a canonical decimal 0..$PB_MAX_ID so the derived port blocks cannot overlap, got '$n'"
   # A 100-port stride is REQUIRED, not cosmetic: ws is server+80, so a stride
   # of 10 made id 0's ws collide with id 8's server. 100 separates every family.
   printf '{"station":%d,"rail":%d,"server":%d,"cdp":%d,"ws":%d,"vnc":%d}' \
@@ -29,29 +32,51 @@ pb_ports_json() {
 }
 
 pb_port() {
-  local json; json="$(pb_ports_json "$1")" || exit $?
-  printf '%s' "$json" | jq -r ".$2"
+  local json
+  json="$(pb_ports_json "$1")" || return $?
+  printf '%s' "$json" | jq -er ".$2"
+}
+
+# pb_port_probe PORT: 0 = LISTENING, 1 = FREE, 2 = THE PROBE ITSELF FAILED.
+# A failed probe is NEVER "free": that conflation let pb_claim succeed when `ss`
+# was missing or errored, which is a fail-open on a safety gate.
+pb_port_probe() {
+  [[ "$1" =~ ^[0-9]+$ ]] || return 2
+  command -v ss >/dev/null 2>&1 || return 2
+  local out
+  out="$(ss -ltnH "sport = :$1" 2>&1)" || return 2
+  case "$out" in *[Ee]rror*|*"Cannot"*|*"cannot"*) return 2 ;; esac
+  [ -n "$out" ]
 }
 
 # what holds this port: "" when free, else "<pid|unknown> <cmdline-head>". A LISTEN row with
-# no visible owner is HELD (owner "unknown") - never free.
+# no visible owner is HELD (owner "unknown") - never free. Returns 2 when the probe failed.
 pb_port_holder() {
-  port_listening "$1" || return 0
+  pb_port_probe "$1"
+  case $? in 1) return 0 ;; 2) return 2 ;; esac
   local pid; pid="$(port_owner "$1")"
   if [ -z "$pid" ]; then printf 'unknown (owner not visible)'; return 0; fi
   printf '%s %s' "$pid" "$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null | cut -c1-70)"
 }
 
-# pb_claim ID [OWN_PIDS...]: every port must be free, or held by a pid of OUR instance
+# pb_claim ID [OWN_PIDS...]: every port must be free, or held by a pid of OUR instance.
+# Serialized per id under flock so two concurrent claimants cannot both observe "free".
+# A pid is trusted only while its cmdline still names a pinebox-owned process.
 pb_claim() {
   local id="$1"; shift
-  local own=" $* " name port holder pid
+  local own=" $* " name port holder pid rc
+  mkdir -p "${PB_ROOT:-/tmp/pinebox}" 2>/dev/null
+  exec 6>"${PB_ROOT:-/tmp/pinebox}/.claim-$id.lock"; flock -x 6
   for name in station rail server cdp ws vnc; do
-    port="$(pb_port "$id" "$name")"
-    holder="$(pb_port_holder "$port")"
+    port="$(pb_port "$id" "$name")" || { exec 6>&-; refuse BAD_ID "could not derive the $name port for instance '$id'"; }
+    [ -n "$port" ] || { exec 6>&-; refuse BAD_ID "empty $name port for instance '$id'"; }
+    holder="$(pb_port_holder "$port")"; rc=$?
+    [ "$rc" -eq 2 ] && { exec 6>&-; refuse PORT_PROBE_FAILED "cannot determine whether $name port $port is free (ss missing or errored) - refusing rather than assuming free"; }
     [ -z "$holder" ] && continue
     pid="${holder%% *}"
-    case "$own" in *" $pid "*) [ "$pid" != unknown ] && continue ;; esac   # an invisible owner is never ours
+    case "$own" in *" $pid "*) [ "$pid" != unknown ] && [ -r "/proc/$pid/cmdline" ] && continue ;; esac   # an invisible or dead owner is never ours
+    exec 6>&-
     refuse "PORT_TAKEN:$port" "$name port $port is held by pid $pid (${holder#* }), not by this instance"
   done
+  exec 6>&-
 }

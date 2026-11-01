@@ -39,7 +39,8 @@ c="$(call 5 '{"verb":"down","id":"9"}')"
 c="$(call 6 '{"verb":"view","id":"9"}')"
 [ "$(jq -r .error <<<"$c")" = NOT_UP ] && ok "view on a missing instance: NOT_UP, no window touched" || bad "view token" "$c"
 c="$(call 7 '{"verb":"nonsense"}')"
-[ "$(jq -r .error <<<"$c")" = BAD_VERB ] && ok "an unknown verb arrives as BAD_VERB" || bad "BAD_VERB token" "$c"
+# the server validates BEFORE it spawns: an unknown verb is BAD_ARGS (a bad request), never a CLI failure
+[ "$(jq -r .error <<<"$c")" = BAD_ARGS ] && jq -e '.detail|test("unknown verb")' <<<"$c" >/dev/null && ok "an unknown verb arrives as BAD_ARGS (unknown verb)" || bad "BAD_ARGS token" "$c"
 
 echo "── the two forwarders read the SAME table (R7) ──"
 grep -q 'actions.json' "$PB/mcp/server.mjs" && grep -q 'actions.json' "$EXT" && ok "mcp/server.mjs and the extension both read actions.json" || bad "a forwarder does not read the table" ""
