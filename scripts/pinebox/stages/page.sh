@@ -80,8 +80,11 @@ stage_page() {
   # THE APP, not just the target: CDP names pine.html as soon as the tab exists, long before the IDE has rendered. On a loaded host the
   # first frame was 37 colours and `.pine-week` did not exist yet (measured 2026-11-02: 1 of 9 concurrent starts). Wait, bounded, until
   # the week control AND the chart renderer are in the DOM, so every later stage acts on a page that is there.
-  if ! pb_wait 90 pb_app_ready "$cdp"; then
-    refuse APP_NOT_READY "pine.html is open on CDP :$cdp but the IDE did not render within 90s (no .pine-week control and chart renderer) - the host is starved or the page failed; nothing was driven"
+  # the bound is a knob, not a constant: PB_APP_READY_S (whole seconds, default 90); 0 never polls and so forces the refusal below
+  local ready_s="${PB_APP_READY_S:-90}"
+  case "$ready_s" in ''|*[!0-9]*) refuse BAD_CONFIG "PB_APP_READY_S must be whole seconds, got '$ready_s'" ;; esac
+  if ! pb_wait "$ready_s" pb_app_ready "$cdp"; then
+    refuse APP_NOT_READY "pine.html is open on CDP :$cdp but the IDE did not render within ${ready_s}s (no .pine-week control and chart renderer) - the host is starved or the page failed; nothing was driven"
   fi
   printf '  page      chrome in a window on :%s · CDP :%s · profile %s\n' "$(pb_rec_get "$id" .slot)" "$cdp" "$profile" >&2
 }
