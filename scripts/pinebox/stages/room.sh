@@ -66,16 +66,16 @@ pb_room_preflight() {   # refuses by name BEFORE anything is started
 
 stage_room() {
   local id="$1" d="$2" week="$3" room srv fix home
-  [[ "$week" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || refuse BAD_ARGS "week must be a date YYYY-MM-DD naming a fixture, got '$week'"
-  room="$(pb_port "$id" room)" && srv="$(pb_port "$id" server)" || refuse BAD_ID "could not derive the room port for instance '$id'"
+  [[ "$week" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || pb_fail "$id" BAD_ARGS "week must be a date YYYY-MM-DD naming a fixture, got '$week'"
+  room="$(pb_port "$id" room)" && srv="$(pb_port "$id" server)" || pb_fail "$id" BAD_ID "could not derive the room port for instance '$id'"
   fix="$PV_ROOT/fixtures/bars/$week.json"
-  [ -f "$fix" ] || refuse FIXTURE_ABSENT "no bars fixture for week '$week': $fix"
+  [ -f "$fix" ] || pb_fail "$id" FIXTURE_ABSENT "no bars fixture for week '$week': $fix"
 
   # a fresh, instance-scoped database and HOME on every up; the room refuses to init without the base table
   home="$d/room-home"; rm -rf -- "$home" "$d"/room.db "$d"/room.db-wal "$d"/room.db-shm; mkdir -p "$home"
   node --no-warnings -e "const {DatabaseSync}=require('node:sqlite'); const fs=require('node:fs'); const db=new DatabaseSync(process.argv[1]); db.exec(fs.readFileSync(process.argv[2],'utf8')); db.close();" \
       "$d/room.db" "$PB_HOME/room/base-schema.sql" 2>"$d/room-seed.err" \
-    || refuse ROOM_SEED_FAILED "could not seed $d/room.db from room/base-schema.sql: $(tail -1 "$d/room-seed.err" | cut -c1-200)"
+    || pb_fail "$id" ROOM_SEED_FAILED "could not seed $d/room.db from room/base-schema.sql: $(tail -1 "$d/room-seed.err" | cut -c1-200)"
 
   # TV feed pinned to a closed loopback port: the instance has no TradingView feed, and the default
   # would reach the OPERATOR'S. Any use fails loudly (ECONNREFUSED) instead of crossing instances.

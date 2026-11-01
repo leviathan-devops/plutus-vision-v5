@@ -90,28 +90,13 @@ stage_verify() {
   # Freshness belongs to the CHART PIXELS, not the PNG container: the UTC
   # footer changes every second, so byte hashes differ on an unchanged chart.
   if [ -f "$prevfresh" ]; then
-    # THREE outcomes, never two: 0 = chart pixels changed, 1 = unchanged, 2 = the INSTRUMENT failed
-    # (PIL missing, unreadable PNG). Collapsing 2 into 1 reported a missing dependency as "no new frame".
-    python3 - "$prevfresh" "$fresh" <<'PY'
-import sys
-try:
-    from PIL import Image, ImageChops
-    a, b = (Image.open(p).convert("RGB") for p in sys.argv[1:3])
-except Exception as e:
-    print("FRESHNESS_INSTRUMENT: %s" % e, file=sys.stderr); raise SystemExit(2)
-if a.size != b.size:
-    raise SystemExit(0)      # a different viewport IS a different frame
-# the chart pane, as proportions of the frame (it is not a fixed pixel box): right of the editor
-# column (~35%), below the tab strip, above the footer clock, short of the right edge
-box = (int(a.width * 0.35), 70, a.width - 6, int(a.height * 0.78))
-if ImageChops.difference(a.crop(box), b.crop(box)).getbbox() is None:
-    raise SystemExit(1)
-PY
-    pr=$?
+    # THREE outcomes, never two (chartpx.py): 0 = the chart pane changed, 1 = unchanged, 2 = the INSTRUMENT
+    # failed (PIL missing, unreadable PNG). Collapsing 2 into 1 reported a missing dependency as "no new frame".
+    python3 "$PB_HOME/chartpx.py" changed "$prevfresh" "$fresh" 2>"$d/chartpx.err"; pr=$?
     case "$pr" in
       0) ;;
       1) refuse NO_FRESH_FRAME "the chart pixels are unchanged; only frame metadata or the UTC clock moved" ;;
-      *) refuse FRESHNESS_CHECK_FAILED "the pixel-freshness instrument itself failed (exit $pr) - install python3-pil; this is NOT a verdict about the frame" ;;
+      *) refuse FRESHNESS_CHECK_FAILED "the pixel-freshness instrument itself failed (exit $pr): $(tail -1 "$d/chartpx.err") - this is NOT a verdict about the frame" ;;
     esac
   fi
   freshsha="$(sha256sum "$fresh" | cut -c1-16)"
@@ -121,7 +106,16 @@ PY
   [[ "$colours" =~ ^[0-9]+$ ]] && [ "$colours" -gt 1 ] \
     || refuse FRAME_BLANK "the fresh frame has ${colours:-no} colour(s) - a blank or failed render must not read as WORKS"
   add_check frame "$colours colours"
+  # The WHOLE-frame count above cannot see a blank CHART: the editor, tabs and footer alone supply
+  # thousands of colours (measured: 6268..7622 with the chart pane painted flat). Measure the pane itself.
+  local pane_n pane_min
+  pane_min="$(python3 -c 'import sys; sys.path.insert(0,sys.argv[1]); import chartpx; print(chartpx.BLANK_THRESHOLD)' "$PB_HOME")"
+  pane_n="$(python3 "$PB_HOME/chartpx.py" colours "$fresh" 2>"$d/chartpx.err")" \
+    || refuse FRESHNESS_CHECK_FAILED "could not measure the chart pane: $(tail -1 "$d/chartpx.err") - this is NOT a verdict about the frame"
+  [[ "$pane_n" =~ ^[0-9]+$ ]] && [ "$pane_n" -ge "$pane_min" ] \
+    || refuse CHART_BLANK "the chart pane has ${pane_n:-no} distinct colours, below the measured floor of $pane_min (a populated pane measures 1493..4153): the chart did not draw"
+  add_check chart "$pane_n chart-pane colours (floor $pane_min)"
 
-  require_id "$id"
-  jq -nc --argjson id "$ID" --arg want "$want" --argjson checks "$checks" '{ok:true,id:$id,week:$want,verdict:"WORKS",checks:$checks}'
+  [[ "$id" =~ ^(0|[1-9])$ ]] || refuse BAD_ID "verdict for a non-canonical instance id '$id'"   # the function's OWN id, not the global $ID that require_id happened to set
+  jq -nc --argjson id "$id" --arg want "$want" --argjson checks "$checks" '{ok:true,id:$id,week:$want,verdict:"WORKS",checks:$checks}'
 }

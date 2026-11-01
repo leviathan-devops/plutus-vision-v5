@@ -41,22 +41,31 @@ COMPUTER=pb_computer
 . "$CORE/lib.sh"
 . "$CORE/govern.sh"
 export PYTHONDONTWRITEBYTECODE=1   # never leave a __pycache__ in the tree (B13)
-PB_ROOT="${PINEBOX_ROOT:-/tmp/pinebox}"
-# A predictable /tmp path is attacker-pre-creatable: a symlink at $PB_ROOT (or $PB_ROOT/iN)
-# would redirect every mkdir/truncate/rm below into an arbitrary directory. Refuse symlinks,
-# require our own uid, and keep it private.
+# THE INSTANCE ROOT IS PRIVATE BY CONSTRUCTION. The old default, /tmp/pinebox, was a predictable
+# path in a world-writable directory, so every check on it (is it a symlink? who owns it?) was
+# check-then-use and could be raced. The default is now $XDG_RUNTIME_DIR/pinebox: the parent is a
+# 0700 directory owned by this user, so no other user can create, swap or symlink anything inside
+# it. There is NO /tmp default; with neither PINEBOX_ROOT nor XDG_RUNTIME_DIR the tool refuses.
+if [ -n "${PINEBOX_ROOT:-}" ]; then PB_ROOT="$PINEBOX_ROOT"
+elif [ -n "${XDG_RUNTIME_DIR:-}" ]; then PB_ROOT="$XDG_RUNTIME_DIR/pinebox"
+else refuse PB_ROOT_UNAVAILABLE "neither PINEBOX_ROOT nor XDG_RUNTIME_DIR is set - set PINEBOX_ROOT to a directory only you can write (there is no /tmp default: it is a predictable path in a shared directory)"
+fi
+case "$PB_ROOT" in /*) ;; *) refuse PB_ROOT_UNAVAILABLE "the instance root must be an absolute path, got '$PB_ROOT'" ;; esac
 [ -L "$PB_ROOT" ] && refuse SCOPE_VIOLATION "$PB_ROOT is a symlink - refusing to use it as the instance root"
-mkdir -p -m 0700 "$PB_ROOT" 2>/dev/null || true
-[ -d "$PB_ROOT" ] || refuse SCOPE_VIOLATION "$PB_ROOT could not be created as a directory"
-[ "$(stat -c %u "$PB_ROOT" 2>/dev/null)" = "$(id -u)" ] || refuse SCOPE_VIOLATION "$PB_ROOT is not owned by uid $(id -u) - refusing to use another user's directory"
-chmod 0700 "$PB_ROOT" 2>/dev/null || true
+mkdir -p -m 0700 -- "$PB_ROOT" || refuse PB_ROOT_UNAVAILABLE "could not create the instance root $PB_ROOT"
+# ONE stat for owner, mode and type: three separate checks were three separate chances to be raced
+read -r _pb_uid _pb_mode _pb_type < <(stat -c '%u %a %F' -- "$PB_ROOT" 2>/dev/null)
+[ "${_pb_type:-}" = directory ] && [ "${_pb_uid:-x}" = "$(id -u)" ] \
+  || refuse SCOPE_VIOLATION "$PB_ROOT is not a directory owned by uid $(id -u) (type '${_pb_type:-?}', owner '${_pb_uid:-?}')"
+[ "$_pb_mode" = 700 ] || chmod 0700 -- "$PB_ROOT" || refuse SCOPE_VIOLATION "$PB_ROOT has mode $_pb_mode and could not be made 0700"
+unset _pb_uid _pb_mode _pb_type
 
 # every refusal is recorded per instance too: { token, verb, at }
 eval "$(declare -f ledger_row | sed '1s/ledger_row/cu_ledger_row/')"
 PB_VERB=""
 ledger_row() {
   cu_ledger_row "$@"
-  [ -n "${CU_CTX_ID:-}" ] && [ -d "$PB_ROOT/i$CU_CTX_ID" ] && \
+  [[ "${CU_CTX_ID:-}" =~ ^(0|[1-9])$ ]] && [ -d "$PB_ROOT/i$CU_CTX_ID" ] && [ ! -L "$PB_ROOT/i$CU_CTX_ID" ] && \
     printf '{"token":"%s","verb":"%s","at":"%s"}\n' "$(jesc "$1")" "$PB_VERB" "$(date -Is)" >> "$PB_ROOT/i$CU_CTX_ID/refusals.jsonl"
 }
 
@@ -72,10 +81,13 @@ ledger_row() {
 need jq NO_JQ
 
 pb_dir() { printf '%s/i%s' "$PB_ROOT" "$1"; }
+# pb_dir is called inside $(...), where a refusal only ends the substitution and leaves an EMPTY path
+# (which "$d/state.json" would turn into /state.json). Every WRITER therefore validates its id itself.
+pb_need_id() { [[ "${1:-}" =~ ^(0|[1-9])$ ]] || refuse BAD_ID "pinebox instance id must be a canonical decimal 0..9, got '${1:-}'"; }
 
 # ── the instance record: JSON, updated under flock ───────────────────────────────────────
 pb_rec() {
-  local id="$1" filter="$2" d; d="$(pb_dir "$id")"; mkdir -p "$d"
+  local id="$1" filter="$2" d; pb_need_id "$id"; d="$(pb_dir "$id")"; [ -n "$d" ] || refuse BAD_ID "empty instance dir for '$id'"; mkdir -p -- "$d"
   ( flock -x 9
     [ -s "$d/state.json" ] || echo '{}' > "$d/state.json"
     jq "$filter" "$d/state.json" > "$d/state.json.tmp" && mv "$d/state.json.tmp" "$d/state.json"
@@ -123,8 +135,11 @@ pb_kill_recorded() {
     p="$(pb_rec_get "$id" ".pids.$k")"; tok="$(pb_rec_get "$id" ".toks.$k")"
     if [ -n "$tok" ]; then
       tok_group_ours "$tok" && { kill_tok "$tok"; killed="$killed $p"; }
-    elif [[ "$p" =~ ^[0-9]+$ ]] && [ "$p" -gt 1 ] && [ "$(ps -o pgid= -p "$p" 2>/dev/null | tr -d ' ')" = "$p" ]; then
-      kill_group "$p" && killed="$killed $p"       # legacy record with no start-time token
+    elif [ -n "$p" ]; then
+      # a pid with NO start-time token cannot be told apart from an unrelated process that reused the
+      # number, so it is never signalled (the C5 guarantee). pb_svc_record always writes both; a record
+      # lacking the token is damaged or hand-made, and its owner is told instead of being killed.
+      printf 'pinebox: instance %s service %s has pid %s but NO identity token - not signalling it (stop it by hand if it is yours)\n' "$id" "$k" "$p" >&2
     fi
   done
   printf '%s' "${killed# }"
@@ -300,11 +315,18 @@ pb_load() {
 pb_drive() {   # drive --id N --action VERB [core flags...]
   local id action rest=() a skip=0
   id="$(flag id 0)"; action="$(flag action)"; [ -n "$action" ] || refuse BAD_ARGS "drive needs --action VERB"
-  while [ $# -gt 0 ]; do :; break; done
-  local args=("${PB_ARGS[@]}") i=0
+  local args=("${PB_ARGS[@]}") i=0 nid=0 nact=0
   while [ $i -lt ${#args[@]} ]; do
-    case "${args[$i]}" in --id|--action) i=$((i+2)) ;; *) rest+=("${args[$i]}"); i=$((i+1)) ;; esac
+    case "${args[$i]}" in
+      --id)     nid=$((nid+1));   i=$((i+2)) ;;
+      --action) nact=$((nact+1)); i=$((i+2)) ;;
+      # `--id=2` was NOT recognised as the id flag, so it rode through into the core call as a second,
+      # attacker-chosen --id; reject the glued form outright
+      --id=*|--action=*) refuse BAD_ARGS "drive takes '--id N' and '--action VERB' as separate arguments, got '${args[$i]}'" ;;
+      *) rest+=("${args[$i]}"); i=$((i+1)) ;;
+    esac
   done
+  [ "$nid" -le 1 ] && [ "$nact" -le 1 ] || refuse BAD_ARGS "drive got a repeated --id or --action (id x$nid, action x$nact)"
   [ -s "$(pb_dir "$id")/state.json" ] || refuse NOT_UP "pinebox instance $id is not up"
   # an ALLOWLIST: drive forwards INPUT/CAPTURE verbs only. `view` raises a window, and
   # shell_*/terminal_*/state_*/app_* change the instance itself - none may ride in here.

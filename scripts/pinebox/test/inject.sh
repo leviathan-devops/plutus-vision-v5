@@ -41,7 +41,8 @@ PY
 pinebox ports --id 10 >/dev/null 2>&1; rc=$?; [ $rc -eq 1 ] && ok "id 10 is REFUSED (the derived blocks would overlap above 9)" || bad "id bound" "rc=$rc"
 
 echo; echo "── P1/B10: the SERVED bytes name the instance's own ports ──"
-P="$(jq -c '.ports' <<<"$j")"
+TOK="inject-gate-token-0123456789abcdef"
+P="$(jq -c --arg t "$TOK" '.ports + {authToken:$t}' <<<"$j")"
 free=$(( $(jq -r .ports.server <<<"$j") + 400 ))
 PINEBOX_PORTS="$P" PV_FIXTURE="$PV/fixtures/bars/2026-07-06.json" python3 "$PV/scripts/pv-server.py" "$free" "$PV/pine-ide/ide/renderer" >/tmp/inject-srv-$$.log 2>&1 &
 SP=$!
@@ -56,6 +57,18 @@ case "$wb" in *"var MAIN_API = \"http://127.0.0.1:$srv\";"*) ok "served workbenc
 base="$(jq -r .server <<<"$(pinebox ports --id 0 | jq -c .ports)")"
 case "$wb" in *"var MAIN_API = \"http://127.0.0.1:$base\";"*) bad "B10 workbench default" "canonical MAIN_API leaked";; *) ok "the workbench's canonical MAIN_API is not served";; esac
 case "$page" in *"http://127.0.0.1:$base"*) bad "B10: the DEFAULT port leaked into the served page" "the page still names :$base";; *) ok "no default (id 0) port appears anywhere in the served page";; esac
+case "$page" in *"$TOK"*) ok "the served page carries THIS instance's token";; *) bad "B11 token not injected" "";; esac
+case "$page" in *rw_dev_plutus_backtest*) bad "B11: the shared dev token is still served" "$(printf '%s' "$page" | grep -o 'rw_dev_plutus_backtest' | head -1)";; *) ok "B11 the shared dev token rw_dev_plutus_backtest is NOT in the served page";; esac
+out="$(python3 "$PB/inject.py" --render "$PV/pine-ide/ide/renderer/pine.html" "$(jq -c 'del(.authToken)' <<<"$P")" 2>&1 >/dev/null)"; rc=$?
+[ "$rc" -ne 0 ] && case "$out" in *AUTH_TOKEN_UNAVAILABLE*) ok "B11 a port block with no authToken is REFUSED AUTH_TOKEN_UNAVAILABLE (rc=$rc)";; *) bad "B11 token refusal name" "$out";; esac || bad "B11 a tokenless block was ACCEPTED" "rc=$rc"
+cat > /tmp/inject-nested-$$.html <<'HTML'
+<script>
+ window.dashboardConfig = { apiBase: 'http://127.0.0.1:1111', opts: { retry: { n: 3 } }, note: 'a } inside a string', pineStation: 'http://127.0.0.1:2222' };   /* neutral ports: only the brace shape matters here */
+</script><p id="after">tail</p>
+HTML
+out="$(python3 "$PB/inject.py" --render /tmp/inject-nested-$$.html "$P" 2>&1)"; rc=$?
+[ "$rc" -eq 0 ] && case "$out" in *"inside a string"*|*"retry"*) bad "B12 a nested/string-brace block left junk behind" "$(printf '%s' "$out" | head -c 160)";; *'<p id="after">tail</p>'*) ok "B12 a block with a nested object and a '}' in a string is replaced WHOLE (nothing left behind)";; *) bad "B12 tail lost" "";; esac || bad "B12 nested block refused" "$out"
+rm -f /tmp/inject-nested-$$.html
 n="$(git -C "$PV" diff HEAD --stat -- pine-ide/ | wc -l)"; [ "$n" = 0 ] && ok "git diff -- pine-ide/ is EMPTY: the page was NOT touched" || bad "P1 pine-ide edited" "$n lines"
 kill "$SP" 2>/dev/null; SP=""
 

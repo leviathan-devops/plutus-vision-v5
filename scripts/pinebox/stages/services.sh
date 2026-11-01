@@ -27,14 +27,26 @@ pb_http_ok() { curl -s -m 2 -o /dev/null -w '%{http_code}' "$1" 2>/dev/null | gr
 # a SERVICE is up when it ANSWERS: any HTTP status proves the listener is serving. (The rail's
 # `/` is not a 200 route; demanding one reported a live, listening rail as DOWN.) Only the
 # PAGE needs a 200, because that is the thing being served.
+# pb_fail ID TOKEN DETAIL: a refusal AFTER something was started. It kills every recorded service
+# group first, so a refused instance leaves no supervisor loop, rail or server behind (the audit's
+# critical: only the station path cleaned up; the server and CONFIG_NOT_INJECTED refusals leaked).
+pb_fail() { local id="$1"; shift; pb_kill_recorded "$id" >/dev/null 2>&1; refuse "$@"; }
+
 pb_http_answers() { curl -s -m 2 -o /dev/null "$1" 2>/dev/null; }
 
 # pb_preflight WEEK: everything about the INPUTS that can be known before a single process
 # starts. Nothing is spawned for an instance whose inputs are wrong.
 pb_preflight() {
   local week="$1" instance_id="${2:-0}" fix renderer
+  # the id becomes part of a file path below: only a canonical decimal may reach it
+  [[ "$instance_id" =~ ^(0|[1-9])$ ]] || refuse BAD_ID "instance id must be a canonical decimal 0..9, got '$instance_id'"
   fix="$PV_ROOT/fixtures/bars/$week.json"
   renderer="${PINEBOX_RENDERER_ROOT:-$PV_ROOT/pine-ide/ide/renderer}"
+  # the renderer root is read, never written, but it is still an input: absolute, free of control
+  # characters, a real directory, and carrying the page we are about to rewrite
+  case "$renderer" in /*) ;; *) refuse BAD_ARGS "PINEBOX_RENDERER_ROOT must be an absolute path, got '$renderer'" ;; esac
+  [[ "$renderer" != *[[:cntrl:]]* ]] || refuse BAD_ARGS "PINEBOX_RENDERER_ROOT contains a control character"
+  [ -d "$renderer" ] && [ -f "$renderer/pine.html" ] || refuse RENDERER_ABSENT "no pine.html under renderer root '$renderer'"
   # the week names a FILE: only a real date may reach the path (--week ../../x resolved outside
   # the fixtures tree and would have been loaded as the bars fixture)
   [[ "$week" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || refuse BAD_ARGS "week must be a date YYYY-MM-DD naming a fixture, got '$week'"
@@ -81,25 +93,35 @@ stage_services() {
   fi
 
   # ── server: the static host + the API, with THIS instance's port block to inject ──
-  local ports; ports="$(pb_ports_json "$id")"
-  env PYTHONDONTWRITEBYTECODE=1 PV_FIXTURE="$fix" PINEBOX_PORTS="$ports" \
+  local ports
+  ports="$(pb_ports_json "$id")" && jq -e 'type=="object" and has("server") and has("room")' <<<"$ports" >/dev/null 2>&1 \
+    || pb_fail "$id" BAD_PORTS "the port block for instance '$id' is empty or malformed: '${ports:0:120}'"
+  # A PER-INSTANCE credential, generated fresh on every `up`: 128 bits from the kernel. The page carries
+  # it (it is embedded in the served config) and the server's terminal bridge requires the SAME value
+  # (PV_TERM_TOKEN), so instance A's page cannot authenticate to instance B's server. It is never written
+  # to the record, the log or the repo; it lives in this process's environment and the served bytes.
+  local ptoken
+  ptoken="$(od -An -N16 -tx1 /dev/urandom 2>/dev/null | tr -d ' \n')"
+  [[ "$ptoken" =~ ^[0-9a-f]{32}$ ]] || pb_fail "$id" AUTH_TOKEN_UNAVAILABLE "could not read 16 random bytes from /dev/urandom for the per-instance token"
+  ports="$(jq -c --arg t "$ptoken" '. + {authToken:$t}' <<<"$ports")" || pb_fail "$id" BAD_PORTS "could not attach the per-instance token to the port block"
+  env PYTHONDONTWRITEBYTECODE=1 PV_FIXTURE="$fix" PINEBOX_PORTS="$ports" PV_TERM_TOKEN="$ptoken" \
       setsid python3 "$PV_ROOT/scripts/pv-server.py" "$srv" "$renderer" >> "$d/server.log" 2>&1 < /dev/null 6>&- 7>&- 8>&- &
   pb_svc_record "$id" server "$!"
   pb_wait 20 pb_http_ok "http://127.0.0.1:$srv/pine.html" \
-    || refuse "SERVICE_DOWN:server" "pine.html never answered 200 on :$srv - $d/server.log: $(tail -2 "$d/server.log" | tr '\n' ' ')"
+    || pb_fail "$id" "SERVICE_DOWN:server" "pine.html never answered 200 on :$srv - $d/server.log: $(tail -2 "$d/server.log" | tr '\n' ' ')"
 
   # B10: the SERVED bytes must name THIS instance's own ports, or the instance would talk
   # to another instance's server
   local served; served="$(curl -s -m 3 "http://127.0.0.1:$srv/pine.html")"
   printf '%s' "$served" | grep -q "\"apiBase\": \"http://127.0.0.1:$srv\"" \
-    || refuse CONFIG_NOT_INJECTED "the page served on :$srv does not name apiBase :$srv - the instance would use another instance's server"
+    || pb_fail "$id" CONFIG_NOT_INJECTED "the page served on :$srv does not name apiBase :$srv - the instance would use another instance's server"
   printf '%s' "$served" | grep -q "\"pineStation\": \"http://127.0.0.1:$st\"" \
-    || refuse CONFIG_NOT_INJECTED "the page served on :$srv does not name pineStation :$st"
+    || pb_fail "$id" CONFIG_NOT_INJECTED "the page served on :$srv does not name pineStation :$st"
   printf '%s' "$served" | grep -qE "PlutusPineShellConfig *= *\{[^}]*\"railBases\": *\[\"http://127\.0\.0\.1:$rail\"\]" \
-    || refuse CONFIG_NOT_INJECTED "the page served on :$srv does not name this instance's rail :$rail in PlutusPineShellConfig - the engine would fall back to the default rail"
+    || pb_fail "$id" CONFIG_NOT_INJECTED "the page served on :$srv does not name this instance's rail :$rail in PlutusPineShellConfig - the engine would fall back to the default rail"
   local wb; wb="$(curl -s -m 5 "http://127.0.0.1:$srv/charts/workbench.bundle.js")"
   printf '%s' "$wb" | grep -qF "var MAIN_API = \"http://127.0.0.1:$srv\";" \
-    || refuse CONFIG_NOT_INJECTED "the workbench served on :$srv does not name this instance's MAIN_API - its fixture feed would use another instance"
+    || pb_fail "$id" CONFIG_NOT_INJECTED "the workbench served on :$srv does not name this instance's MAIN_API - its fixture feed would use another instance"
   printf '  services  station :%s · rail :%s (%s) · server :%s  (apiBase/pineStation verified in the served bytes)\n' \
     "$st" "$rail" "$(jq -r .rail "$d/state.json")" "$srv" >&2
 }

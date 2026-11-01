@@ -29,7 +29,17 @@ stage_page() {
     || refuse SCOPE_VIOLATION "instance dir '$d' is not $PB_ROOT/i$id - refusing to delete a browser profile under it"
   [ "$profile" = "$d/chrome" ] && [ ! -L "$profile" ] && [ ! -L "$d" ] \
     || refuse SCOPE_VIOLATION "chrome profile '$profile' is not a plain <instance>/chrome directory (symlink or escape)"
-  rm -rf -- "$profile"
+  # A top-level -L test does not see a symlinked PARENT component (/tmp -> elsewhere, PB_ROOT -> elsewhere).
+  # Canonicalise both ends and delete through the CANONICAL path, so the check and the rm name the same
+  # inode path; PB_ROOT is a private 0700 directory, so no other user can swap a component between them.
+  local real_root real_d
+  real_root="$(realpath -e -- "$PB_ROOT" 2>/dev/null)" && real_d="$(realpath -e -- "$d" 2>/dev/null)" \
+    || refuse SCOPE_VIOLATION "cannot canonicalise the instance root '$PB_ROOT' or instance dir '$d'"
+  # canonical == literal, for BOTH. If PB_ROOT itself (or any parent of it) is a symlink the two ends
+  # still agree with each other, so agreement alone proves nothing; equality with the LITERAL path does.
+  [ "$real_root" = "$PB_ROOT" ] && [ "$real_d" = "$PB_ROOT/i$id" ] \
+    || refuse SCOPE_VIOLATION "the instance root/dir is not its own canonical path (root '$PB_ROOT' -> '$real_root', dir '$d' -> '$real_d'): a path component is a symlink"
+  rm -rf -- "$real_d/chrome" || refuse SCOPE_VIOLATION "could not remove the previous browser profile $real_d/chrome"
 
   local out
   # the flags and WHY each is there: blueprint section 7E. --ozone-platform=x11 pins it to
@@ -48,9 +58,16 @@ stage_page() {
         *) pb_forward_refusal "$d/spawn.err" ;;
       esac
     }
-  local chrome_json
-  chrome_json="$(jq -nc --arg profile "$profile" --argjson cdp "$cdp" --arg url "$url" --arg window "$(jq -r '.window // empty' <<<"$out")" '{profile:$profile,cdp:$cdp,url:$url,window:$window}')"
-  [ -n "$(jq -r '.window // empty' <<<"$out")" ] || refuse WINDOW_NOT_MAPPED "the core returned no browser window for instance $id"
+  local chrome_json win
+  # three distinct outcomes, three distinct tokens: the reply is not JSON at all (the core broke),
+  # the reply is JSON with no window (nothing mapped), or it is good. Collapsing the first into the
+  # second reported a crashed core as "no window" and hid the real error.
+  jq -e . <<<"$out" >/dev/null 2>&1 \
+    || refuse CORE_REPLY_UNREADABLE "the core's spawn reply was not JSON: $(printf '%s' "$out" | head -c 200)"
+  win="$(jq -r '.window // empty' <<<"$out")"
+  [ -n "$win" ] || refuse WINDOW_NOT_MAPPED "the core returned no browser window for instance $id"
+  chrome_json="$(jq -nc --arg profile "$profile" --argjson cdp "$cdp" --arg url "$url" --arg window "$win" '{profile:$profile,cdp:$cdp,url:$url,window:$window}')" \
+    && [ -n "$chrome_json" ] || refuse CORE_REPLY_UNREADABLE "could not build the browser record from the core's reply"
   pb_rec "$id" ".chrome = $chrome_json"
 
   # the CDP target list must name pine.html on THIS instance's server port

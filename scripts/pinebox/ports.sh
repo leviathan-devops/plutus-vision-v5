@@ -61,14 +61,27 @@ pb_port_holder() {
   printf '%s %s' "$pid" "$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null | cut -c1-70)"
 }
 
+# pb_pid_is_ours PID: its command line names one of this tool's own service entrypoints
+pb_pid_is_ours() {
+  local c; c="$(tr '\0' ' ' < "/proc/$1/cmdline" 2>/dev/null)" || return 1
+  [ -n "$c" ] || return 1
+  case "$c" in *server.mjs*|*pv-server.py*|*vil-rail*|*control.mjs*|*"${PB_HOME:-/nonexistent}"*|*"${PV_ROOT:-/nonexistent}/scripts"*) return 0 ;; esac
+  return 1
+}
+
 # pb_claim ID [OWN_PIDS...]: every port must be free, or held by a pid of OUR instance.
 # Serialized per id under flock so two concurrent claimants cannot both observe "free".
 # A pid is trusted only while its cmdline still names a pinebox-owned process.
 pb_claim() {
   local id="$1"; shift
   local own=" $* " name port holder pid rc
-  mkdir -p "${PB_ROOT:-/tmp/pinebox}" 2>/dev/null
-  exec 6>"${PB_ROOT:-/tmp/pinebox}/.claim-$id.lock"; flock -x 6
+  # validate the id BEFORE it names a file, and make every step of the lock setup LOUD: a swallowed
+  # mkdir/exec/flock failure ran the claim with no mutual exclusion at all (fail-open)
+  [[ "$id" =~ ^(0|[1-9])$ ]] || refuse BAD_ID "pinebox instance id must be a canonical decimal 0..9, got '$id'"
+  [ -n "${PB_ROOT:-}" ] || refuse PB_ROOT_UNAVAILABLE "pb_claim needs PB_ROOT"
+  mkdir -p -- "$PB_ROOT" || refuse CLAIM_LOCK_FAILED "cannot create the instance root $PB_ROOT"
+  exec 6>"$PB_ROOT/.claim-$id.lock" || refuse CLAIM_LOCK_FAILED "cannot open $PB_ROOT/.claim-$id.lock"
+  flock -w 30 6 || { exec 6>&-; refuse CLAIM_LOCK_FAILED "another claim for instance $id has held the lock for 30s"; }
   for name in station rail server cdp ws vnc room; do
     port="$(pb_port "$id" "$name")" || { exec 6>&-; refuse BAD_ID "could not derive the $name port for instance '$id'"; }
     [ -n "$port" ] || { exec 6>&-; refuse BAD_ID "empty $name port for instance '$id'"; }
@@ -76,7 +89,10 @@ pb_claim() {
     [ "$rc" -eq 2 ] && { exec 6>&-; refuse PORT_PROBE_FAILED "cannot determine whether $name port $port is free (ss missing or errored) - refusing rather than assuming free"; }
     [ -z "$holder" ] && continue
     pid="${holder%% *}"
-    case "$own" in *" $pid "*) [ "$pid" != unknown ] && [ -r "/proc/$pid/cmdline" ] && continue ;; esac   # an invisible or dead owner is never ours
+    # a pid is OURS only if it is on this instance's own list AND its command line still names a pinebox
+    # service entrypoint. `-r /proc/$pid/cmdline` is true for ANY live process, so a recycled pid now
+    # running something unrelated passed as "ours" and the claim waved through a port someone else holds.
+    case "$own" in *" $pid "*) [ "$pid" != unknown ] && pb_pid_is_ours "$pid" && continue ;; esac   # an invisible, dead or foreign owner is never ours
     exec 6>&-
     refuse "PORT_TAKEN:$port" "$name port $port is held by pid $pid (${holder#* }), not by this instance"
   done

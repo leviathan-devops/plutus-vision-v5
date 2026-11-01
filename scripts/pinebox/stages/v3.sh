@@ -65,6 +65,7 @@ pb_v3_run() {
   [ -n "$pine" ] || refuse PINE_ABSENT "run needs --pine FILE"
   case "$pine" in /*) ;; *) pine="$PWD/$pine" ;; esac
   [ -f "$pine" ] || refuse PINE_ABSENT "no such pine source: $pine"
+  pb_check_pair_tf "$pair" "$tf"      # refuse a bad pair/tf BEFORE the editor is touched
   pb_v3_insert >/dev/null || exit $?
   stage_load "$id" "$d" "$pine" "$pair" "$tf" || exit $?
   result="$(pb_rec_get "$id" .load.result)"
@@ -104,9 +105,16 @@ pb_v3_look() {
   out="$d/$name"
   frame="$("$COMPUTER" screenshot --id "$id" --out "$out" 2>"$d/look.err")" \
     || refuse CAPTURE_FAILED "$(tail -1 "$d/look.err")"
+  # the reply is a CLAIM about a file: it must be JSON, name THIS file, and the file must exist and be
+  # non-empty before any hash or record is derived from it
+  jq -e . <<<"$frame" >/dev/null 2>&1 || refuse CAPTURE_FAILED "the screenshot reply was not JSON: ${frame:0:160}"
+  [ "$(realpath -m -- "$(jq -r '.path // empty' <<<"$frame")")" = "$(realpath -m -- "$out")" ] \
+    || refuse CAPTURE_FAILED "the tool captured '$(jq -r '.path // empty' <<<"$frame")', not the requested '$out'"
+  [ -s "$out" ] || refuse CAPTURE_FAILED "$out is missing or empty after the capture"
   colours="$(jq -r '.colours // 0' <<<"$frame")"
   [[ "$colours" =~ ^[0-9]+$ ]] && [ "$colours" -gt 1 ] || refuse FRAME_BLANK "the captured frame has ${colours:-no} colour(s)"
-  sha="$(sha256sum "$out" | cut -c1-16)"
+  sha="$(sha256sum -- "$out" 2>/dev/null | cut -c1-16)"
+  [[ "$sha" =~ ^[0-9a-f]{16}$ ]] || refuse CAPTURE_FAILED "could not hash $out"
   pb_rec "$id" ".look = $(jq -nc --argjson f "$frame" --arg sha "$sha" '{path:$f.path,bytes:$f.bytes,colours:$f.colours,sha:$sha}')"
   jq -nc --argjson id "$id" --argjson f "$frame" --arg sha "$sha" '{ok:true,id:$id,verb:"look",frame:($f|{path,bytes,colours,via}),sha:$sha}'
 }

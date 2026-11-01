@@ -32,7 +32,7 @@ pb_bt() {
     step)
       local n; n="$(flag n 1)"
       [[ "$n" =~ ^[0-9]+$ ]] && [ "$n" -ge 1 ] && [ "$n" -le 500 ] || refuse BAD_ARGS "step --n must be an integer in 1..500 (a larger loop blocks the page's event loop), got '$n'"
-      res="$(pb_bt_eval "$id" "let done=0; for(let i=0;i<$n;i++){ if(!c.replayStep()) break; done++; } return {requested:$n,steps:done,queue:c.replayQueue?.length??null,playing:c.replayPlaying};")" || exit $?
+      res="$(pb_bt_eval "$id" "let done=0; for(let i=0;i<$n;i++){ const stepped=await c.replayStep(); if(!stepped) break; done++; } return {requested:$n,steps:done,queue:c.replayQueue?.length??null,playing:c.replayPlaying};")" || exit $?
       [ "$(jq -r '.steps // 0' <<<"$res")" -gt 0 ] || refuse REPLAY_STEP_FAILED "no replay bar could be stepped (the queue is empty - start one with --op date)"
       jq -nc --argjson id "$id" --argjson s "$res" '{ok:true,id:$id,verb:"backtest",op:"step",state:$s,partial:($s.steps < $s.requested)}' ;;
     speed)
@@ -50,7 +50,8 @@ pb_bt() {
       [[ "$ms" =~ ^[0-9]+$ ]] || refuse DATE_SET_FAILED "'$date' is not a valid calendar date"
       # the date must lie INSIDE the loaded bars. replayStart({from}) with an earlier date silently
       # starts at bar 0, so "1999-01-01" read as a successful seek 27 years before the data.
-      res="$(pb_bt_eval "$id" "const b=P.workbench.getBars()||[]; if(!b.length) return {empty:true};   /* the LOADED bars, not c.rawBars: that is the replay's own mutable working set and shrinks after every seek */ const lo=b[0].time, hi=b[b.length-1].time; if($ms<lo||$ms>hi) return {outside:true,first:lo,last:hi}; await c.replayStart({from:$ms}); return {queue:c.replayQueue?.length??null,playing:c.replayPlaying,first:lo,last:hi};")" || exit $?
+      res="$(pb_bt_eval "$id" "const b=P.workbench.getBars()||[]; if(!b.length) return {empty:true};   /* the LOADED bars, not c.rawBars: that is the replay's own mutable working set and shrinks after every seek */ const lo=b[0].time, hi=b[b.length-1].time; if(!Number.isFinite(lo)||!Number.isFinite(hi)||lo<1e11||hi>1e14) return {badunit:true,first:lo,last:hi}; if($ms<lo||$ms>hi) return {outside:true,first:lo,last:hi}; await c.replayStart({from:$ms}); return {queue:c.replayQueue?.length??null,playing:c.replayPlaying,first:lo,last:hi};")" || exit $?
+      [ "$(jq -r '.badunit // false' <<<"$res")" = false ] || refuse REPLAY_TIME_UNIT "the loaded bars' time is not epoch MILLISECONDS (first=$(jq -r .first <<<"$res") last=$(jq -r .last <<<"$res")); a date seek computed in ms would land anywhere"
       [ "$(jq -r '.empty // false' <<<"$res")" = false ]   || refuse DATE_OUT_OF_RANGE "no bars are loaded, so there is nothing to replay"
       [ "$(jq -r '.outside // false' <<<"$res")" = false ] || refuse DATE_OUT_OF_RANGE "$date is outside the loaded bars ($(jq -r '.first/1000|strftime("%Y-%m-%d")' <<<"$res") .. $(jq -r '.last/1000|strftime("%Y-%m-%d")' <<<"$res"))"
       [[ "$(jq -r '.queue // 0' <<<"$res")" =~ ^[0-9]+$ ]] && [ "$(jq -r '.queue // 0' <<<"$res")" -gt 0 ] || refuse DATE_OUT_OF_RANGE "no replay bars at or after $date"

@@ -19,7 +19,15 @@ import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CLI = process.env.PINEBOX_CLI ?? resolve(HERE, "..", "pinebox");
-const RUN_TIMEOUT_MS = Number(process.env.PINEBOX_MCP_TIMEOUT_MS ?? 120000);
+// A timeout is a SAFETY BOUND: `Number("foo")` is NaN, `Number("")` is 0 and a negative or huge value
+// makes setTimeout fire immediately, so every verb would answer MCP_TIMEOUT for no reason. Anything
+// that is not a plain integer in 100..3600000 ms is a loud startup failure, not a silent default.
+const RAW_TIMEOUT = process.env.PINEBOX_MCP_TIMEOUT_MS ?? "120000";
+const RUN_TIMEOUT_MS = /^\d+$/.test(String(RAW_TIMEOUT)) ? Number(RAW_TIMEOUT) : NaN;
+if (!(RUN_TIMEOUT_MS >= 100 && RUN_TIMEOUT_MS <= 3600000)) {
+  console.error(`PINEBOX_MCP_STARTUP_FAILED: PINEBOX_MCP_TIMEOUT_MS must be an integer in 100..3600000, got '${RAW_TIMEOUT}'`);
+  process.exit(2);
+}
 const MAX_LINE = 1 << 20;   // a JSON-RPC line over 1 MiB is refused, not buffered forever
 
 // A missing or malformed action table is a startup failure with a clear message - not an
@@ -140,7 +148,7 @@ async function handle(msg) {
       send({ jsonrpc: "2.0", id: msg.id, error: { code: -32601, message: `unknown method ${msg.method}` } });
     }
   } catch (e) {
-    if (msg.id !== undefined) send({ jsonrpc: "2.0", id: msg.id, error: { code: -32603, message: String(e?.message || e) } });
+    if (msg?.id !== undefined) send({ jsonrpc: "2.0", id: msg.id, error: { code: -32603, message: String(e?.message || e) } });
   }
 }
 
@@ -149,11 +157,19 @@ async function handle(msg) {
 // server look hung.
 let callChain = Promise.resolve();
 let buf = "";
+let discarding = false;     // inside an oversized line: drop input up to its newline, answering ONCE
 process.stdin.setEncoding("utf8");
 process.stdin.on("data", (chunk) => {
+  if (discarding) {
+    const nl = chunk.indexOf("\n");
+    if (nl < 0) return;                    // still inside the oversized line
+    chunk = chunk.slice(nl + 1);
+    discarding = false;
+  }
   buf += chunk;
   if (buf.length > MAX_LINE && buf.indexOf("\n") < 0) {
-    buf = "";
+    // one error for the whole line - a per-chunk error flooded the client with hundreds of replies
+    buf = ""; discarding = true;
     send({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "parse error: line exceeds 1 MiB" } });
     return;
   }
@@ -161,9 +177,16 @@ process.stdin.on("data", (chunk) => {
   while ((i = buf.indexOf("\n")) >= 0) {
     const line = buf.slice(0, i); buf = buf.slice(i + 1);
     if (!line.trim()) continue;
+    // the 1 MiB bound applies to EVERY line, including one that arrived whole with its newline
+    if (line.length > MAX_LINE) { send({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "parse error: line exceeds 1 MiB" } }); continue; }
     let msg;
     try { msg = JSON.parse(line); }
     catch { send({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "parse error: not valid JSON" } }); continue; }
+    // `null`, a number, a string or an array parses fine and then threw on `msg.method` OUTSIDE any
+    // try/catch, killing the whole stdio server: a JSON-RPC message must be an object
+    if (msg === null || typeof msg !== "object" || Array.isArray(msg)) {
+      send({ jsonrpc: "2.0", id: null, error: { code: -32600, message: "invalid request: a JSON-RPC message must be a JSON object" } }); continue;
+    }
     if (msg.method === "tools/call") callChain = callChain.then(() => handle(msg)).catch((e) => console.error("MCP_CALL_FAILED", String(e)));
     else handle(msg);
   }

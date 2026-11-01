@@ -22,7 +22,12 @@ import json
 import re
 import sys
 
-BLOCK = re.compile(r"window\.dashboardConfig\s*=\s*\{[^}]*\}")
+# The two config globals are found by their ASSIGNMENT and then delimited by a brace matcher that
+# understands JavaScript strings and comments. The first version matched `\{[^}]*\}`, which stops at
+# the FIRST `}`: a nested object or a `}` inside a string truncated the block, the rewrite spliced
+# into the middle of it, and no post-condition could notice because it used the same pattern.
+ASSIGN_DASH = re.compile(r"window\.dashboardConfig\s*=\s*(?=\{)")
+ASSIGN_SHELL = re.compile(r"window\.PlutusPineShellConfig\s*=\s*(?=\{)")
 
 # THE PAGE HAS TWO CONFIG GLOBALS, and the blueprint's "one seam" holds for only one:
 #   window.dashboardConfig        { apiBase, wsUrl, authToken, pineStation }  - defined in pine.html
@@ -35,7 +40,6 @@ WORKBENCH_MAIN_API = re.compile(rb'var MAIN_API = "http://127\.0\.0\.1:9851";')
 # So the rewrite DEFINES the second global too, in the served bytes only. readerUrl is left
 # unset on purpose: pineshell.js:106 derives it from railBases[0] + '/vil/look'.
 REQUIRED_PORTS = ("station", "rail", "server", "ws")
-SHELL_BLOCK = re.compile(r"window\.PlutusPineShellConfig\s*=\s*\{[^}]*\}")
 
 
 class Refused(Exception):
@@ -45,8 +49,66 @@ class Refused(Exception):
         self.detail = detail
 
 
+def _brace_end(text: str, i: int) -> int:
+    """Index just past the `}` that closes the `{` at text[i]. Skips '...', "..." and `...` strings
+    (with escapes) and // and /* */ comments, so a `}` inside either does not close the block."""
+    depth, k, n, quote = 0, i, len(text), None
+    while k < n:
+        c = text[k]
+        if quote:
+            if c == "\\":
+                k += 2
+                continue
+            if c == quote:
+                quote = None
+        elif c in "'\"`":
+            quote = c
+        elif text.startswith("//", k):
+            k = text.find("\n", k)
+            if k < 0:
+                break
+            continue
+        elif text.startswith("/*", k):
+            e = text.find("*/", k + 2)
+            if e < 0:
+                break
+            k = e + 2
+            continue
+        elif c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+            if depth == 0:
+                return k + 1
+        k += 1
+    raise Refused("CONFIG_BLOCK_MALFORMED", "a config block opened at offset %d is never closed" % i)
+
+
+def _blocks(text: str, assign) -> list:
+    """[(start, end)] of every `window.X = { ... }` for the given assignment pattern."""
+    return [(m.start(), _brace_end(text, m.end())) for m in assign.finditer(text)]
+
+
+def _strict(body: bytes) -> str:
+    try:
+        return body.decode("utf-8")
+    except UnicodeDecodeError as e:
+        raise Refused("PAGE_NOT_UTF8", f"the page is not valid UTF-8 ({e.reason} at byte {e.start}); refusing to serve a lossy re-encoding of it")
+
+
 def has_block(body: bytes) -> bool:
-    return BLOCK.search(body.decode("utf-8", "replace")) is not None
+    return len(_blocks(_strict(body), ASSIGN_DASH)) == 1
+
+
+def _token(ports: dict) -> str:
+    """The per-instance credential. There is NO default: the old fallback served one committed
+    token (rw_dev_plutus_backtest) to every instance, so any instance's page could authenticate to
+    any other instance's terminal bridge - the exact cross-instance leak this file exists to stop."""
+    t = ports.get("authToken")
+    if not isinstance(t, str) or len(t) < 16:
+        raise Refused("AUTH_TOKEN_UNAVAILABLE",
+                      "the port block carries no per-instance authToken of at least 16 characters - generate one per `up` and pass it in PINEBOX_PORTS (never a shared default)")
+    return t
 
 
 def config_for(ports: dict) -> dict:
@@ -57,7 +119,7 @@ def config_for(ports: dict) -> dict:
     return {
         "apiBase": f"http://{host}:{ports['server']}",
         "wsUrl": f"ws://{host}:{ports['ws']}",
-        "authToken": ports.get("authToken", "rw_dev_plutus_backtest"),
+        "authToken": _token(ports),
         "pineStation": f"http://{host}:{ports['station']}",
     }
 
@@ -69,30 +131,27 @@ def shell_config_for(ports: dict) -> dict:
 def inject_dashboard_config(body: bytes, ports: dict) -> bytes:
     """Rewrite ONLY the dashboardConfig block. Exactly one substitution, and the result
     must re-parse: the substituted block is checked before it is returned."""
-    # STRICT decode. errors="replace" turned any invalid byte into U+FFFD and then served the
-    # MUTATED page as if it were the original - exactly the silent corruption this file's
-    # fail-loud contract forbids. A page that is not valid UTF-8 is refused by name.
-    try:
-        text = body.decode("utf-8")
-    except UnicodeDecodeError as e:
-        raise Refused("PAGE_NOT_UTF8", f"the page is not valid UTF-8 ({e.reason} at byte {e.start}); refusing to serve a lossy re-encoding of it")
-    m = BLOCK.search(text)
-    if not m:
+    text = _strict(body)
+    found = _blocks(text, ASSIGN_DASH)
+    if not found:
         raise Refused("CONFIG_BLOCK_ABSENT",
                       "the page has no window.dashboardConfig block - the instance cannot reach its own ports")
-    if SHELL_BLOCK.search(text):
+    if len(found) > 1:
+        raise Refused("CONFIG_BLOCK_AMBIGUOUS", "the page defines window.dashboardConfig %d times; refusing to guess which one the app reads" % len(found))
+    if _blocks(text, ASSIGN_SHELL):
         # a page that DEFINES the second global is a different page: rewriting only one of
         # the two would leave the other pointing at someone else's rail
         raise Refused("SHELL_CONFIG_PRESENT", "the page already defines window.PlutusPineShellConfig; inject.py must be taught to rewrite it")
     cfg, shell = config_for(ports), shell_config_for(ports)
     block = ("window.dashboardConfig = " + json.dumps(cfg) + ";\n    window.PlutusPineShellConfig = " + json.dumps(shell))
-    out = text[:m.start()] + block + text[m.end():]
+    start, end = found[0]
+    out = text[:start] + block + text[end:]
     # the rewrite is a PREDICATE, not a hope: each global exactly once, and each must name
-    # THIS instance's own port
-    d, s = BLOCK.findall(out), SHELL_BLOCK.findall(out)
-    if len(d) != 1 or json.dumps(cfg["apiBase"]) not in d[0]:
+    # THIS instance's own port. Measured with the SAME brace matcher, over the OUTPUT.
+    d, sh = _blocks(out, ASSIGN_DASH), _blocks(out, ASSIGN_SHELL)
+    if len(d) != 1 or json.dumps(cfg["apiBase"]) not in out[d[0][0]:d[0][1]]:
         raise Refused("INJECT_FAILED", "the rewritten page does not carry exactly one dashboardConfig naming the instance's server")
-    if len(s) != 1 or json.dumps(shell["railBases"][0]) not in s[0]:
+    if len(sh) != 1 or json.dumps(shell["railBases"][0]) not in out[sh[0][0]:sh[0][1]]:
         raise Refused("INJECT_FAILED", "the rewritten page does not carry exactly one PlutusPineShellConfig naming the instance's rail")
     return out.encode("utf-8")
 # The Backtest tab finds its room by probing a hardcoded port list. Left alone, EVERY instance's tab
@@ -125,22 +184,25 @@ def inject_workbench_base(body: bytes, ports: dict) -> bytes:
 
 
 def _main(argv):
-    if len(argv) >= 2 and argv[0] == "--check":
-        body = open(argv[1], "rb").read()
-        if has_block(body):
-            print(json.dumps({"ok": True, "file": argv[1]}))
-            return 0
-        print("REFUSED  CONFIG_BLOCK_ABSENT  —  %s has no window.dashboardConfig block" % argv[1], file=sys.stderr)
-        return 1
-    if len(argv) >= 3 and argv[0] == "--render":
-        try:
+    try:
+        if len(argv) >= 2 and argv[0] == "--check":
+            if has_block(open(argv[1], "rb").read()):
+                print(json.dumps({"ok": True, "file": argv[1]}))
+                return 0
+            print("REFUSED  CONFIG_BLOCK_ABSENT  \u2014  %s has no single window.dashboardConfig block" % argv[1], file=sys.stderr)
+            return 1
+        if len(argv) >= 3 and argv[0] == "--render":
             sys.stdout.buffer.write(inject_dashboard_config(open(argv[1], "rb").read(), json.loads(argv[2])))
             return 0
-        except Refused as e:
-            print("REFUSED  %s  —  %s" % (e.token, e.detail), file=sys.stderr)
-            return 1
+    except Refused as e:
+        print("REFUSED  %s  \u2014  %s" % (e.token, e.detail), file=sys.stderr)
+        return 1
+    except (OSError, ValueError) as e:      # unreadable file, bad PORTS_JSON, closed stdout: named, never a traceback
+        print("REFUSED  CLI_INPUT_UNREADABLE  \u2014  %s: %s" % (type(e).__name__, e), file=sys.stderr)
+        return 1
     print("usage: inject.py --check FILE | --render FILE PORTS_JSON", file=sys.stderr)
     return 2
+
 
 if __name__ == "__main__":
     sys.exit(_main(sys.argv[1:]))
