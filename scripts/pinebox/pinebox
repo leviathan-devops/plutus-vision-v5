@@ -50,6 +50,7 @@ ledger_row() {
 . "$PB_HOME/stages/page.sh"
 . "$PB_HOME/stages/load.sh"
 . "$PB_HOME/stages/verify.sh"
+. "$PB_HOME/stages/v3.sh"
 need jq NO_JQ
 
 pb_dir() { printf '%s/i%s' "$PB_ROOT" "$1"; }
@@ -337,5 +338,9 @@ case "$PB_VERB" in
   view)     pb_view ;;
   week)     pb_week ;;
   verify)   pb_verify ;;
+  insert)   pb_v3_insert "$@" ;;
+  run)      pb_v3_run "$@" ;;
+  editor)   pb_v3_editor "$@" ;;
+  look)     pb_v3_look "$@" ;;
   *) refuse BAD_VERB "unknown verb '$PB_VERB' - run: pinebox help" ;;
 esac

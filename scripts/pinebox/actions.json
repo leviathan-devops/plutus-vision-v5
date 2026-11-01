@@ -85,6 +85,10 @@
     "set": {
       "type": "string",
       "description": "week: the ISO week label to set in the IDE, e.g. 2026-W28"
+    },
+    "mode": {
+      "type": "string",
+      "description": "editor: get or set"
     }
   },
   "actions": {
@@ -213,6 +217,47 @@
       "flags": [
         "id",
         "week"
+      ]
+    },
+    "insert": {
+      "argv": [
+        "insert"
+      ],
+      "flags": [
+        "id",
+        "pine",
+        "pair",
+        "tf"
+      ]
+    },
+    "run": {
+      "argv": [
+        "run"
+      ],
+      "flags": [
+        "id",
+        "pine",
+        "pair",
+        "tf"
+      ]
+    },
+    "editor": {
+      "argv": [
+        "editor"
+      ],
+      "flags": [
+        "id",
+        "mode",
+        "text"
+      ]
+    },
+    "look": {
+      "argv": [
+        "look"
+      ],
+      "flags": [
+        "id",
+        "out"
       ]
     }
   }
