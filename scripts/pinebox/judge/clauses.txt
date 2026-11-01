@@ -6,3 +6,6 @@
 - a price chart with candlestick bars and two overlaid coloured moving-average lines (C1.1)
 - a price axis with numeric labels down the right-hand side of the chart (C1.2)
 - small green upward-pointing triangles sitting on top of some of the candlestick bars (C1.3)
+
+## C2 - temporal anchoring (the operator's own complaint: the requested week shown on another week's price action)
+- the word Jul written in the labels along the bottom time axis (C2.1)

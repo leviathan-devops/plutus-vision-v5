@@ -301,6 +301,102 @@
     }
    ],
    "would_be_act": 0.3795
+  },
+  "C2.1": {
+   "bad": [
+    {
+     "file": "n13-A-apr-blank.png",
+     "image_tokens": 1186,
+     "p": 0.1411,
+     "sha256": "0a2deca4a28b5a71"
+    },
+    {
+     "file": "n13-B-plus2s.png",
+     "image_tokens": 1186,
+     "p": 0.1343,
+     "sha256": "4ff419a4796480b7"
+    },
+    {
+     "file": "n13-C-plus6s.png",
+     "image_tokens": 1186,
+     "p": 0.1363,
+     "sha256": "11ca90c4694f6646"
+    },
+    {
+     "file": "w5-bad-off-data.png",
+     "image_tokens": 1186,
+     "p": 0.145,
+     "sha256": "20266466e5ccc831"
+    }
+   ],
+   "clause_text": "a time axis whose date labels are all in July",
+   "derived_at": "2026-11-02T03:04:13+0400",
+   "good": [
+    {
+     "file": "w5-good-default.png",
+     "image_tokens": 1186,
+     "p": 0.6003,
+     "sha256": "192a4c694ec98fc5"
+    },
+    {
+     "file": "w5-good-recoloured.png",
+     "image_tokens": 1186,
+     "p": 0.5799,
+     "sha256": "0833f375f04d3f82"
+    },
+    {
+     "file": "w5-good-reload.png",
+     "image_tokens": 1186,
+     "p": 0.5846,
+     "sha256": "4c0c5b9ca6ff8b68"
+    },
+    {
+     "file": "w5-good-panned-small.png",
+     "image_tokens": 1186,
+     "p": 0.6293,
+     "sha256": "883cbd58d0952530"
+    },
+    {
+     "file": "w5-bad-candles-only.png",
+     "image_tokens": 1186,
+     "p": 0.6899,
+     "sha256": "486896953d627dcd"
+    },
+    {
+     "file": "w5-bad-one-ma.png",
+     "image_tokens": 1186,
+     "p": 0.57,
+     "sha256": "6d49f6690b28874c"
+    }
+   ],
+   "sweep": [
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.5
+    },
+    {
+     "precision": 1.0,
+     "recall": 0.5,
+     "threshold": 0.6
+    },
+    {
+     "precision": null,
+     "recall": 0.0,
+     "threshold": 0.7
+    },
+    {
+     "precision": null,
+     "recall": 0.0,
+     "threshold": 0.8
+    },
+    {
+     "precision": null,
+     "recall": 0.0,
+     "threshold": 0.9
+    }
+   ],
+   "would_be_act": 0.3575
   }
  }
 }
