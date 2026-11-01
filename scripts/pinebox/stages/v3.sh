@@ -8,7 +8,7 @@
 
 # pb_v3_begin: parse --id (a canonical decimal), set PB_ID, and require the instance to be up.
 pb_v3_begin() {
-  require_id "$(flag id 0)"
+  pb_bind
   PB_ID="$ID"
   [ -s "$(pb_dir "$PB_ID")/state.json" ] || refuse NOT_UP "pinebox instance $PB_ID is not up"
 }

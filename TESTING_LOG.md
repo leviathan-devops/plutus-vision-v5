@@ -2317,3 +2317,69 @@ forecast direction (rise to the resistance, fall to the support) matches.
 - **The verdict:** PASS.
 - **The artifacts:** `extensions-disabled/snapcompact-read-frames.{ts,md}` (recoverable); the
   `extensions` key set to 14 entries via `omp config set`; commit `9031f45`.
+
+## TEST PLAN ENTRY - 2026-11-01 - what is owed before the two tools can be called production grade
+
+### HOST
+- **What:** a headed weston-x11 CU instance and a Pinebox instance kept up, with a per-verb table of opened frames (every visual verb of the 23) taken on `ema-ribbon.pine`.
+- **How:** `computer shell up` (default adapter) + `pinebox up`; `look` after each verb; read every frame; name deltas.
+- **PASS criteria:** a frame per verb, opened, deltas named, the operator's focus identical before/after (`hostwin :1 active/top`).
+- **FAIL criteria:** any verb without a frame; any focus change.
+- **Status:** PENDING
+
+### CONTAINER
+- **What:** the container hot-seat crash test for both tools (RULES section C2): adversarial inputs aimed at the classes the tools touch, a passToken in a tool result, several clean rounds.
+- **PASS criteria:** passTokens in tool results, `.omp/container-test-results.json` written, 3 consecutive clean rounds. **Status:** PENDING
+
+### SCRIPT
+- **What:** negative controls for `WINDOW_STATE_UNREADABLE`/`WINDOW_STACK_UNREADABLE`/`WINDOW_LOWER_FAILED`/`WINDOW_NOT_BELOW` (fake `hostwin`); a dynamic `verify` that reads bars-in-view from the renderer and cross-checks pixels,
+  with a theme-change must-fail. **Status:** PENDING
+
+## TEST RESULT - 2026-11-01 - T-41 · computer-use v2 gate chain (fresh)
+
+### SCRIPT
+- **The run:** `cd ~/.omp/agent/extensions/computer-use-v2 && bash test/run.sh --slow` (load 9.58, available 6,136 MB; own instances torn down first).
+- **The raw output:** `══ 17 gates · 0 failed ══`, real 2m35.137s; `deploy.sh verify` -> `DEPLOY: OK  sealed=89 files  nofocus=191345155214  hostwin=f3fbebc5322d  mcp=2/2 answer  probe=native/weston-x11`.
+- **The verdict:** PASS as a regression guard (it is a script chain, not a sanctioned instrument - F-159).
+- **The artifacts:** `reports/overnight-2026-11-01/artifacts/cu-chain-final-fresh-2026-11-01.log`.
+
+## TEST RESULT - 2026-11-01 - T-42 · Pinebox gate chain (fresh, default, no N=7)
+
+### SCRIPT
+- **The run:** `cd PLUTUS_VISION/scripts/pinebox && bash test/run.sh` (available 5,954 MB).
+- **The raw output:** `══ 11 gates · 0 failed ══`, real 1m28.328s.
+- **The verdict:** PASS as a regression guard. The N=7 gate (`--full`) was NOT run (needs ~7.8 GB available): BLOCKED, last passed `12 gates, 0 failed` earlier on 2026-11-01 (20:20).
+- **The artifacts:** `artifacts/pinebox-chain-final-fresh-2026-11-01.log`.
+
+## TEST RESULT - 2026-11-01 - T-43 · live demonstration, opened frames
+
+### HOST
+- **The run:** `computer shell up --id 3 --adapter xvfb` (HEADLESS adapter, F-164) + `shell_spawn xev` + click/type/key + zenity text entry; `pinebox up --id 2 --pine plutus-vision-v2.pine` then `verify`; `pinebox load ema-ribbon.pine`.
+- **The raw output:** c3 `held` on every verb, `activate` -> `ACTIVATE_FORBIDDEN`, terminal `TERM_OK_42`; `verify` -> WORKS with 4,989 candle pixels (floor 707) on week 2026-W28.
+- **The verdict:** PASS for the tool path on `ema-ribbon.pine` and `zenity`; NOT PROVEN for the Plutus overlays (32 drawings, none visible) and NOT demonstrated on a headed compositor.
+- **The artifacts:** `reports/overnight-2026-11-01/visual/` - `cu-live-typed.png` (32bcb0c41b6487a9), `pinebox-live-works.png` (75cb315960cb4f5b), `pinebox-live-ema.png` (de92c03b6fa05bb6).
+
+## TEST RESULT - 2026-11-01 - T-44 · ship-gate scans (the mandated artifact)
+
+### SCRIPT
+- **The run:** `code-review action=scan` over CU core, CU helpers/mcp/forwarders, Pinebox; six completed passes plus one hung driver.
+- **The raw output:** FAIL on all: 1d9dc71f 4c/29h; 8dfa7ac0 1c/39h; a3b5abb8 0c/8h; 908da8f7 1c/39h; 90faf1b3 0c/6h; baeb9f64 1c/31h; the third-pass driver hung 47:36 (F-154).
+- **The verdict:** FAIL / never PASS. **The artifacts:** `reports/overnight-2026-11-01/artifacts/scans/`.
+
+## TEST RESULT - 2026-11-01 - T-45 · migration into the PINEBOX repo
+
+### SCRIPT
+- **The run:** `tools/verify-migration.sh`; negative control: one byte appended to a copy.
+- **The raw output:** `verified=33 mismatched=0`; control: `DIFF ...` and exit 1; restored: exit 0; large-file sha256 OK (2 guest images, 2 live-session snapshots).
+- **The verdict:** PASS (copy fidelity only).
+
+## TEST RESULT - 2026-11-01 - T-46 · SESSION SCOPE, live, headed (thanatos testing law: the running product, opened pixels, a negative case in the same run)
+
+### HOST
+- **The run:** the real `computer` and `pinebox` CLIs, headed weston-x11 on the operator's :1 through the tool, software renderer. Three sessions started at the same instant with no ids: `computer shell up` -> ids 10, 11, 12 (distinct displays :4 :3 :5); `pinebox up --pine ema-ribbon.pine` -> ids 0, 1, 2 (slots :5 :4 :3), 31 s.
+- **The raw output (negatives):** session alpha against charlie's instance 11: `screenshot`, `type`, `click`, `state put`, `terminal send`, `shell down`, `shell up --id 11` -> each `REFUSED SESSION_FOREIGN`; `shell list`/`displays`/`instance list` showed only alpha's own; no session -> `NO_SESSION`; a session owning nothing -> `NO_INSTANCE`; a malformed session -> `BAD_SESSION`. Pinebox session one against id 1: `shot`, `verify`, `status`, `down`, `load`, `terminal`, `view` -> each `SESSION_FOREIGN`; `list` -> [0].
+- **Operator focus:** `hostwin :1 active/top` read before and after each run: `active=0x0`, top unchanged except the first client appearing on an empty stack.
+- **MCP:** three separate MCP clients -> sessions mcp-4243/4245/4247 -> ids 13, 14, 15; a model-supplied `session` argument refused `BAD_ARGS`.
+- **RAM (PSS, through the tool):** one bare computer 73.7 MB (weston --use-pixman 26.2, Xwayland 33.0, desktop-shell 10.4, keyboard 4.1); the same with the GL renderer 155.3 MB. One Pinebox 635 MB total: Chrome 434 (11 processes), Xwayland 70, three node services 84, weston/shell/keyboard 47.
+- **The verdict:** PASS for session scope; the Pinebox RAM is 6% over the operator's 600 MB target.
+- **The artifacts:** `reports/overnight-2026-11-01/visual/session-{alpha,bravo,charlie}-id*.png`, `pinebox-session-{one,two,three}-id*.png`. Opened and read: each dialog shows only its own typed text; the three Pinebox frames show rail :9754 / room :9643 / rail :9854.

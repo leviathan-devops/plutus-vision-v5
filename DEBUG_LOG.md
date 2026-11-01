@@ -3531,3 +3531,141 @@ DXY points because DXY is its worked example; the indicator is 4-pair.)
 - **THE LESSON:** the loader's factory contract is the SPEC, and a file that fails it produces a
   warning that is easy to read past on every single boot. A one-line sweep over the enabled list —
   "does each export a factory?" — turns a per-boot warning into a single check.
+
+# EN-164 - `pinebox verify` answered WORKS on an empty chart (2026-11-01)
+
+- **THE FINDING:** after `chart --op fit` the chart pane showed gridlines, axis labels and a price tag and no candles; `verify` returned `"verdict":"WORKS"`.
+- **THE ROOT CAUSE:** 5 whys: (1) the freshness gate counts distinct colours in the chart pane; (2) the floor 747 came from a flat-painted blank pane (1 colour)
+  vs a populated one (1493); (3) a real empty chart still has ~1500 colours of furniture; (4) so the count separates "painted flat" from "anything else"; (5) the
+  instrument was calibrated on a synthetic negative, never on the real failure. MECHANISM: `chartpx.py` BLANK_THRESHOLD = 747; measured colours 1489/1617 on empty frames.
+- **THE FIX:** `chartpx.py` candle_pixels() (vertically-connected candle-colour pixels in the pane below the legend, left of the price axis) with CANDLE_FLOOR 707 from
+  four real frames (0, 352 empty; 1062, 4371 populated); `stages/verify.sh` refuses `CHART_NO_CANDLES`; commit 139fef7.
+- **THE VERIFICATION:** `test/hardening.sh` 64/0 with the old colour test as a control reading both empty frames as populated; live: instance 2, week 2026-W28,
+  `"verdict":"WORKS"` with 4,989 candle pixels, frame sha16 2fee35dd9c193a32 opened; an empty chart refused.
+- **THE LESSON:** calibrate an instrument on the real failure frame, not a synthetic negative; and the fix is still theme-bound (F-157): ask the renderer for
+  bars-in-view instead of reading colours.
+
+# EN-165 - a hardening control vanished when HEAD advanced (2026-11-01)
+
+- **THE FINDING:** `test/hardening.sh` printed 38 passes where an earlier run printed 39; the missing line was "CONTROL: the pre-fix ports.sh ACCEPTS that pid".
+- **THE ROOT CAUSE:** MECHANISM: `test/hardening.sh:37` `git -C "$PV" show HEAD:scripts/pinebox/ports.sh` - HEAD stopped being pre-fix when the fix was committed; the
+  `if grep -q pb_pid_is_ours ...; then : ; else <control>` branch then skipped the control with no output.
+- **THE FIX:** the control reads a pinned commit (579312c); an unreadable ref or an already-fixed "pre-fix" file is a FAIL. Commit 334d762.
+- **THE VERIFICATION:** hardening 39/0 (control line present); mutating `pb_row_has_field` to a substring test gave 2 FAIL, restored gave 39/0.
+- **THE LESSON:** a control that can be skipped silently is no control; assert the control ran.
+
+# EN-166 - the scan driver hung 47 minutes with no verdict (2026-11-01)
+
+- **THE FINDING:** third scan pass: `omp --no-session -p ...` PID 2156008 alive 47:36, 3.2% CPU, log `/tmp/ocr-last-A.log` last written 20:56:41 (boot lines only; the
+  code-review tool was never called).
+- **THE ROOT CAUSE:** NOT ESTABLISHED. Measured: blocked in `ep_poll`; one established socket to 127.0.0.1:4097 (the local go-session-proxy); the proxy answered
+  `curl http://127.0.0.1:4097/` with http=200 in 0.75 s. The model call did not return; why is unproven.
+- **THE FIX:** none; killed by recorded PID after verifying its command line.
+- **THE LESSON:** a long job needs a liveness probe at 5 minutes (F-154); the runner should record the model route and abort on no first token.
+
+# EN-167 - intercom copies came back as inbound from "another" session (2026-11-01)
+
+- **THE FINDING:** my sends to 01a193fb arrived in my inbox as "From 01a193fb ..." with my own text.
+- **THE ROOT CAUSE:** the recipient id was my own session id (F-155); the rail delivered my message to myself and marked the sender as that id.
+- **THE FIX:** none needed beyond not messaging agents (the operator's rule). Verified by `grep -c pbx-import` = 5 in my transcript, 0 in 01a1373b.
+- **THE LESSON:** compare a recipient id with your own before assuming a peer.
+
+# EN-168 - the guest image sha did not match its proof, and a sidecar named the wrong file (2026-11-01)
+
+- **THE FINDING:** installed image sha 291b2640... vs the proof's df5b6976...; `sha256sum -c` on the prev sidecar failed although the image was intact.
+- **THE ROOT CAUSE:** the prev sidecar kept the filename column `guest-bootable.qcow2` after I `mv`'d it (measured: computed prev = sidecar hash). The proof/disk
+  mismatch: UNKNOWN (F-162).
+- **THE FIX:** sidecar regenerated (`sha256sum guest-bootable.prev.qcow2 > ...sha256`, both copies); the guest was rebuilt (`bb6ad4cc20e6...`) with the host key recorded.
+- **THE VERIFICATION:** `sha256sum -c` OK on both sidecars; `test/guest.sh` 12/0; the guest frame `guest-xev.png` opened.
+
+# EN-169 - the c3 stall: a spawned app inherited the spawn lock (2026-11-01)
+
+- **THE FINDING:** `c3-no-raise` Chrome step rc=124; the second `shell_spawn` blocked forever.
+- **THE ROOT CAUSE:** MECHANISM: `core/drive.sh` drv_spawn did `exec 9>LOCK; flock -x 9`; fd 9 was inherited by the launched app, so the lock outlived the call (a bash `exec N>` fd is inherited by children).
+- **THE FIX:** the launch line closes fd 9 (`9>&- &`), explicit `flock -u 9`, spawn wait a 90 s deadline (`CU_SPAWN_WAIT_S`); new gate `test/spawn-lock.sh` with a mutant; commit 2820d4c.
+- **THE VERIFICATION:** old drive.sh: holders=1, spawn #2 rc=124; new: holders=0, rc=0; `c3-no-raise` 32 pass / 0 fail in 23 s.
+- **THE LESSON:** any lock fd opened with `exec` must be closed for every child; also per-gate deadlines turn a hang into `INSTRUMENT_INVALID`.
+
+# EN-170 - C3 refused 100% of starts on a desktop with zero X clients (2026-11-01)
+
+- **THE FINDING:** `computer shell_up` -> `REFUSED FOCUS_STOLEN: stack top moved 0x0 -> 0xe00005`; `active` never moved.
+- **THE ROOT CAUSE:** MECHANISM: `core/govern.sh:139` fired when the stack top changed to one of our windows with no guard for an operator WM that manages zero X clients (the first X window becomes a one-element stack's top).
+- **THE FIX:** guard `b_top != 0x0` (commit 9c95d7b); `c3-no-raise` 32/0 with the injected-raise mutants still red.
+- **THE LESSON:** a safety oracle that cannot read the operator's native (Wayland) windows needs an explicit "no operator window to displace" branch.
+
+# EN-171 - state-cli created its database outside the instance through a symlinked fs/ (2026-11-01)
+
+- **THE FINDING:** with `<root>/fs` a symlink to a victim directory, the old `core/state-cli.ts put` created `state.db` in the victim.
+- **THE ROOT CAUSE:** the vendored scope-guard (`scoped/scope-guard.ts:44`) resolves lexically (`path.resolve`/`relative`), so the symlink passes `assertContained`.
+- **THE FIX:** `core/state-cli.ts` resolves the nearest existing ancestor with `realpathSync` and refuses `SCOPE_VIOLATION`; the vendored files stay byte-pinned (`test/cmp-guard.sh`); commit 76375fb.
+- **THE VERIFICATION:** `test/state-cli.sh` 11/0; the same file against the old state-cli fails S1 (victim dir non-empty).
+
+# EN-172 - an instance id escaped the state root (2026-11-01)
+
+- **THE FINDING:** `rec_set "/../../victim/pwn" evil 1` wrote `state.env` and `.rec.lock` outside `$ROOT`.
+- **THE ROOT CAUSE:** `core/lib.sh` `idir()` interpolated the raw id; every record/state path and several `rm -rf` derive from it and each caller had to remember `require_id`.
+- **THE FIX:** `idir()` validates `^(0|[1-9][0-9]?)$` and answers a sentinel path on refusal; one `_rec_txn` for rec_set/rec_append; commit 60dd2d1.
+- **THE VERIFICATION:** old lib.sh: victim dir held the file; new: empty; `test/core-attacks.sh` K1/K2 pass, 41/0 (old tree fails the batch's 7 checks).
+
+# EN-173 - the weston-x11 correction loop failed OPEN (2026-11-01)
+
+- **THE FINDING:** an unreadable window state or stack (empty `hostwin` output) read as "not BELOW / not on top", the loop broke, the final test passed, and an `up` was reported clean.
+- **THE ROOT CAUSE:** MECHANISM: `core/adapters/weston-x11.sh` loop with `hostwin ... | grep -q BELOW` and `break` on empty output; no read was checked.
+- **THE FIX:** every read/correction checked; end state proven; tokens `WINDOW_STATE_UNREADABLE`, `WINDOW_STACK_UNREADABLE`, `WINDOW_LOWER_FAILED`, `WINDOW_NOT_BELOW`; commit ee8a10a.
+- **THE VERIFICATION:** happy path only (`c3-no-raise` PASS). The new refusals have NO negative control (no fake `hostwin` harness): UNPROVEN.
+
+# EN-174 - `--cdp` bypassed the display fence, and `--out` deleted any file (2026-11-01)
+
+- **THE FINDING:** `click --cdp <any port>` drove a browser the instance did not own (the CDP branch returns before the display fence); `screenshot --out <path>` ran `rm -f "$out"` on a caller-named path.
+- **THE ROOT CAUSE:** `core/drive.sh` `cdp_of` honoured a per-call port without comparing it to the recorded one; `drv_screenshot` accepted any `--out`.
+- **THE FIX:** `CDP_NOT_OWNED` when the port differs from the instance's recorded port; `--out` must be a regular `.png`, not a symlink; commit ee8a10a / 60dd2d1.
+- **THE VERIFICATION:** `test/core-attacks.sh` K7 (a non-PNG file survives; symlink refused; a legitimate `.png` still captures).
+
+# EN-175 - the Pinebox room reset deleted under an unscoped directory (2026-11-01)
+
+- **THE FINDING:** scan C critical: `stages/room.sh` ran `rm -rf -- "$home" "$d"/room.db ...` with `$d` caller-supplied; an empty `$d` expands to `/room-home`, `/room.db`.
+- **THE FIX:** the reset only runs when `$d = $PB_ROOT/i<id>`, exists and is not a symlink (`SCOPE_VIOLATION` otherwise); commit 139fef7.
+- **THE VERIFICATION:** `test/hardening.sh`: a decoy directory keeps its `room.db` with the new code, loses it with the pre-batch `stage_room` (control reads defective).
+
+# EN-176 - helpers: BadWindow read as an empty answer; stale-toolchain cache; sibling fixes (2026-11-01)
+
+- **THE FINDING:** `hostwin viewable 0x7fffffff` printed `0` with rc 0; malformed root properties (8-bit STRING in a WINDOW property) were read as window ids; the helper cache was keyed on the .c file only.
+- **THE FIX:** `helpers/hostwin.c` rejects a NULL reply and a wrong type/format with a named stderr line and rc 1; `helpers/build.sh` `helper_key()` covers source + compiler + xcb flags; `deploy.sh verify` asks `build.sh --expected`; commit c5127dc.
+- **THE VERIFICATION:** `test/helpers.sh` 14/0, the same file against the pre-fix sources 12 FAIL; stale-helper mutation refused `HELPER_STALE`.
+
+# EN-177 - the frozen-tree check could not fail (2026-11-01)
+
+- **THE FINDING:** `git diff --quiet -- pine-ide` returned 0 on 2026-11-01 while commit 0888248 had changed two files under `pine-ide/` that morning.
+- **THE ROOT CAUSE:** MECHANISM: a working-tree diff vs HEAD is empty once the change is committed. The property to check is "no commits touched the frozen tree".
+- **THE FIX:** none applied (the operator's ruling on `vision.mjs` is owed); the correct predicate is `git log --since=<checkpoint> --name-only -- pine-ide/ide pine-ide/pine-ide`.
+- **THE VERIFICATION:** `git show --name-only 0888248` lists `pine-ide/pine-ide/vision.mjs` and `pine-ide/pine-station/lib/run.mjs`.
+- **THE LESSON:** run each guard against a known-violating input before citing it.
+
+# EN-178 - a refused start leaked a 30 ms focus-sampler loop that held the instance's lock (2026-11-01, session-scope run)
+
+- **THE FINDING:** after a start refused with `WINDOW_NOT_BELOW`, instance 12's next `up` refused "an 'up' for instance 12 is already in progress". `/proc` showed pid 300557, `bash weston-x11.sh up 12`, alive 1:14, parent systemd, holding `i12/.up.lock`.
+- **THE ROOT CAUSE:** MECHANISM: `core/govern.sh` `c3_sampler_start` forks `( while :; do hostwin ... >> $f; sleep 0.03; done ) &`. Nothing stops it when `up` leaves through `refuse` (exit); it is reparented to systemd and runs forever - two `hostwin` forks every 30 ms, a growing `/tmp/cu-c3s.*` file (10 files, 3.1 MB found), and the inherited lock fd 8.
+- **THE FIX:** the loop runs `while kill -0 "$par"` (the shell that started it), removes its own file when it ends, and starts with `6>&- 7>&- 8>&- 9>&-`. `weston-x11.sh` and `weston-vnc.sh` launch lines also close 6-9 for the compositor (a live weston was found holding the up lock).
+- **THE VERIFICATION:** real crash: `kill -9` of the adapter mid-start with the sampler alive (2 processes carrying the adapter cmdline) -> 3 s later 0 processes, lock free (`/proc/*/fd` scan: no holder). The old loop would still be running.
+- **THE LESSON:** a background loop needs a parent-liveness condition and must not inherit lock descriptors.
+
+# EN-179 - my own WINDOW_NOT_BELOW check refused every concurrent start (2026-11-01)
+
+- **THE FINDING:** three `computer shell up` at once: one refused `WINDOW_NOT_BELOW: host window 0x1000005 still tops the operator's stack after 0 corrections`.
+- **THE ROOT CAUSE:** `weston-x11.sh` (my change in ee8a10a) counted "more than one window on the stack" as "operator windows to displace". With several instances up the other windows are OUR instances' windows.
+- **THE FIX:** `others_on_stack` subtracts every instance's recorded `host_win` (and this one) before deciding anything is displaced.
+- **THE VERIFICATION:** three sessions up in the same instant (ids 10, 11, 12), operator focus `active=0x0 top=0xa00005` before and after.
+
+# EN-180 - FOCUS_STOLEN fired when the baseline stack top was a SIBLING instance's window (2026-11-01)
+
+- **THE FINDING:** 3 concurrent `pinebox up`: one refused `stack top was 0x2a00005 mid-verb`; it was the instance's own window moving above another of our windows.
+- **THE ROOT CAUSE:** `govern.sh` `c3_check` applied the stack-top rule whenever the baseline top was not `0x0`, including when the baseline top was one of ours.
+- **THE FIX:** `b_top_op` - the baseline top is an OPERATOR window only if it is neither `0x0` nor one of ours; the stack-top rules apply only then. Focus rules unchanged.
+- **THE VERIFICATION (instrument control, synthetic inputs, not a product test):** operator top displaced -> REFUSED; mid-verb sample on top -> REFUSED; focus moved onto ours -> REFUSED; sibling baseline -> pass; empty stack -> pass. Live: 3 concurrent `pinebox up` all came up.
+
+# EN-181 - `pinebox up` released its own registry claim while reaping a stale record (2026-11-01)
+
+- **THE FINDING:** session one's pinebox ran, but `pinebox status` said "this session has no pinebox"; the registry row for id 0 was kind `computer`, claimed later than the others.
+- **THE ROOT CAUSE:** `pb_up` claims the id, finds a leftover `state.json`, runs `pb_teardown` -> `computer shell down` -> `reg release`; the next stage `computer shell up --id 0` re-claims it as a plain computer.
+- **THE FIX:** `pb_up` re-establishes its pinebox claim after the reap.
+- **THE VERIFICATION:** three concurrent starts, `status` answered for all three sessions; registry rows all `pinebox`.

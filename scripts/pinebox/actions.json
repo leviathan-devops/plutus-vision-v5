@@ -4,7 +4,7 @@
   "params": {
     "id": {
       "type": "string",
-      "description": "the instance id, 0..9 (id 0 is the canonical port block the operator's own IDE may hold)"
+      "description": "the pinebox instance id 0..9. OPTIONAL: omit it and the verb acts on YOUR session's only pinebox; `up` with no id allocates one for your session. An id owned by another session is refused (SESSION_FOREIGN)."
     },
     "week": {
       "type": "string",

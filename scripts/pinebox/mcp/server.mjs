@@ -87,12 +87,18 @@ function argvFor(p) {
   return argv;
 }
 
+// A stdio MCP server process serves ONE client, so that client is ONE session: the launcher passes CU_SESSION_ID, and a client that does not gets a
+// session minted from this process (isolated by default - never a shared default instance). The model cannot set it: it is not a tool argument.
+const SESSION_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{3,79}$/.test(process.env.CU_SESSION_ID ?? "")
+  ? process.env.CU_SESSION_ID
+  : `mcp-${process.pid}-${Date.now().toString(36)}`;
+
 function run(argv) {
   const { promise, resolve: done } = Promise.withResolvers();
   // detached => the CLI leads its OWN process group, so a timeout can signal the whole tree. Killing
   // only the CLI left its grandchildren holding the stdout pipe, `close`
   // never fired, and the call never answered.
-  const c = spawn(CLI, argv, { stdio: ["ignore", "pipe", "pipe"], detached: true });
+  const c = spawn(CLI, argv, { stdio: ["ignore", "pipe", "pipe"], detached: true, env: { ...process.env, CU_SESSION_ID: SESSION_ID } });
   let out = "", err = "", settled = false, timedOut = false;
   const settle = (r) => { if (settled) return; settled = true; clearTimeout(timer); done(r); };
   const killTree = (sig) => { try { process.kill(-c.pid, sig); } catch { try { c.kill(sig); } catch { /* already gone */ } } };

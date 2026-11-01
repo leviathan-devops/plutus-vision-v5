@@ -40,6 +40,7 @@ pb_computer() { "$PB_CORE_BIN" "$@" 6>&- 7>&- 8>&-; }
 COMPUTER=pb_computer
 . "$CORE/lib.sh"
 . "$CORE/govern.sh"
+. "$CORE/session.sh"     # SESSION SCOPE: the same registry the core uses (one id space; pinebox ids are the 0..9 range)
 export PYTHONDONTWRITEBYTECODE=1   # never leave a __pycache__ in the tree (B13)
 # THE INSTANCE ROOT IS PRIVATE BY CONSTRUCTION. The old default, /tmp/pinebox, was a predictable
 # path in a world-writable directory, so every check on it (is it a symlink? who owns it?) was
@@ -84,6 +85,25 @@ pb_dir() { printf '%s/i%s' "$PB_ROOT" "$1"; }
 # pb_dir is called inside $(...), where a refusal only ends the substitution and leaves an EMPTY path
 # (which "$d/state.json" would turn into /state.json). Every WRITER therefore validates its id itself.
 pb_need_id() { [[ "${1:-}" =~ ^(0|[1-9])$ ]] || refuse BAD_ID "pinebox instance id must be a canonical decimal 0..9, got '${1:-}'"; }
+
+# pb_bind: the ONE place a pinebox verb gets its instance. --id must be one THIS session owns (and be a pinebox, not a plain computer);
+# no --id means "my only pinebox". There is no default instance 0: every agent that omitted --id used to land on the same one.
+pb_bind() {
+  session_resolve
+  local want out kind; want="$(flag id)"
+  if [ -n "$want" ]; then
+    pb_need_id "$want"
+    out="$(reg check "$SESSION" "$want")" || exit $?
+    kind="$(jq -r '.kind' <<<"$out")"
+    [ "$kind" = pinebox ] || refuse WRONG_ECOSYSTEM "instance $want is a '$kind' instance, not a pinebox - drive it with \`computer\`, not \`pinebox\`"
+    ID="$want"
+  else
+    out="$(reg sole "$SESSION" pinebox)" || exit $?
+    ID="$(jq -r '.id' <<<"$out")"
+  fi
+  pb_need_id "$ID"; CU_CTX_ID="$ID"
+}
+
 
 # ── the instance record: JSON, updated under flock ───────────────────────────────────────
 pb_rec() {
@@ -167,12 +187,22 @@ pb_instance_live() {   # the core still has a live compositor for this id
 
 # ── up: the five stages, in order, each verified, each refusing by name ─────────────────
 PB_UP_ID=""; PB_UP_OK=0
+PB_CLAIM_NEW=""
 pb_up_cleanup() {
   [ -n "$PB_UP_ID" ] && [ "$PB_UP_OK" -eq 0 ] && { pb_teardown "$PB_UP_ID" >/dev/null; echo "  (the partly started instance $PB_UP_ID was torn down; logs kept in $(pb_dir "$PB_UP_ID"))" >&2; }
+  # a claim THIS call made must not outlive a failed start
+  [ -n "$PB_CLAIM_NEW" ] && [ "$PB_UP_OK" -eq 0 ] && bun "$REGISTRY_CLI" "$ROOT" release "$SESSION" "$PB_CLAIM_NEW" >/dev/null 2>&1
+  return 0
 }
 
 pb_up() {
-  require_id "$(flag id 0)"; local id="$ID"
+  # the registry ALLOCATES this session's pinebox id (0..9), or re-issues the one it already owns; an id another session owns is refused by name
+  session_resolve
+  local want claim; want="$(flag id)"; [ -z "$want" ] || pb_need_id "$want"
+  claim="$(reg claim "$SESSION" pinebox "$want")" || exit $?
+  [ "$(jq -r '.kind' <<<"$claim")" = pinebox ] || refuse WRONG_ECOSYSTEM "instance $(jq -r '.id' <<<"$claim") is a computer instance of this session - bring a pinebox up on another id"
+  require_id "$(jq -r '.id' <<<"$claim")"; pb_need_id "$ID"; local id="$ID"
+  if [ "$(jq -r '.reused' <<<"$claim")" = false ]; then PB_CLAIM_NEW="$id"; trap pb_up_cleanup EXIT; fi   # a claim THIS call made is released if the start fails
   pb_ports_json "$id" >/dev/null || exit $?
   local week pair tf pine adapter d
   week="$(flag week 2026-07-06)"; pair="$(flag pair DXY)"; tf="$(flag tf 1H)"; pine="$(flag pine)"; adapter="$(flag adapter)"
@@ -186,6 +216,9 @@ pb_up() {
   if [ -s "$d/state.json" ]; then
     if pb_instance_live "$id"; then refuse INSTANCE_LIVE "pinebox instance $id is already running - run: pinebox down --id $id"; fi
     echo "  (reaping a stale record for instance $id)" >&2; pb_teardown "$id" >/dev/null
+    # the teardown runs \`computer shell down\`, which RELEASES the registry claim this start just made - the next stage would then re-claim
+    # the id as a plain computer, and \`pinebox status\` would say this session has no pinebox. Re-establish the claim the reap dropped.
+    reg claim "$SESSION" pinebox "$id" >/dev/null || exit $?
   fi
   pb_preflight "$week" "$id"
   pb_room_preflight      # the room substrate is checked BEFORE anything is started: a refusal here leaves nothing behind
@@ -228,14 +261,16 @@ pb_up() {
 
 pb_down() {
   if [ "$(flag all)" = 1 ]; then
-    local d n=0
-    for d in "$PB_ROOT"/i*; do
-      [ -d "$d" ] || continue
-      pb_teardown "${d##*/i}" >/dev/null; n=$((n+1))
+    # "all" is all of THIS SESSION's pineboxes. It used to tear down every instance directory on the host, other agents' included.
+    local n=0 mine i
+    session_resolve
+    mine="$(reg list "$SESSION")" || exit $?
+    for i in $(jq -r '.instances[]|select(.kind=="pinebox")|.id' <<<"$mine"); do
+      pb_teardown "$i" >/dev/null; n=$((n+1))
     done
     printf '{"ok":true,"down":"all","instances":%s}\n' "$n"
   else
-    require_id "$(flag id 0)"
+    pb_bind
     [ -s "$(pb_dir "$ID")/state.json" ] || refuse NOT_UP "pinebox instance $ID is not up"
     local killed; killed="$(pb_teardown "$ID")"
     printf '{"ok":true,"down":%s,"killed":"%s"}\n' "$ID" "$killed"
@@ -257,7 +292,7 @@ pb_pss_group() {
 }
 
 pb_status() {
-  require_id "$(flag id 0)"; local id="$ID" d; d="$(pb_dir "$id")"
+  pb_bind; local id="$ID" d; d="$(pb_dir "$id")"
   [ -s "$d/state.json" ] || refuse NOT_UP "pinebox instance $id is not up"
   local k_ comp_ r kb bad name total=0 unread="" parts="" t
   # name:leader-pid, one per recorded process group (the browser's pids are core tokens: pid:start)
@@ -283,10 +318,11 @@ pb_status() {
 }
 
 pb_list() {
-  local d out="" id slot alive row
-  for d in "$PB_ROOT"/i*; do
+  local d out="" id slot alive row mine
+  session_resolve; mine="$(reg list "$SESSION")" || exit $?
+  for id in $(jq -r '.instances[]|select(.kind=="pinebox")|.id' <<<"$mine"); do
+    d="$(pb_dir "$id")"
     [ -s "$d/state.json" ] || continue
-    id="${d##*/i}"
     alive=false; pb_instance_live "$id" && alive=true
     row="$(jq -c --argjson a "$alive" '{id, slot, adapter, ports, window:.chrome.window, colours:.frame.colours, pids, alive:$a}' "$d/state.json")"
     out="${out:+$out,}$row"
@@ -295,14 +331,14 @@ pb_list() {
 }
 
 pb_shot() {
-  require_id "$(flag id 0)"; local id="$ID" d out; d="$(pb_dir "$id")"
+  pb_bind; local id="$ID" d out; d="$(pb_dir "$id")"
   [ -s "$d/state.json" ] || refuse NOT_UP "pinebox instance $id is not up"
   out="$(flag out "$d/frame.png")"
   pb_c3 "pinebox shot" "$COMPUTER" screenshot --id "$id" --out "$out"
 }
 
 pb_load() {
-  require_id "$(flag id 0)"; local id="$ID" d; d="$(pb_dir "$id")"
+  pb_bind; local id="$ID" d; d="$(pb_dir "$id")"
   [ -s "$d/state.json" ] || refuse NOT_UP "pinebox instance $id is not up"
   [ -n "$(flag pine)" ] || refuse BAD_ARGS "load needs --pine FILE"
   local before after; before="$(c3_snapshot)"
@@ -314,7 +350,7 @@ pb_load() {
 # ── the core's verbs, bound to this instance ──────────────────────────────────────────────
 pb_drive() {   # drive --id N --action VERB [core flags...]
   local id action rest=() a skip=0
-  id="$(flag id 0)"; action="$(flag action)"; [ -n "$action" ] || refuse BAD_ARGS "drive needs --action VERB"
+  pb_bind; id="$ID"; action="$(flag action)"; [ -n "$action" ] || refuse BAD_ARGS "drive needs --action VERB"
   local args=("${PB_ARGS[@]}") i=0 nid=0 nact=0
   while [ $i -lt ${#args[@]} ]; do
     case "${args[$i]}" in
@@ -334,7 +370,6 @@ pb_drive() {   # drive --id N --action VERB [core flags...]
     focus|click|type|key|screenshot) ;;
     *) refuse BAD_ARGS "drive --action '$action' is not an input/capture verb (allowed: focus click type key screenshot)" ;;
   esac
-  require_id "$id"
   # The verb was allowlisted but its FLAGS were forwarded verbatim: `drive --action screenshot --out /any/path` wrote
   # wherever the caller named, and an abbreviated `--i 5` could override the instance. Each action takes a fixed set of
   # flags, every flag takes one value, and --out must resolve inside THIS instance's directory.
@@ -361,7 +396,7 @@ pb_drive() {   # drive --id N --action VERB [core flags...]
 }
 
 pb_terminal() {
-  require_id "$(flag id 0)"
+  pb_bind
   [ -s "$(pb_dir "$ID")/state.json" ] || refuse NOT_UP "pinebox instance $ID is not up"
   if [ -n "$(flag send)" ]; then "$COMPUTER" terminal send --id "$ID" --text "$(flag send)"
   elif [ "$(flag read)" = 1 ]; then "$COMPUTER" terminal read --id "$ID" --lines "$(flag lines 50)"
@@ -369,7 +404,7 @@ pb_terminal() {
 }
 
 pb_state() {
-  require_id "$(flag id 0)"
+  pb_bind
   [ -s "$(pb_dir "$ID")/state.json" ] || refuse NOT_UP "pinebox instance $ID is not up"
   if [ -n "$(flag get)" ]; then "$COMPUTER" state get --id "$ID" --key "$(flag get)"
   elif [ -n "$(flag put)" ]; then "$COMPUTER" state put --id "$ID" --key "$(flag put)" --value "$(flag value)"
@@ -377,28 +412,28 @@ pb_state() {
 }
 
 pb_week() {
-  require_id "$(flag id 0)"; [ -s "$(pb_dir "$ID")/state.json" ] || refuse NOT_UP "pinebox instance $ID is not up"
+  pb_bind; [ -s "$(pb_dir "$ID")/state.json" ] || refuse NOT_UP "pinebox instance $ID is not up"
   [ -n "$(flag set)" ] || refuse BAD_ARGS "week needs --set YYYY-Www"
   stage_week_set "$ID" "$(flag set)"
   printf '{"ok":true,"id":%s,"week":"%s"}\n' "$ID" "$(flag set)"
 }
 
 pb_verify() {
-  require_id "$(flag id 0)"; local d; d="$(pb_dir "$ID")"
+  pb_bind; local d; d="$(pb_dir "$ID")"
   [ -s "$d/state.json" ] || refuse NOT_UP "pinebox instance $ID is not up"
   local w; w="$(flag week "$(pb_rec_get "$ID" .week)")"; [ -n "$w" ] || w="$(pb_rec_get "$ID" .week)"
   stage_verify "$ID" "$d" "$w"
 }
 
 pb_view() {
-  require_id "$(flag id 0)"
+  pb_bind
   [ -s "$(pb_dir "$ID")/state.json" ] || refuse NOT_UP "pinebox instance $ID is not up"
   # --confirm is the operator's "I asked to see it"; the core refuses the raise without it
   "$COMPUTER" view --id "$ID" ${FLAG[confirm]:+--confirm}
 }
 
 pb_ports() {
-  require_id "$(flag id 0)"
+  if [ -n "$(flag id)" ]; then require_id "$(flag id)"; pb_need_id "$ID"; else pb_bind; fi   # derived numbers for a named id; no id means this session's own
   local json; json="$(pb_ports_json "$ID")" || exit $?
   local name port holder status="" rows=""
   for name in station rail server cdp ws vnc room; do
