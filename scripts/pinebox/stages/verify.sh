@@ -26,6 +26,9 @@ PY
 stage_week_set() {
   local id="$1" want="$2" cdp got expr
   [[ "$want" =~ ^[0-9]{4}-W[0-9]{2}$ ]] || refuse BAD_ARGS "week must be an ISO label YYYY-Www, got '$want'"
+  # the SHAPE is not enough: 2026-W00 and 2026-W99 match it and do not exist (measured: `week --set 2026-W99` answered ok:true, "the IDE control now reads 2026-W99")
+  python3 -c 'import datetime,sys; y,w=sys.argv[1].split("-W"); datetime.date.fromisocalendar(int(y),int(w),1)' "$want" 2>/dev/null \
+    || refuse BAD_ARGS "week $want does not exist (ISO weeks run 01..52, or 53 in a long year)"
   cdp="$(pb_port "$id" cdp)"
   local want_json; want_json="$(jq -nc --arg w "$want" '$w')"
   expr="(function(){const el=document.querySelector('.pine-week'); if(!el) return 'NO_CONTROL'; el.value=$want_json; el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); return el.value;})()"

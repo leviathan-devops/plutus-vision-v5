@@ -96,7 +96,7 @@
     },
     "op": {
       "type": "string",
-      "description": "chart: pan, zoom, fit, view, resize"
+      "description": "chart: pan, zoom, fit, view, resize | backtest: session, state, play, pause, step, speed, date, stop (the Backtest ROOM's own controls)"
     },
     "dx": {
       "type": "number",
@@ -124,11 +124,11 @@
     },
     "speed": {
       "type": "number",
-      "description": "backtest: replay interval in milliseconds per bar"
+      "description": "backtest speed: the room's bars-per-second select: 0.5, 1, 2, 5, 10 or 25"
     },
     "date": {
       "type": "string",
-      "description": "backtest: replay start date YYYY-MM-DD"
+      "description": "backtest date: YYYY-MM-DD inside the session's window (the room's jump-to field + GO)"
     },
     "n": {
       "type": "number",
