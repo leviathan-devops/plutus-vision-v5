@@ -19,7 +19,7 @@ THE REFUSALS (blueprint section 8; there is NO fallback judge - a different mode
   BUDGET_EXCEEDED  REGION_EMPTY (verdict INCONCLUSIVE, no judge call, no ticket)  THRESHOLD_UNCALIBRATED  CLAUSE_UNOBSERVABLE  EVIDENCE_SCOPE
   TICKET_WRITE_FAILED  TICKET_CORRUPT  LEDGER_HOLE  JUDGE_ABSTAINED  DEFECT_UNCLASSIFIED (recorded in the ticket, never bucketed)
 
-Environment: PB_JUDGE_URL (default http://127.0.0.1:8090)  PB_JUDGE_MODEL (default imajev-4b-Q6_K)  PB_JUDGE_TIMEOUT_S (default 60)
+Environment: PB_JUDGE_URL (default http://127.0.0.1:8090)  PB_JUDGE_MODEL (default imajev-4b-Q6_K)  PB_JUDGE_TIMEOUT_S (default 120)
              PB_JUDGE_WINDOW_BUDGET (default 15000)  PB_JUDGE_CONTROLS (a directory holding positive.png + negative.png; a test knob for the VOID path)
 """
 import argparse, hashlib, io, json, os, re, sqlite3, sys, time, urllib.error, urllib.request, uuid
@@ -28,7 +28,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 URL = os.environ.get("PB_JUDGE_URL", "http://127.0.0.1:8090").rstrip("/")
 MODEL = os.environ.get("PB_JUDGE_MODEL", "imajev-4b-Q6_K")
-TIMEOUT = float(os.environ.get("PB_JUDGE_TIMEOUT_S", "60"))
+TIMEOUT = float(os.environ.get("PB_JUDGE_TIMEOUT_S", "120"))   # 120: the judge is SHARED; under load one call measured 47 s and two timed out at 60 s
 WINDOW_BUDGET = int(os.environ.get("PB_JUDGE_WINDOW_BUDGET", "15000"))  # default 15000          # blueprint section 2: REFUSE when (image + instructions + clauses + question + answer) > 15,000
 ANSWER_HEADROOM = 1000
 CHARS_PER_TOKEN = 3.0          # a deliberately CONSERVATIVE text estimate (over-counts, so the packer refuses earlier, never later)
@@ -279,12 +279,22 @@ def controls(cid=None):
 NEUTRAL = "CONTROL RUN: no history. The only evidence is the image."
 
 
-def run_controls(ctext, act, cid):
-    pos, neg = controls(cid); q, cr = question_for(ctext), criteria_for(ctext)
-    rp = ask_noul(q, cr, pos, NEUTRAL); rn = ask_noul(q, cr, neg, NEUTRAL)
+def judge_controls(rp, rn, cid):
+    """the verdict on the two control answers: the SAME clause, a known-good and a known-bad image, EVERY call"""
     sep = rp["p"] >= 0.85 and rn["p"] <= 0.15
     if not sep: refuse("CONTROL_UNSEPARATED", f"clause {cid}: positive control p={rp['p']:.3f} (need >= 0.85), negative control p={rn['p']:.3f} (need <= 0.15): JUDGE_BLIND - the run is VOID, no ticket")
     return {"positive": {k: rp[k] for k in ("p", "call_id", "latency_ms")}, "negative": {k: rn[k] for k in ("p", "call_id", "latency_ms")}, "separation": round(rp["p"] - rn["p"], 4), "separated": True}
+
+
+def ask_all(ctext, cid, region_png, state):
+    """positive control, negative control and the main question concurrently: wall time ~ the slowest ONE call instead of the sum of three (a shared judge
+    measured 22-47 s per call under load). Results are read in a fixed order so the refusal named is deterministic: a judge refusal first, then the controls."""
+    from concurrent.futures import ThreadPoolExecutor
+    pos, neg = controls(cid); q, cr = question_for(ctext), criteria_for(ctext)
+    with ThreadPoolExecutor(max_workers=3) as ex:
+        fp = ex.submit(ask_noul, q, cr, pos, NEUTRAL); fn = ex.submit(ask_noul, q, cr, neg, NEUTRAL); fm = ex.submit(ask_noul, q, cr, region_png, state)
+        rp, rn, r = fp.result(), fn.result(), fm.result()
+    return judge_controls(rp, rn, cid), r
 
 
 def cmd_calibrate(a):
@@ -327,8 +337,7 @@ def cmd_judge(a):
     toks = (act_c.get("image_tokens_measured") or [None])[0]
     if toks is None: refuse("THRESHOLD_UNCALIBRATED", f"no measured image cost for {a.clause} in act.json: the budget cannot be computed")
     parts, total = pack(a.clause, ctext, state, toks)
-    ctl = run_controls(ctext, act_c["act"], a.clause)                   # the SAME clause, a known-good and a known-bad image, EVERY call
-    r = ask_noul(question_for(ctext), criteria_for(ctext), region_png, state)
+    ctl, r = ask_all(ctext, a.clause, region_png, state)                # controls (same clause, known-good + known-bad image) and the main question, concurrently
     if r["state_truncated"]: refuse("BUDGET_EXCEEDED", "the adapter reports it truncated the state: the judgement would be about a document it did not receive")
     passed = bool(r["p"] >= act_c["act"] and ctl["separated"])
     cls = None; choice = None

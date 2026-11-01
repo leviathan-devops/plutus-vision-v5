@@ -93,7 +93,9 @@ const SESSION_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{3,79}$/.test(process.env.CU_SESSI
   ? process.env.CU_SESSION_ID
   : `mcp-${process.pid}-${Date.now().toString(36)}`;
 
-function run(argv) {
+// a JUDGED verify makes several calls to a judge shared with other sessions (22-47 s per call measured under load): it gets a longer bound than the other verbs
+const JUDGE_TIMEOUT_MS = Math.max(RUN_TIMEOUT_MS, 480000);
+function run(argv, timeoutMs = RUN_TIMEOUT_MS) {
   const { promise, resolve: done } = Promise.withResolvers();
   // detached => the CLI leads its OWN process group, so a timeout can signal the whole tree. Killing
   // only the CLI left its grandchildren holding the stdout pipe, `close`
@@ -107,7 +109,7 @@ function run(argv) {
     killTree("SIGTERM");                                  // lets the CLI's own EXIT cleanup run first
     setTimeout(() => killTree("SIGKILL"), 5000).unref();  // then force it
     settle({ code: 124, timedOut: true, out: out.trim(), err: err.trim() });   // answer NOW, do not wait for a pipe
-  }, RUN_TIMEOUT_MS);
+  }, timeoutMs);
   const cap = (s, chunk, max) => { s += chunk; return s.length > max ? s.slice(-max) : s; };
   c.stdout.on("data", (d) => { out = cap(out, d, 1 << 20); });
   c.stderr.on("data", (d) => { err = cap(err, d, 1 << 18); });
@@ -124,9 +126,11 @@ const REFUSAL = /REFUSED\s+([A-Za-z0-9_:.\-]+)\s+[\u2014\u2013-]+\s*([\s\S]*)/;
 async function callTool(p) {
   const bad = validate(p);
   if (bad) return { ok: false, error: "BAD_ARGS", detail: bad };
-  const r = await run(argvFor(p));
+  const judged = p.verb === "verify" && p.judge === true;
+  const bound = judged ? JUDGE_TIMEOUT_MS : RUN_TIMEOUT_MS;
+  const r = await run(argvFor(p), bound);
   if (r.spawnError) return { ok: false, error: "CLI_SPAWN_FAILED", detail: `${r.spawnError} (CLI=${CLI})` };
-  if (r.timedOut) return { ok: false, error: "MCP_TIMEOUT", detail: `verb '${p.verb}' did not answer within ${RUN_TIMEOUT_MS}ms and was killed` };
+  if (r.timedOut) return { ok: false, error: "MCP_TIMEOUT", detail: `verb '${p.verb}' did not answer within ${bound}ms and was killed` };
   if (r.code === 0) {
     let details = null;
     try { details = JSON.parse(r.out.split("\n").pop()); } catch { /* text */ }

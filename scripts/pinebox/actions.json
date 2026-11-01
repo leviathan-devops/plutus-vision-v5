@@ -137,6 +137,18 @@
     "section": {
       "type": "string",
       "description": "shot/look: capture only a SECTION of the page, located from the page's own layout - chart (the chart workspace: symbol bar, tools, plot, axes) or plot (the plotting area only)"
+    },
+    "cmd": {
+      "type": "string",
+      "description": "spawn: the program (and its arguments) to start INSIDE the new instance, e.g. \"zenity --info --text hi\"; checked before anything is claimed (CMD_NOT_FOUND)"
+    },
+    "judge": {
+      "type": "boolean",
+      "description": "verify: after the arithmetic verify, also ask the independent image judge about a fresh chart capture and write a content-addressed ticket (needs `clause`); a pass:false ticket is refused as JUDGE_FAILED"
+    },
+    "clause": {
+      "type": "string",
+      "description": "verify --judge: the clause id to judge, from judge/clauses.txt (calibrated: C1.1)"
     }
   },
   "actions": {
