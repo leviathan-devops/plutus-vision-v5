@@ -34,8 +34,15 @@ claim() { # $1 own-pid  $2 ports.sh  ; port_owner is overridden because `ss -p` 
   FAKE="$FAKE" bash -c "cd '$PB'; source '$CUE/core/lib.sh'; source '$2'; port_owner() { [ \"\$1\" = '$RP' ] && echo \"\$FAKE\"; }; PB_ROOT='$W/claim'; mkdir -p \$PB_ROOT; pb_claim 7 '$1'; echo claim_rc=\$?" 2>&1 | tail -1; }
 python3 -c "$PYL" >/dev/null 2>&1 & P=$!; PIDS="$PIDS $P"; sleep 0.8
 FAKE=$P; r="$(claim "$P" ./ports.sh)"; case "$r" in *PORT_TAKEN*) ok "a recycled pid (unrelated python) on the own-list is PORT_TAKEN";; *) bad "recycled pid accepted" "$r";; esac
-git -C "$PV" show HEAD:scripts/pinebox/ports.sh > "$W/ports-head.sh" 2>/dev/null
-if grep -q 'pb_pid_is_ours' "$W/ports-head.sh"; then : ; else r="$(claim "$P" "$W/ports-head.sh")"; case "$r" in *claim_rc=0*) ok "CONTROL: the pre-fix ports.sh ACCEPTS that pid (the instrument can say defective)";; *) bad "control: old ports.sh did not accept" "$r";; esac; fi
+# The CONTROL is the ports.sh from BEFORE the fix, pinned to a commit (579312c): `HEAD:` was the pre-fix file only until the
+# fix was committed, after which the control branch was skipped without a word - a control that disappears is a gate that
+# cannot fail. An unreadable ref, or a "pre-fix" file that already has the fix, is now a FAIL, never a skip.
+PRE_FIX_REF=579312c
+if git -C "$PV" show "$PRE_FIX_REF:scripts/pinebox/ports.sh" > "$W/ports-prefix.sh" 2>/dev/null && ! grep -q 'pb_pid_is_ours' "$W/ports-prefix.sh"; then
+  r="$(claim "$P" "$W/ports-prefix.sh")"; case "$r" in *claim_rc=0*) ok "CONTROL: the pre-fix ports.sh ($PRE_FIX_REF) ACCEPTS that pid (the instrument can say defective)";; *) bad "control: old ports.sh did not accept" "$r";; esac
+else
+  bad "control unavailable" "cannot read a pre-fix ports.sh at $PRE_FIX_REF (git history rewritten, or the ref already contains pb_pid_is_ours)"
+fi
 kill "$P" 2>/dev/null; wait "$P" 2>/dev/null
 bash -c "exec -a pv-server.py python3 -c \"$PYL\"" >/dev/null 2>&1 & P=$!; PIDS="$PIDS $P"; sleep 0.8
 FAKE=$P; r="$(claim "$P" ./ports.sh)"; case "$r" in *claim_rc=0*) ok "a real service (argv0 pv-server.py) on the own-list claims";; *) bad "real service refused" "$r";; esac
