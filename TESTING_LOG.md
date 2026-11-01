@@ -2400,3 +2400,22 @@ forecast direction (rise to the resistance, fall to the support) matches.
 - **What this does NOT show:** nothing about whether the tools work. No claim of the build was audited. `ta selftest` (earlier, PASS, 42 lies / 0 missed) proves the auditor, not this build.
 - **The verdict:** BLOCKED (named). Owed to the operator: what audit shape fits a headed-display tool (a `ta` evidence mode that accepts an opened-frame capture as the proof channel, or a different auditor). Recorded as N10.
 - **The artifacts:** `~/.ta/pinebox/cu-pinebox/ready/round-2/PLAN.md`; `/tmp/ta-pinebox/{ta.project.json,WORKFLOW.md}`.
+
+## TEST RESULT - 2026-11-01 - T-49 - dynamic `verify` (N2): the renderer is asked, the pixels are checked at its columns
+- **What ran (headed, through the tool):** `pinebox up --session probe-n2 --pine test/fixtures/ema-ribbon.pine` (32 s, weston-x11 :3, ports station 9741 / rail 9754 / server 9851 / cdp 9222; operator focus `hostwin :1 active` = `0x0` before and after), then `pinebox verify` in each state below, each state set through the page (`renderer.applyFeature` for colours, the visibility of the chart mount for "bars but nothing drawn", `coords.setViewport` for off-data) and read back from the renderer first.
+- **The raw output (rate = in-view bars whose column holds a pixel of the renderer's colour for that bar / in-view bars):**
+
+| state | renderer says | verify | pixels |
+|---|---|---|---|
+| populated | 382 of 508 in view, up #089981 down #f23645 | WORKS | 356/382 = 0.9319 (identical on 2 repeats) |
+| recoloured through `applyFeature` | same bars, up #ffb000 down #7a3cff | WORKS | 356/382 = 0.9319 |
+| partially panned | 324 of 508 in view | WORKS | 324/324 = 1.0 |
+| static, right after `load` | 382 of 508 | WORKS (note: pixels identical to previous frame) | 356/382 |
+| canvases hidden, last frame populated | 382 of 508 | REFUSED CHART_NOT_DRAWN | 0/382 = 0.0 |
+| canvases hidden, last frame also hidden | 382 of 508 | REFUSED NO_FRESH_FRAME | 0/382 |
+| viewport off the data | `getVisibleRange()` null, 508 held | REFUSED CHART_EMPTY_RANGE | not measured (refused before pixels) |
+
+  Controls: swapped colour on the same columns 0.346, a colour absent from the chart (magenta) 0.0, a drag through the UI clamps with 2 bars still in view (`rightOffset -506`), so the off-data state was set directly (the renderer state matches the frame I opened).
+- **The floor:** `RENDER_HIT_FLOOR = 0.466` = midpoint(max not-drawn 0.0, min drawn 0.9319) (chartpx.py:25). The measured-from-one-fixture discipline is the same as before; the difference is that the thing measured no longer contains a colour, a crop or a week.
+- **The verdict:** PASS on the seven states above. 2 of the 12 `verify` calls in this session (S1 and S1c) were false `NO_FRESH_FRAME` refusals from the old freshness guard on a static chart (F-168, fixed; A in the table is the same state after the fix). Not tested: a chart with hollow or non-candle price style (the renderer's `priceStyle`), where column presence in the up/down colours may not hold; a zoomed-out chart with under 1 px per bar; a different pair/timeframe; 3 consecutive clean rounds (this was one round of 7 scenarios, repeated twice for populated).
+- **The artifacts:** frames `/tmp/n2-panned.png` (panned, recoloured, no candles) and `/tmp/n2-offdata.png` (off-data), both opened; probes `/tmp/n2-*.json`.

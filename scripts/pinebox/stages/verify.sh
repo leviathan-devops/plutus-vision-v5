@@ -9,6 +9,7 @@
 #   a blank/error frame is reported as a successful render
 # Every check below REFUSES with its own token, so an agent cannot proceed on a false premise:
 #   WEEK_MISMATCH · RAIL_DOWN · STATION_DOWN · PORTS_MISMATCH · NO_BARS · NO_DRAWINGS · FRAME_BLANK
+#   CHART_NOT_READY · CHART_EMPTY_RANGE · CHART_NOT_SETTLED · CHART_NOT_DRAWN  (asked of the renderer itself, then checked in the pixels)
 #
 # stage_week_set ID LABEL      drive the IDE's own week control (.pine-week) and verify it took
 # stage_verify   ID DIR WEEK   run every check; print one JSON verdict; refuse on the first failure
@@ -39,7 +40,7 @@ stage_week_set() {
 
 stage_verify() {
   local id="$1" d="$2" week="$3"
-  local st rail srv cdp want got bars onchart colours frame_json frame_rec pr
+  local st rail srv cdp want got bars onchart colours frame_json frame_rec pr floor unchanged=0
   # the verdict's checks are a real JSON ARRAY built by jq - hand-concatenated rows broke on any
   # quote/newline in the evidence and were emitted as a STRING, not an array
   local checks='[]'
@@ -106,7 +107,7 @@ stage_verify() {
     python3 "$PB_HOME/chartpx.py" changed "$prevfresh" "$fresh" 2>"$d/chartpx.err"; pr=$?
     case "$pr" in
       0) ;;
-      1) refuse NO_FRESH_FRAME "the chart pixels are unchanged; only frame metadata or the UTC clock moved" ;;
+      1) unchanged=1 ;;   # NOT a refusal by itself: a static, correctly drawn chart is identical to its last frame. It refuses below ONLY when the renderer cross-check also fails (a stale capture)
       *) refuse FRESHNESS_CHECK_FAILED "the pixel-freshness instrument itself failed (exit $pr): $(tail -1 "$d/chartpx.err") - this is NOT a verdict about the frame" ;;
     esac
   fi
@@ -117,26 +118,41 @@ stage_verify() {
   [[ "$colours" =~ ^[0-9]+$ ]] && [ "$colours" -gt 1 ] \
     || refuse FRAME_BLANK "the fresh frame has ${colours:-no} colour(s) - a blank or failed render must not read as WORKS"
   add_check frame "$colours colours"
-  # The WHOLE-frame count above cannot see a blank CHART: the editor, tabs and footer alone supply
-  # thousands of colours (measured: 6268..7622 with the chart pane painted flat). Measure the pane itself.
-  local pane_n pane_min
-  pane_min="$(python3 -c 'import sys; sys.path.insert(0,sys.argv[1]); import chartpx; print(chartpx.BLANK_THRESHOLD)' "$PB_HOME")"
-  pane_n="$(python3 "$PB_HOME/chartpx.py" colours "$fresh" 2>"$d/chartpx.err")" \
-    || refuse FRESHNESS_CHECK_FAILED "could not measure the chart pane: $(tail -1 "$d/chartpx.err") - this is NOT a verdict about the frame"
-  [[ "$pane_n" =~ ^[0-9]+$ ]] && [ "$pane_n" -ge "$pane_min" ] \
-    || refuse CHART_BLANK "the chart pane has ${pane_n:-no} distinct colours, below the measured floor of $pane_min (a populated pane measures 1493..4153): the chart did not draw"
-  add_check chart "$pane_n chart-pane colours (floor $pane_min)"
-
-  # CANDLES, not colours: the colour count above cannot tell a chart from an empty one (gridlines and axis labels alone
-  # measure 1617 colours; a pane with NO candles passed it and `verify` answered WORKS). The candle count is measured on the
-  # same frame and refuses below its measured floor - see chartpx.py for the four real frames the floor comes from.
-  local candles_n candles_min
-  candles_min="$(python3 -c 'import sys; sys.path.insert(0,sys.argv[1]); import chartpx; print(chartpx.CANDLE_FLOOR)' "$PB_HOME")"
-  candles_n="$(python3 "$PB_HOME/chartpx.py" candles "$fresh" 2>"$d/chartpx.err")" \
-    || refuse FRESHNESS_CHECK_FAILED "could not measure the candles in the chart pane: $(tail -1 "$d/chartpx.err") - this is NOT a verdict about the frame"
-  [[ "$candles_n" =~ ^[0-9]+$ ]] && [ "$candles_n" -ge "$candles_min" ] \
-    || refuse CHART_NO_CANDLES "the chart pane shows ${candles_n:-no} candle pixels, below the measured floor of $candles_min (a drawn week measures 4371; none measures 0..352): there is nothing on the chart to read"
-  add_check candles "$candles_n candle pixels (floor $candles_min)"
+  # THE RENDERER'S OWN ACCOUNT OF THE CHART, CROSS-CHECKED AGAINST THE PIXELS (chartprobe.js, chartpx.py render).
+  # The old pane-colour and candle-pixel floors named the IDE theme's two candle colours and a crop: a recolour made a populated chart
+  # read as empty, and "no bar in view" could not be told from "the chart did not draw". Now the page is asked what it holds - candle
+  # colours, visible range, the x of every in-view bar - and the captured pixels are checked AT THOSE PLACES, in THOSE colours.
+  # Nothing below names a colour, a week, a price or a theme.
+  local probe_js probe_a probe_b pst pin ptot pvr rj rate hits cand pcol
+  probe_js="$(cat "$PB_HOME/chartprobe.js")" || refuse CDP_UNREADABLE "chartprobe.js is missing from $PB_HOME"
+  probe_read() {  # prints the probe JSON; a failed READ is CDP_UNREADABLE, never a verdict about the chart
+    local o rc
+    o="$(node "$CORE/cdp.mjs" "$cdp" evaluate "$probe_js" 2>"$d/chartprobe.err")"; rc=$?
+    [ "$rc" -eq 0 ] || { printf 'REFUSE %s' "$(grep -m1 '^REFUSED' "$d/chartprobe.err" | cut -c1-200)"; return 1; }
+    jq -r '.value // empty' <<<"$o"
+  }
+  probe_a="$(probe_read)" || refuse CDP_UNREADABLE "could not ask the renderer what the chart holds over CDP :$cdp - ${probe_a#REFUSE }"
+  [ -n "$probe_a" ] || refuse CDP_UNREADABLE "the renderer probe returned nothing over CDP :$cdp"
+  pst="$(jq -r '.state' <<<"$probe_a")"; pin="$(jq -r '.inView' <<<"$probe_a")"; ptot="$(jq -r '.total' <<<"$probe_a")"; pvr="$(jq -c '.vr' <<<"$probe_a")"
+  case "$pst" in
+    NOT_READY)   refuse CHART_NOT_READY "the page has no renderer to ask yet: $(jq -r '.why' <<<"$probe_a")" ;;
+    EMPTY_RANGE) refuse CHART_EMPTY_RANGE "the renderer holds $ptot bars but none is in view (visible range: $pvr) - the chart is panned or zoomed off its data; nothing is there to read" ;;
+    OK) ;;
+    *)           refuse CHART_PROBE_UNKNOWN "the renderer probe answered state '$pst' - not a state this verifier knows" ;;
+  esac
+  # the chart must hold still between the capture and the probe, and between two probes: a moving chart makes the cross-check meaningless
+  sleep 0.4
+  probe_b="$(probe_read)" || refuse CDP_UNREADABLE "second renderer probe failed: ${probe_b#REFUSE }"
+  [ "$(jq -c '[.vr,.inView,.up,.down]' <<<"$probe_a")" = "$(jq -c '[.vr,.inView,.up,.down]' <<<"$probe_b")" ] \
+    || refuse CHART_NOT_SETTLED "the chart moved between two probes 0.4s apart (range/bars/colours differ): $(jq -c '[.vr,.inView]' <<<"$probe_a") then $(jq -c '[.vr,.inView]' <<<"$probe_b") - no pixel verdict is possible on a moving chart"
+  printf '%s' "$probe_a" > "$d/chartprobe.json"
+  rj="$(python3 "$PB_HOME/chartpx.py" render "$d/chartprobe.json" "$fresh" 2>"$d/chartpx.err")" \
+    || refuse FRESHNESS_CHECK_FAILED "the pixel cross-check instrument itself failed: $(tail -1 "$d/chartpx.err") - this is NOT a verdict about the frame"
+  rate="$(jq -r '.rate' <<<"$rj")"; hits="$(jq -r '.hits' <<<"$rj")"; cand="$(jq -r '.candidates' <<<"$rj")"; pcol="$(jq -r '"up "+.up+" down "+.down' <<<"$probe_a")"
+  floor="$(python3 -c 'import sys; sys.path.insert(0,sys.argv[1]); import chartpx; print(chartpx.RENDER_HIT_FLOOR)' "$PB_HOME")"
+  python3 -c 'import sys; sys.exit(0 if float(sys.argv[1]) >= float(sys.argv[2]) else 1)' "$rate" "$floor" \
+    || { [ "$unchanged" = 1 ] && refuse NO_FRESH_FRAME "the chart pixels are unchanged since the last frame AND the renderer's bars are not on screen in them (rate $rate, floor $floor): this capture is stale, not a second look"; refuse CHART_NOT_DRAWN "the renderer says $pin of $ptot bars are in view (colours: $pcol) but only $hits of $cand of them are on screen at their columns in those colours (rate $rate, floor $floor): the chart did not draw what it holds"; }
+  add_check chart "renderer: $pin of $ptot bars in view; pixels: $hits of $cand at their columns in the renderer's own colours ($pcol), rate $rate >= $floor$([ "$unchanged" = 1 ] && printf '; pixels identical to the previous frame (a static chart), proven current by this cross-check')"
 
   [[ "$id" =~ ^(0|[1-9])$ ]] || refuse BAD_ID "verdict for a non-canonical instance id '$id'"   # the function's OWN id, not the global $ID that require_id happened to set
   jq -nc --argjson id "$id" --arg want "$want" --argjson checks "$checks" '{ok:true,id:$id,week:$want,verdict:"WORKS",checks:$checks}'
