@@ -52,6 +52,7 @@ ledger_row() {
 . "$PB_HOME/stages/verify.sh"
 . "$PB_HOME/stages/v3.sh"
 . "$PB_HOME/stages/v3_nav.sh"
+. "$PB_HOME/stages/v3_backtest.sh"
 need jq NO_JQ
 
 pb_dir() { printf '%s/i%s' "$PB_ROOT" "$1"; }
@@ -348,5 +349,6 @@ case "$PB_VERB" in
   asset)    pb_nav_asset "$@" ;;
   tf)       pb_nav_tf "$@" ;;
   widget)   pb_nav_widget "$@" ;;
+  backtest) pb_bt "$@" ;;
   *) refuse BAD_VERB "unknown verb '$PB_VERB' - run: pinebox help" ;;
 esac

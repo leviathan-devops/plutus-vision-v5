@@ -121,6 +121,18 @@
     "name": {
       "type": "string",
       "description": "widget: its name"
+    },
+    "speed": {
+      "type": "number",
+      "description": "backtest: replay interval in milliseconds per bar"
+    },
+    "date": {
+      "type": "string",
+      "description": "backtest: replay start date YYYY-MM-DD"
+    },
+    "n": {
+      "type": "number",
+      "description": "backtest: number of replay steps"
     }
   },
   "actions": {
@@ -340,6 +352,18 @@
         "id",
         "action",
         "name"
+      ]
+    },
+    "backtest": {
+      "argv": [
+        "backtest"
+      ],
+      "flags": [
+        "id",
+        "op",
+        "speed",
+        "date",
+        "n"
       ]
     }
   }
