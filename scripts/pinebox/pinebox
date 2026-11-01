@@ -334,7 +334,7 @@ pb_shot() {
   pb_bind; local id="$ID" d out; d="$(pb_dir "$id")"
   [ -s "$d/state.json" ] || refuse NOT_UP "pinebox instance $id is not up"
   out="$(flag out "$d/frame.png")"
-  pb_c3 "pinebox shot" "$COMPUTER" screenshot --id "$id" --out "$out"
+  pb_c3 "pinebox shot" "$COMPUTER" screenshot --id "$id" --out "$out" ${FLAG[section]:+--section "${FLAG[section]}"}
 }
 
 pb_load() {

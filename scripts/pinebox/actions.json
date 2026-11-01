@@ -133,6 +133,10 @@
     "n": {
       "type": "number",
       "description": "backtest: number of replay steps"
+    },
+    "section": {
+      "type": "string",
+      "description": "shot/look: capture only a SECTION of the page, located from the page's own layout - chart (the chart workspace: symbol bar, tools, plot, axes) or plot (the plotting area only)"
     }
   },
   "actions": {
@@ -187,7 +191,8 @@
       ],
       "flags": [
         "id",
-        "out"
+        "out",
+        "section"
       ]
     },
     "load": {
@@ -301,7 +306,8 @@
       ],
       "flags": [
         "id",
-        "out"
+        "out",
+        "section"
       ]
     },
     "tab": {

@@ -2598,3 +2598,51 @@ disable/delete it"* (the per-boot `Failed to load extension` warning).
   (the deletion is cancelled because the file matches HEAD), the other five left as found (F-150).
 - **The audit gate is still BLOCKED** (`OCR_MISSING`) — no ship-ready claim is made this cycle either.
 - **The pinebox chain's seven-instance gate** was re-run and is reported in T-38 when it completed.
+
+## 2026-11-01 - COMPUTER-USE v2 + PINEBOX: UNBLOCKED, HARDENED, AND THEN OVER-AUDITED (honest account; written retroactively at the end of the day)
+
+**The built.** Against the pre-overnight baseline (`reports/PINEBOX_CU_V2_CONTEXT_REPORT_2026-11-01.md` section 5-7: B1 C3 false refusal, B2 seal drift, B3 audit gate, B4
+plaintext key, V11 guest, E2 geometry, fixture pairing, v3 P1-P3), 28 commits between 03:00 and 20:15 (`git log --since=2026-11-01` over cu-v2/pinebox-cli/pinebox-ext):
+- B1 FIXED: `core/govern.sh` guard `b_top != 0x0` (9c95d7b). Both tools can start again on this desktop (the pre-overnight state refused 100% of starts).
+- B2 FIXED: `deploy.sh verify` runs in both chains; a 1-byte change gives `DEPLOY_DRIFT` (7b3d4b3).
+- c3 stall (a separate defect found later): the spawn lock fd leaked into launched apps (2820d4c).
+- B3 repaired OUTSIDE the two tools (`extensions/code-review/index.js` normalises absolute scan paths); B4: OCR provider keys moved to resolvers (rotation of the leaked key is operator-owned).
+- V11 PROVEN on a rebuilt image: real Alpine qcow2 `bb6ad4cc20e6...` (apk add jq python3), booted through `core/guest/boot.sh`, host key pinned, payload streamed and verified against the
+  sealed manifest, `test/guest.sh` 12/0, frame `visual/guest-xev.png` opened. The earlier proof file names an image no longer on disk (F-162).
+- E2 geometry emitted (commit 0888248, `pine-ide/pine-station/lib/run.mjs:161`, `pine-ide/pine-ide/vision.mjs:108`) - with the frozen-tree question in F-166.
+- Pinebox verbs 11 -> 23 (`pinebox-cli/actions.json`): v3 P1 run/insert/editor/look, P2 tab/chart/asset/tf/widget/view, P3 backtest; one Backtest room per instance
+  (945e985, `stages/room.sh`, `test/room.sh` 20/0, frames `room-up/session/replay.png` opened). Missing from the v3 spec: `spawn`, `attach`; P4 drawing unbuilt.
+- Hardening, one finding class at a time: 7 CU criticals (af71d58), Pinebox criticals/highs (91dea2c), audit batches 1-3 and the scan-B/final-scan batches (65e05d8, 9d35854,
+  76375fb, 60dd2d1, c5127dc, ee8a10a, 139fef7) - root-keyed id validation, one record transaction, scoped/fail-closed teardown, symlink-safe state, header-pinned guest key,
+  per-action argument allowlists in both forwarders and the MCP server, exact-field matchers, private per-instance token and root, drive flag allowlist, chart-pane candle check.
+- Gate code: CU 10 -> 18 gate scripts, Pinebox 6 -> 8 (+1 extension gate); chains CU 17 gates, Pinebox 11 (12 with the N=7 gate).
+
+**The why.** The operator's brief (origin session msgs #553-#570, #599-#609): one self-contained headed computer any agent can use, the Pine IDE as its default app, no operator focus
+theft, tools so idiot-proof that "the only possible way they could fuck up is if they don't use the tool". The overnight pin (`GOAL_PIN_TOOLS_100.txt`) added "ship gate PASS on both trees".
+
+**The how.** Audit-driven: the `code-review` scan's findings were triaged per finding, fixed with an attack input and an old-code control, and committed per batch; the pin's PASS verdict
+became the loop's exit. That is the dead end: see F-153 (6 passes, 0 PASS, the count did not fall).
+
+**The evidence (fresh this turn, 2026-11-01 evening).**
+- CU `test/run.sh --slow`: `17 gates, 0 failed`, 2m35.137s; `deploy.sh verify`: `DEPLOY: OK  sealed=89 files  nofocus=191345155214  hostwin=f3fbebc5322d  mcp=2/2 answer  probe=native/weston-x11`.
+  Log: `reports/overnight-2026-11-01/artifacts/cu-chain-final-fresh-2026-11-01.log`.
+- Pinebox `test/run.sh`: `11 gates, 0 failed`, 1m28.328s (the N=7 gate NOT run: 5,954 MB available < 7.8 GB). Log: `artifacts/pinebox-chain-final-fresh-2026-11-01.log`.
+- Migration: `tools/verify-migration.sh` verified=33 mismatched=0, negative control fires; guest image sha256 bb6ad4cc20e69ea6f62bd0c7ea6bb4b0dd4f57f9cf49a339dcf52d78d0554217.
+- Opened frames: `pinebox-live-works.png` (week 2026-W28, candles, verify WORKS with 4,989 candle pixels), `pinebox-live-ema.png` (EMA20/EMA50 lines and crossover triangles),
+  `cu-live-typed.png` (a GTK dialog with text typed by the tool), `guest-xev.png`, `room-*.png`.
+
+**The honest notes (read before trusting any of the above).**
+1. NEITHER ship gate ever returned PASS (verdicts in F-153). 2. The acceptance the operator described was NOT demonstrated: `plutus-vision-v2.pine` loads (32 drawings) but no overlay
+is visible in the opened frame, and its geometry was hardcoded to the fixture (F-158); the tools' own fixture (`ema-ribbon.pine`) renders correctly. 3. `verify` is still theme-bound (F-157).
+4. The Phase-3 evidence-ticket judge with narrative-epoch memory is not built (V-60). 5. No container hot-seat crash test was run (V-62). 6. Canon docs are stale at 2026-10-26 (F-161).
+7. A 13-line edit under `pine-ide/` awaits a ruling (F-166). 8. The headed weston-x11 path was not demonstrated to the operator; the live CU demo used the headless xvfb adapter (F-164).
+9. Test/gate code grew 146% against product code 73% (F-159).
+
+## 2026-11-01 (evening) - SESSION SCOPE + chart-section capture + the software renderer (built by driving the running tools; no script tests)
+
+- **Session scope:** `cu-v2/core/registry-cli.ts` + `core/session.sh`; both OMP forwarders and both MCP servers hand the host's session id (`ctx.sessionManager.getSessionId()`) to the CLI; Pinebox binds every verb through `pb_bind`.
+  Live T-46: 3 sessions same instant -> distinct ids; 14 cross-session attempts refused; frames opened.
+- **RAM:** `weston --use-pixman`: one computer 73.7 MB PSS (155.3 before). One Pinebox 635 MB PSS: Chrome 434 (the Pine IDE renderer alone is 119), Xwayland 70, node services 84, compositor layer 47. Leaner Chrome flags were tried and reverted (-17 MB, not worth the behaviour change).
+- **Chart section:** `shot`/`look --section chart|plot` clips the capture to the renderer's own element rect (no selector, no fractions): 1042x785 / 998x708 on a 1626x875 window; frames `pinebox-section-chart.png`, `pinebox-section-plot.png`.
+- **Testing framework:** `ta selftest` -> `VERDICT ta-selftest PASS (42 lies, 0 missed)` (2m40s; the auditor is proven). No `ta` audit of these tools has been run yet: it needs a registered worker (`ta register`) and a `ta.project.json` for this build.
+- **Not done:** dynamic `verify` (still theme-bound); the narrative-epoch judge; `spawn`/`attach`; V12; the OMP extension's `ctx.sessionManager` hand-off has only been exercised through the MCP path in this run - a fresh host process must show it (the forwarders loaded in the CURRENT session still hold the old code).

@@ -107,7 +107,7 @@ pb_v3_look() {
   [[ "$name" =~ ^[A-Za-z0-9._-]{1,64}\.png$ ]] \
     || refuse SCOPE_VIOLATION "look --out must be a bare file name ending .png (it is written inside the instance dir), got '$name'"
   out="$d/$name"
-  frame="$("$COMPUTER" screenshot --id "$id" --out "$out" 2>"$d/look.err")" \
+  frame="$("$COMPUTER" screenshot --id "$id" --out "$out" ${FLAG[section]:+--section "${FLAG[section]}"} 2>"$d/look.err")" \
     || refuse CAPTURE_FAILED "$(tail -1 "$d/look.err")"
   # the reply is a CLAIM about a file: it must be JSON, name THIS file, and the file must exist and be
   # non-empty before any hash or record is derived from it
