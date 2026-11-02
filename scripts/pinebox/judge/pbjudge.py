@@ -262,6 +262,9 @@ def check_ledger(evidence):
         j = json.loads(line); want = j.pop("row_hash")
         if j["prev_hash"] != prev or sha((prev + json.dumps(j, sort_keys=True)).encode()) != want: refuse("LEDGER_HOLE", f"the hash chain breaks at row {j.get('seq')} (a row was edited, removed or reordered)")
         if not scoped(evidence, "tickets", f"{j['ticket']}.ticket").is_dir(): refuse("LEDGER_HOLE", f"row {j['seq']} names ticket {j['ticket'][:16]} which is not on disk (a ticket was deleted)")
+        # the row's verdict must be the verdict of the ticket it names, and the ticket must still recompute (F-191: `ledger` returned ok:true on a copy whose pass.json had been flipped)
+        t = check_ticket(evidence, j["ticket"])
+        if ("PASS" if t["pass"] else "FAIL") != j["verdict"]: refuse("LEDGER_HOLE", f"row {j['seq']} says {j['verdict']} but ticket {j['ticket'][:16]} says pass:{t['pass']}")
         prev = want; n += 1
     return {"ok": True, "rows": n, "head": prev}
 
