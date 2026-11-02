@@ -2524,3 +2524,27 @@ forecast direction (rise to the resistance, fall to the support) matches.
 ## TEST RESULT - 2026-11-02 - T-65 - the operator's two questions: why not 500 MB, and what "the judge is not armed" means; F-190, F-191
 - **What ran:** ST-91 (RAM per group, per process, the noise, the sharing, three more flags, one void trial), ST-92 (the leak and its before/after control), ST-93 (the judge demonstration on one render: `verify` vs `verify --judge`, the ticket, the ledger, three tamper cases before and after F-191), `raw/demo-judge.sh` and its 198-line output `raw/demo-judge.txt`.
 - **The verdict:** PASS for the demonstration and both fixes. The RAM figure is restated: the two kept Chrome flags are worth about 30 MB (lone: 784.5 -> 754.8 by means with overlapping ranges; fleet of 4: 524.4 -> 493.2, three rounds each), not 37. Not tested: native Wayland Chrome (precluded by the spawn environment), a Chrome without a GPU process, Xwayland removed, any change to the frozen IDE page.
+
+## TEST PLAN ENTRY - 2026-11-02 - the gap closure (V-66..V-73), the completion test of the build
+
+### HOST
+- **What:** every gap of EN-190 closed, each proven by running the deployed tool headed and opening the frame; the completion predicate `PINEBOX/tools/gap-firewall.sh` exits 0.
+- **How:** per gap, a must-fail case first (the token printed, rc=1), then the legitimate case (JSON, rc=0), then the opened frame for anything visual (v3 expansion ACCEPTANCE); the hook (V-66) proven by a turn that claims success without a ticket being refused in a fresh OMP session, and with a passing ticket being allowed; a commit citing an absent ticket refused by the pre-commit gate; three consecutive clean crash rounds and a 9-session round after the last change.
+- **PASS criteria:** `GAP_FIREWALL: 0 open` printed by the firewall; `CLAIM_WITHOUT_TICKET`, `TICKET_FAILED`, `NO_TICKET` each observed refusing in a tool result; `computer look` returning an image part; the judge called on the default `verify`/`run` path with a ticket id in the result.
+- **FAIL criteria:** any firewall line `OPEN`; a success claim allowed without a ticket; a judged verdict with unseparated controls producing a ticket.
+- **Status:** PENDING
+
+## TEST RESULT - 2026-11-02 - T-66 - the save before the gap closure: ship docs, checkpoint, two ship packages, the completion test
+
+### HOST
+- **What ran (verbatim commands):** `tools/gap-firewall.sh`; `pinebox up --session ckpt-visual --pine test/fixtures/ema-ribbon.pine` + `shot` + `shot --section chart` + `verify` + `down --all` (both frames OPENED); the checkpoint structure gate (`find`/`diff -rq` vs the live trees); `python3 tools/ship-package.py build|audit computer-use-v2|pinebox`; each package's `./DEPLOY.sh`; three negative controls on scratch copies.
+- **The raw output:**
+  - firewall: `GAP_FIREWALL: 14 open of 15` [EXIT=1] (G15 live == repo CLOSED; G1-G14 OPEN - the gap map V-66..V-73 + the open F list + no audit + no crash round newer than the code).
+  - visual: READY instance 1 slot :6; `verify` WORKS; runtime-state.png sha256 7c85ed0c7ec34ebe…, runtime-chart.png d7c0206801a82c70…; operator `hostwin :1 active` 0x0 before and after; 0 chrome of the i1 profile after `down`.
+  - checkpoint `checkpoints/cu-v2-pinebox-gaps-mapped-2026-11-02/`: src 134 = repo 134 files; dist vs the three live trees 0 differing entries; 12 canon files; 7 ship docs; 0 secret-pattern hits; no spaces in the path; MODE B (no lock).
+  - computer-use-v2 package: `PACKAGE_AUDIT: PASS` - 63 artifacts, 0 mismatched; docs 2047/1055/2317 lines; 0 secrets; `DEPLOY_VERIFY: IDENTICAL computer-use-v2 package == live (63 artifacts)`; fingerprint b7f3e0c7750c5661….
+  - pinebox package: `PACKAGE_AUDIT: PASS` - 41 artifacts, 0 mismatched; docs 2621/1185/2867 lines; 0 secrets; `DEPLOY_VERIFY: IDENTICAL pinebox package == live (41 artifacts)`; fingerprint fc36c7d8c53264a5….
+  - negative controls: one flipped byte in a scratch copy of each package -> `REFUSED PACKAGE_CORRUPT` [EXIT=1] (both); pinebox with `LIVE_CU` pointed at an empty dir -> `REFUSED REQUIRES_COMPUTER_USE` [EXIT=1].
+  - **AUDIT GATE: BLOCKED (operator ruling 2026-11-01: no code review and no script tests for computer-use v2 and Pinebox - `~/.omp/agent/rules/no-script-tests-no-code-review.md`; `ta` precondition-blocked, T-48). Retry condition: the operator's ruling on an audit shape for a headed tool (next-steps blueprint D5).**
+- **The verdict:** PASS for the save (the state is preserved, packaged, and the packaged bytes equal the live install). NOT a completion: the tools are not finished (firewall exit 1). Deployment: the live install already equalled the repo (`deploy.sh status` IDENTICAL); `--install` was not run because nothing differed - the read-only verify is the deploy proof.
+- **Also observed:** a third compositor on the host, `socket=computer-use11`, registry id 11, owned by session `01a18656-e9b8-773c-acb5-57bddabae762` (started 11:23:37) - not one of the operator's two and not provably this session's; left untouched (F-155 rule).

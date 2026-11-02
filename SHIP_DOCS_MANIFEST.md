@@ -3,7 +3,7 @@ Project root: /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION
 Dist artifact: pine-ide/ide/renderer/plutus-vision-v2.pine (the file the SHA gate reads; the v1 seal is pine-ide/ide/renderer/plutus-vision-v1.pine)
 Served SHA16: 125c94f86e6a2f1d (re-measured 2026-10-14 — full sha256 125c94f86e6a2f1d3009a75c778e02ad16c48e4f3772e8d0d8d95c50af162400; the prior row f4010d31 was STALE, see V-44)
 V1 seal SHA: 0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1 (HARD STOP H1 — never touch)
-Last updated: 2026-10-26 (second: the deployed surface tested on the refreshed session, 3 defects fixed, the broken extension disabled; counters live: F-152 · EN-163 · V-56 · P-16 · T-40 · AP-33; audit gate BLOCKED — F-147 OCR_MISSING)
+Last updated: 2026-11-02T16:33:53+04:00 (the save before the gap closure: F-192..F-195 · EN-191 · V-73 · P-26 · T-66 · AP-41; audit gate BLOCKED by operator ruling 2026-11-01, no code review for computer-use v2 + Pinebox)
 Audit gate: code-review BLOCKED (OCR_MISSING — no executable ocr on this host); independent reviewer subagent T-31 is a substitute, NOT the mandated artifact
 Dist artifact (this cycle): ~/.omp/agent/extensions/computer-use-v2/ (the tool) + scripts/pinebox/ (the app layer) — sealed by deploy.sh into MANIFEST.sha256, 61 rows
 Deploy proof: `deploy.sh verify` → DEPLOY: OK  sealed=61 files  nofix=ccc1f778d2bd  hostwin=dc75cce7e31c  mcp=2/2 answer  probe=native/weston-x11

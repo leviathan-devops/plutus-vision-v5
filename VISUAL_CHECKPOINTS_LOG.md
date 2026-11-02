@@ -152,3 +152,10 @@ constant. Without the control, a scene read of `0` would be indistinguishable fr
 | n3-9-p0-chart.png (and p1..p3) | 3b5616b33b76bb57 | the chart section: candles, EMA20 yellow, EMA50 blue, crossover triangles, legend EMA Ribbon (9-session run) | |
 | n4-persistent-computer-id10.png | 69d29f199d14f6a1 | the persistent computer's dialog naming id 10 and its owning session | |
 | n4-persistent-pinebox-id0.png | 287660c24d27a167 | the persistent Pinebox's full IDE: editor, run bar FIXTURE DXY 1H 508 bars, rail :9754 station UP, chart | |
+
+## CHECKPOINT cu-v2-pinebox-gaps-mapped-2026-11-02 (2026-11-02, session ckpt-visual, instance 1 slot :6, torn down after capture; operator focus 0x0 before and after)
+
+| frame | sha256 (16) | what it shows | ruling |
+|---|---|---|---|
+| checkpoints/cu-v2-pinebox-gaps-mapped-2026-11-02/visual/runtime-state.png | 7c85ed0c7ec34ebe | the full Pine IDE 1626x875: tabs PINE IDE / BACKTEST, the EMA Ribbon source in the editor, status row 2026-W28 · FIXTURE · DXY · 1H · 508 bars · rail :9854 · station UP, chart with candles, yellow EMA20, blue EMA50, four green crossover triangles; the EMAs run flat at 101.263 over the fixture's padding after ~Jul 13; `verify` WORKS | the state the gap closure starts from |
+| checkpoints/cu-v2-pinebox-gaps-mapped-2026-11-02/visual/runtime-chart.png | d7c0206801a82c70 | the chart element only (1042x785, 371 colours): legend EMA Ribbon, price axis 100.400-102.100, time axis Jul 2 / Jul 9 / Jul 16 | |
