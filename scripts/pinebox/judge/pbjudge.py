@@ -155,7 +155,11 @@ def load_act(cid):
 
 
 # ───────────────────────────────────────────────── images ──
-def prep(path, width=768):
+def prep(path, width=1280):
+    # F-196 (measured 2026-11-02, raw/judge-ab-*.json): shrinking the 1042x785 chart element to 768 px and letting the engine upscale it
+    # to 1024 tokens cost 803 ms per image; sending it NATIVE (~840 tokens, engine --image-max-tokens 1024, no minimum) costs 575 ms and
+    # keeps the separation (one-MA 0.332 vs min good 0.714). A 390-token image (the model card's 400,000 px) is faster (353 ms) but can
+    # NOT tell one moving average from two (0.785 > 0.701): never shrink below what the clause needs to see.
     """capture form: the chart ELEMENT is already what `pinebox shot --section chart` returns (nothing cropped); it is only COMPRESSED to a judge-sized width,
     and the factor is recorded in the ticket - never part of the chart dropped (blueprint C1)."""
     from PIL import Image

@@ -3,8 +3,7 @@ Project root: /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION
 Dist artifact: pine-ide/ide/renderer/plutus-vision-v2.pine (the file the SHA gate reads; the v1 seal is pine-ide/ide/renderer/plutus-vision-v1.pine)
 Served SHA16: 125c94f86e6a2f1d (re-measured 2026-10-14 — full sha256 125c94f86e6a2f1d3009a75c778e02ad16c48e4f3772e8d0d8d95c50af162400; the prior row f4010d31 was STALE, see V-44)
 V1 seal SHA: 0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1 (HARD STOP H1 — never touch)
-Last updated: 2026-11-02T16:33:53+04:00 (the save before the gap closure: F-192..F-195 · EN-191 · V-73 · P-26 · T-66 · AP-41; audit gate BLOCKED by operator ruling 2026-11-01, no code review for computer-use v2 + Pinebox)
-Audit gate: code-review BLOCKED (OCR_MISSING — no executable ocr on this host); independent reviewer subagent T-31 is a substitute, NOT the mandated artifact
+Last updated: 2026-11-02T16:33:53+04:00 (the save before the gap closure: F-192..F-195 · EN-191 · V-73 · P-26 · T-66 · AP-41)
 Dist artifact (this cycle): ~/.omp/agent/extensions/computer-use-v2/ (the tool) + scripts/pinebox/ (the app layer) — sealed by deploy.sh into MANIFEST.sha256, 61 rows
 Deploy proof: `deploy.sh verify` → DEPLOY: OK  sealed=61 files  nofix=ccc1f778d2bd  hostwin=dc75cce7e31c  mcp=2/2 answer  probe=native/weston-x11
 Ship gate: JEV_GATE/run_gate.sh (the ONLY success gate — all chunks act or REJECT); the fence SPEC.md:25 is the commit gate (FENCE-ROW PASS 5/5 in the message)
@@ -23,10 +22,9 @@ Entry counters (floors — the logs are append-only, count live): F-152 · EN-16
   fence that cites these entries in re-pin justifications).
 - SPEC_VIOLATION_LOG.md — the contract-breach record (rule cited, evidence, fix).
   Writer: the violator or its reviewer. Freshness: append-only. Gate: in context.
-- TESTING_LOG.md — the battery record (per-suite pass/fail with counts) + the AUDIT
-  GATE line. Writer: whoever runs a suite. Freshness: appended per run; counts are
-  point-in-time (re-run, never trust). Gate: in context; the AUDIT GATE line is the
-  qwen-code-audit verdict (BLOCKED without an artifact — never upgraded to PASS).
+- TESTING_LOG.md — the test plan + the results of every headed run (what ran, the raw
+  output, the opened frames, the judge tickets). Writer: whoever drives the tool.
+  Freshness: appended per run; numbers are point-in-time (re-run, never trust).
 - THEATRICALITY_LOG.md — the anti-pattern ledger (AP-nn: the derailment shape + the
   burn it caused). Writer: the agent that names a new pattern. Freshness: append-only.
   Gate: the WHOLE file goes into context (JEV_GATE/run_gate.sh:54) — the judge reads
@@ -86,9 +84,6 @@ Entry counters (floors — the logs are append-only, count live): F-152 · EN-16
   Write tails that stand alone — the judge never sees the head.
 - The next session (resume from disk): reads this manifest → the pin → the tails.
   Write entries that re-orient a cold reader (numbers WITH dates and shas).
-- The auditor (human or OCR): reads the AUDIT GATE line + the fence row. Never
-  upgrade a BLOCKED line to PASS (AP-4) — a blocked gate is information, and
-  laundering it voids every verdict downstream (PIN_INDICATOR_PORT_BUILD.md:1).
 - The fence (SPEC.md:25): cites F-entries in re-pin justifications. Number every
   failure F-nn and every finding EN-nn or the fence cannot cite it.
 
@@ -101,3 +96,7 @@ Entry counters (floors — the logs are append-only, count live): F-152 · EN-16
 - No secrets in ANY ship doc (keys, tokens, passwords) — fingerprints/paths only.
   A leaked secret is a security incident, not a doc update.
 - END OF MANIFEST — refresh triggers above; when in doubt, re-measure (SPEC.md:25).
+
+## 2026-11-02 (after F-196) - what proves a claim in these logs
+- A claim is proven by a headed run of the deployed tool: the raw output, the OPENED frame, and the judge ticket id (pass:true) for anything visual.
+- The judge path and its measured latency (per call, per verify, per three sessions) are in FAILURE_LOG F-196; the instrument is reports/goal-2026-11-02/raw/judge-ab.py.

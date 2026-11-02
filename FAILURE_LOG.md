@@ -2928,3 +2928,25 @@ verdict on 2026-11-01, after a full day: "you spent the whole day accomplishing 
 - **What happened:** `Ship_Packages/pinebox/BUILD_REPORT.md` said "2018 lines against the SPG floor of 2000" while the file had 2621 lines (`wc -l` via the audit).
 - **Root cause:** MECHANISM: `tools/ship-package.py` `write_doc` set `n = len(L)` - the number of LIST ITEMS; an extracted ship-doc entry is one item spanning many lines.
 - **Disposition:** FIXED before the final build: `n` is the line count of the joined text. Caught by reading the generated header against the audit's own count.
+
+### F-196 - the judge took 0.8 s per image call, 2.2 s per verify, and 21.9 s / 75.3 s under contention (2026-11-02, OPERATOR-CAUGHT)
+
+- **The operator, verbatim:** "The Judge is a fucking system one model designed to complete runs in literally like 80 milliseconds. What the fuck do you mean it takes 47 seconds per check? ... What shit settings have you configured that is slowing this down by literally 1000x?"
+- **Measured floor:** a text decision on this engine is 62 ms wall (23 tokens, `/v1/chat/completions`, max_tokens 1). An image decision is bounded by the image's tokens: prefill runs at ~1,800-3,300 tok/s on this shared RTX 4080 Laptop.
+- **Root cause (three mechanisms, each measured):**
+  1. `/etc/systemd/system/imajev-engine.service` ExecStart `--image-min-tokens 1024`: every image was inflated to ~1,050 tokens (1,201 per call). Widths 256/512/768/1042 px all cost 1,083 tokens; 803 ms per call.
+  2. `pinebox-cli/judge/pbjudge.py:158` `def prep(path, width=768)` shrank the 1042x785 chart element, which the engine then up-sampled to the 1024-token floor: detail thrown away, then the cost paid anyway.
+  3. `~/imajev-runtime/systemone-server.py:299` `lock = threading.Lock()` + `:340` `with lock:` serialised every caller on the host onto one request while the engine runs `-np 3`; the listen backlog was the default 5 (9 concurrent calls: `Connection reset by peer`). Ticket ledger: main call median 2,515 ms, max 21,941 ms; control calls max 75,307 ms.
+  4. One verify sends 3 image calls (2 controls + the clause, `pbjudge.py:298`) and a 4th (the choice) on a failure.
+- **A/B (`reports/goal-2026-11-02/raw/judge-ab.py`, the 9 labelled C1.1 frames + controls, same instrument each time):**
+
+| run | tokens/call | per call | per verify | 3 sessions at once | good/bad gap | controls |
+|---|---|---|---|---|---|---|
+| A baseline | 1201 | 803 ms | 2236 ms | 6781 ms (resets at 9 calls) | 0.438 | 0.898/0.113 |
+| B adapter lock removed | 1201 | 801 ms | 1964 ms | 6107 ms | 0.438 | 0.898/0.113 |
+| C engine max 390 (card's 400k px) | 539 | 353 ms | 1005 ms | 2934 ms | **-0.084 (BLIND: one-MA 0.785)** | 0.890/0.138 |
+| D native 1042 px, engine max 1024, no min | 990 | 575 ms | 1286 ms | 4014 ms | 0.381 | 0.909/0.118 |
+
+- **Disposition:** FIXED as D. (1) adapter: no lock, questions of one request in parallel, backlog 128 (backup `/home/leviathan/imajev-runtime/systemone-server.py.bak-lock-20261102164518`; restarted `imajev-systemone.service`); (2) engine: drop-in `/etc/systemd/system/imajev-engine.service.d/image-tokens.conf` replaces `--image-min-tokens 1024` with `--image-max-tokens 1024` (original unit untouched); (3) `pbjudge.prep` default width 1280 (native element). Headed proof, `pinebox verify --judge --clause C1.1` on instance 1: EMA ribbon WORKS p=0.697 controls 0.908/0.117; one-MA render REFUSED JUDGE_FAILED p=0.1495 class MISSING_ELEMENT (frame /tmp/jf-one-ma.png opened: legend "One MA", one yellow line, no blue line, no triangles). Operator focus 0x0 before and after.
+- **Not reached and why:** 47-80 ms is the TEXT floor; an image call cannot be cheaper than prefilling its image tokens, and C proves that cutting tokens below what the clause needs makes the judge blind. The remaining lever is the controls: they are fixed images re-judged every call (2 of the 3 prefills), the blueprint's "every call" rule (P3 5.4).
+- **Also:** C (390 tokens) is the model card's resize bound; the engine prints "Qwen-VL models require at minimum 1024 image tokens to function correctly on grounding tasks" - a grounding (box) warning; this judge reads no boxes, and D measured no loss.
