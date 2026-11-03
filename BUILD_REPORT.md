@@ -2655,3 +2655,41 @@ is visible in the opened frame, and its geometry was hardcoded to the fixture (F
 **The evidence:** TRUE SHA (cu-v2/MANIFEST.sha256) `0c0816472ccb1f7b55676f1ae9e3017009c45488c0a2addecc3bc813cf803ca8`; package fingerprints b7f3e0c7750c5661… (computer-use-v2), fc36c7d8c53264a5… (pinebox); T-66.
 **The verification:** both PACKAGE_AUDIT: PASS; both DEPLOY_VERIFY: IDENTICAL; canon GATE: PASSED; kg GATE: PASS (346 cards); verify-migration 33/0.
 **The honest notes:** the tools are NOT finished (firewall 14 of 15 open); the gap closure has not started and waits for approval. F-195 (mine): the assembler's doc headers counted list items as lines (pinebox BUILD_REPORT said 2018 for 2621), fixed in `tools/ship-package.py` before the final build.
+
+## 2026-11-03 — THE GAP CLOSURE (goal pin goal/MASTER_PROMPT_GAP_CLOSURE.md, waves W1..W9): both tools finished against their four blueprints
+
+**The built (by wave; every item driven headed through the deployed tool, the frame opened, tokens quoted in reports/goal-2026-11-03/RESULTS.jsonl):**
+- **W1, judge-binding:** signed tickets (HMAC key outside the repos); TICKET_UNSIGNED and ARTIFACT_MISMATCH (ST-120..122).
+- **W2, the claim lock:**
+  - the pinebox extension's session_stop hook; a regex detects and a calibrated judge decides (act 0.6134);
+  - the TTSR alarm `rules/claim-evidence.md`; commit-msg locks in both repos (ST-123..126);
+  - later hardening: LEDGER_HOLE fails closed, and withdrawals are judged (F-217, F-218).
+- **W3, phases:** `judge/phases.json`, `verify --phase` / `phase --close`, PHASE_TICKETS_MISSING / TICKET_REUSED (ST-127/128).
+- **W4, v3 tokens:** WEEK_NOT_IN_VIEW, PRICE_BAND_MISMATCH, PINE_COMPILE_FAILED, CANVAS_ABSENT, ASSET_SET_FAILED / TF_SET_FAILED read-back, still-chart capture (ST-140..145).
+- **W5, computer-use core:** `computer look`; the xvfb, weston-vnc and guest adapters driven; guest image 7a657380 (F-205: `-cpu host`, the session forwarded) (ST-150..156).
+- **W6, geometry:** E2 polyline geometry in Pinebox's own fork (ruling R1, F-201 fork), index and time anchors (ST-160; ta probes P-11/P-12).
+- **W7, the verb sweep:** all 52 verbs plus 5 refusal rows, must-fail first.
+  - Its defects: F-206 (view timestamp/active), F-208 (bare up), F-209 (CDP ownership), F-210 (fullscreen view), F-211 (CLI arguments).
+  - Gate G16 added.
+- **W8, the audit:**
+  - the open entries closed;
+  - the independent audit, ta, 11 rounds → PASS at round 11 (reports/audit/AUDIT_W8_2026-11-03.md);
+  - the audit's findings fixed: F-212..F-220. The fork lost 116 never-loaded files; the host window is pinned; the week persists across tabs; the RAM is measured whole.
+- **W9, the final record:**
+  - 3 consecutive clean crash rounds, 68/68 each (raw/w9-crash.sh, new section H for every W4..W8 verb and token);
+  - the nine-session round, FAIL=0;
+  - the final sweep, 57/57;
+  - all after the last code change.
+- **The evidence:**
+  - repo HEAD `88aebb5`; TRUE SHA (cu-v2/MANIFEST.sha256) `8fa66ea66624036dc93a31e445f2b04c340ce0fcb6b97cecd5000c2644d3890a`;
+  - `deploy.sh status` → STATUS: IDENTICAL (217 files);
+  - `tools/gap-firewall.sh` → 16 of 17 CLOSED before F-192's closing entry.
+- **The numbers that matter:**
+  - one Pinebox is 633–652 MB measured whole (lower_bound false); nine sessions run at 492–524 MB per Pinebox;
+  - the page is 1626×875 regardless of the operator's window manager;
+  - 0 FOCUS_STOLEN in every round; 9 of 9 cross-session attempts refused.
+- **The honest notes:**
+  - `view --confirm` on the operator's own display was not run (a private mutter display stands in for it).
+  - The audit was run by the build's own session (subagents barred); its evidence is ta's hashed captures.
+  - The pv-server's synthetic prediction bars draw a vertical stroke in a user's `plot(close)` (upstream design, recorded in the audit report).
+  - 6 foreign processes hold displays :5 / :99 on this host (not these tools'; the leftover check diffs against them).

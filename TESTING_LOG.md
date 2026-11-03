@@ -2600,3 +2600,35 @@ forecast direction (rise to the resistance, fall to the support) matches.
   - the time-anchored polyline (P-12);
   - the F-219 re-run zigzag.
 - **The verdict:** PASS (ST-180, ST-181).
+
+## TEST RESULT - 2026-11-03 - T-70 - W9: three consecutive crash rounds (reports/goal-2026-11-03/raw/w9-crash.sh 1..3)
+- **What ran:** the W6 round extended (one script, identical each round).
+  - **Old scenarios kept:** adversarial ids, ownership, duplicates, verify under hostile chart states, a real app with input, a two-session race for one id, a start killed between claim and up, the judge on the one-MA blind spot, teardown and audit.
+  - **Section H, 26 new scenarios:** computer look; CDP_NOT_OWNED; VIEW_UNCONFIRMED (both tools); BAD_ARGS (both CLIs); PINE_COMPILE_FAILED; TF_SET_FAILED and ASSET_ABSENT with the page put back; the record agreeing with the page; PHASE_NOT_FOUND; verify --phase and PHASE_TICKETS_MISSING; phase close; ARTIFACT_MISMATCH; NO_TICKET; a backed claim OK; tab readiness (room and IDE with its week); page geometry 1626x875; the host window pinned (WM_NORMAL_HINTS min = max); RAM whole; 0 404s; a program spawned into a Pinebox seen through X while the IDE is captured over CDP.
+  - **Leftover check:** now diffs app processes against the round's own baseline.
+  - **Updated for this build's state:** the clean-host gate expects registry 11,10,0 (11 = a foreign session's instance, never touched); G1/G2 follow the judge's move onto verify's default path.
+- **The raw output:** `=== ROUND 1 SUMMARY: PASS=68 FAIL=0`, `=== ROUND 2 SUMMARY: PASS=68 FAIL=0`, `=== ROUND 3 SUMMARY: PASS=68 FAIL=0` (raw/w9-crash-r1..3.txt). Every matched line was read (round 1 in full), and every frame was opened: recoloured chart, typed dialog, spawned dialog, IDE (rounds 1–3).
+- **The verdict:** PASS, three consecutive clean rounds (ST-191..ST-193). Completion line G14 CLOSED.
+- **The id mapping:** the goal pin names the W9 gates ST-190 (firewall), ST-191 (PACKAGE_AUDIT) and ST-192 (DEPLOY_VERIFY). The crash script numbered its rows ST-19<k>, so the package and deploy rows are ST-196 and ST-197, and the firewall row is ST-190.
+
+## TEST RESULT - 2026-11-03 - T-71 - W9: the nine-session round (reports/goal-2026-11-03/raw/n9/round9.sh)
+- **What ran:** 5 computers and 4 Pineboxes started at once (wall 31.6 s, all rc 0), then driven concurrently:
+  - computers: spawn, focus, type, screenshot;
+  - Pineboxes: verify, chart shot.
+  - Each session also aimed at its neighbour's id; then all nine were torn down at once.
+- **The raw output:**
+  - 9 of 9 neighbour attempts refused SESSION_FOREIGN, 0 files leaked;
+  - verify WORKS x4;
+  - Pinebox RAM 502 / 492 / 524 / 505 MB, lower_bound false;
+  - FOCUS_STOLEN 0; teardown 1.0 s; leftover diff 0; operator 0x0 after;
+  - `=== NINE-SESSION SUMMARY: FAIL=0`.
+- **The frames:** all nine opened (5 dialogs, each holding its own session's typed text; 4 charts, each with its own clock).
+- **The verdict:** PASS (ST-194).
+
+## TEST RESULT - 2026-11-03 - T-72 - W9: the final verb sweep, run 7 (after the last code change)
+- **What ran:** `reports/sweep-2026-11-03/sweep.sh` (rows.jsonl, run-7.txt).
+- **The raw output:** `ROWS: 57  PASS: 57  FAIL: 0`; operator 0x0 before and after; the foreign display processes unchanged before and after.
+- **The frames:** all 12 opened, no delta. Among them:
+  - `pinebox-view`: the fixed 1626x931 window, not maximized, the whole IDE visible;
+  - `pinebox-spawn_ide`: on DXY with 508 bars.
+- **The verdict:** PASS (ST-195). Completion line G16 CLOSED.

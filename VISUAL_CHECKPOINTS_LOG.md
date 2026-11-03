@@ -159,3 +159,14 @@ constant. Without the control, a scene read of `0` would be indistinguishable fr
 |---|---|---|---|
 | checkpoints/cu-v2-pinebox-gaps-mapped-2026-11-02/visual/runtime-state.png | 7c85ed0c7ec34ebe | the full Pine IDE 1626x875: tabs PINE IDE / BACKTEST, the EMA Ribbon source in the editor, status row 2026-W28 · FIXTURE · DXY · 1H · 508 bars · rail :9854 · station UP, chart with candles, yellow EMA20, blue EMA50, four green crossover triangles; the EMAs run flat at 101.263 over the fixture's padding after ~Jul 13; `verify` WORKS | the state the gap closure starts from |
 | checkpoints/cu-v2-pinebox-gaps-mapped-2026-11-02/visual/runtime-chart.png | d7c0206801a82c70 | the chart element only (1042x785, 371 colours): legend EMA Ribbon, price axis 100.400-102.100, time axis Jul 2 / Jul 9 / Jul 16 | |
+
+## W9 FINAL RECORD (2026-11-03) - crash rounds, nine sessions, the final sweep (all frames opened; no delta)
+
+| frame | sha256 (16) | what it shows | ruling |
+|---|---|---|---|
+| reports/goal-2026-11-03/frames/w9-crash-r1-recoloured.png | 0b65577e9e34 | the chart with candles recoloured orange/purple, both EMAs, crossover triangles (verify WORKS on it) | no delta |
+| reports/goal-2026-11-03/frames/w9-crash-r1-spawn.png | 0decc5fd2c7c | the program spawned into a Pinebox, seen through X: W9SPAWN1 'spawned' | no delta |
+| reports/goal-2026-11-03/frames/w9-crash-r3-computer.png | f6d2d89ce01f | the computer's zenity entry holding 'typed-round3' | no delta |
+| reports/goal-2026-11-03/frames/n9-p2-chart.png | a8107318534362b0 | one of four concurrent Pinebox charts (EMA ribbon, 1042x785) during the nine-session round | no delta |
+| reports/goal-2026-11-03/frames/n9-c3.png | c761ba24f594ca5e | one of five concurrent computers: 'typed-n3-9-c3' in its own dialog | no delta |
+| reports/sweep-2026-11-03/frames/pinebox-view.png | (rows.jsonl) | view --confirm raised the Pinebox over a private mutter display at its fixed 1626x931, whole IDE visible | no delta |
