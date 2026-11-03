@@ -3772,3 +3772,11 @@ DXY points because DXY is its worked example; the indicator is 4-pair.)
 - **THE FIX:** `computer look` (`cu-v2/core/drive.sh` drv_look; actions.json; the forwarder attaches the frame) + `fresh`; `pinebox look`/`run` now attach their frame in the extension (only shot/up/load did); F-205 (above).
 - **THE VERIFICATION:** ST-151..ST-156 (RESULTS.jsonl), every frame opened. ST-150 (the image part at the tool boundary) runs in a fresh omp session; the default `opencode-go` route is exhausted (`503 go_pool_exhausted`: 2 of 3 keys quota-dead), so test sessions use `openrouter/nvidia/nemotron-3.5-lightning:free`.
 - **NOT DONE, by design:** a capture through the VNC channel needs weston's PAM login (the operator's password); `view --confirm` raises a window on the operator's screen.
+
+# EN-197 - W6: E2 polyline geometry in Pinebox's fork (ruling R1) (2026-11-03)
+- **THE FINDING:** the station counted Pine polylines (`counts.polylines`) and drew none (PINEBOX blueprint 7A STATION, B-A8; V-73). The fix written on 2026-11-01 had been made in the operator's pine-ide (0888248, reverted by ruling R2).
+- **THE FIX (in `pinebox-cli/fork/` only, recorded in fork/UPSTREAM.md):**
+  - `pine-ide/pine-station/lib/run.mjs` emits time-anchored polyline points, and `pine-ide/pine-ide/vision.mjs` draws them (the reverted change, applied to the fork).
+  - `counts.polylines` is taken from the emitted geometry.
+  - A Pine `chart.point` is read by INDEX under xloc bar_index. Measured on PineTS 0.10: `{"index":81,"price":101.447}`, xloc "bi". The reverted code read x/time only and dropped every point of a from_index polyline.
+- **THE VERIFICATION:** ST-160: `polylines: 1`, frame opened, the four anchors equal the page's bars at n-1-300/220/140/60 to the bar and the price. Completion line G11 now reads the fork.
