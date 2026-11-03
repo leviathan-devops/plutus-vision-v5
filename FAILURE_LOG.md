@@ -2967,3 +2967,12 @@ verdict on 2026-11-01, after a full day: "you spent the whole day accomplishing 
 - **What happened:** pan off the data, `fit`, `verify`: 177 of 382 in-view bars at their columns in the frame. Three other sessions' verifies of the same chart passed.
 - **Root cause (hypothesis, not measured):** the F-177 stale capture: the bitmap lags the renderer after a viewport change. OPEN, next wave.
 
+
+### F-201 - Pinebox ran the operator's Pine IDE source instead of its own fork (2026-11-03, OPERATOR-CAUGHT)
+
+- **The operator, verbatim:** "PINE IDE SOURCE IS OFF FUCKING LIMITS. PINEBOX IS SUPPOSED TO BE FORKED AND ENTIRELY SELF CONTAINED.STOP BEING FUCKING RETARDED I SPELLED THIS OUT CLEARLY AT THE START OF THE PROJECT"
+- **What it was:** `pinebox-cli/pinebox:29` set `PV_ROOT` to the PLUTUS_VISION tree; `stages/services.sh:44,54,70,73,86,113` started the station, rail and server from `PLUTUS_VISION/pine-ide` and `PLUTUS_VISION/scripts`; `stages/room.sh:22` ran the backtest room from `PLUTUS/GITHUB-PLUTUS-DASHBOARD`. And I edited that source twice (987dc3e, 0888248 - F-158, F-166) and proposed a third edit (ruling R1).
+- **Root cause:** the blueprint's "a FORK of computer-use v2.0 with the Pine IDE as its default application" was implemented as a fork of the CLI only; the IDE runtime was referenced in place, guarded by a "frozen" law instead of being copied - so every IDE change needed the operator's source.
+- **Disposition:** FIXED: `pinebox-cli/fork/` (226 files, git archive of PLUTUS_VISION 9fc33bb + the dashboard 7b78c45, provenance and per-file hashes in fork/UPSTREAM.md/.sha256); `PB_FORK="$PB_HOME/fork"`; the fork station's engine installed by `deploy.sh push` (npm ci from its lockfile, stamp-checked, not sealed); R2 reverts in PLUTUS_VISION 9fc33bb. Proof ST-099..ST-101: a fresh instance's 5 services run from the fork, 0 references to the operator trees (the same scan finds 4 on the old instance 0), verify WORKS on 5 judged clauses, the chart and the Backtest room frames opened. Completion line G17 (static, negative control on a planted path -> OPEN).
+- **Also fixed on the way:** a `fork/scripts/pinebox -> ../..` symlink made a directory loop (diff -rq unreadable, the seal hashed 1521 files); replaced by PYTHONPATH at launch. The npm log was written into the live tree (LIVE_DRIFT on the next push); it now goes to a temp file.
+- **Open:** the operator's Pinebox id 0 still runs the OLD code from PLUTUS_VISION until it is restarted (pin law: never signal id 0).
