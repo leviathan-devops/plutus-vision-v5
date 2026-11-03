@@ -3745,3 +3745,14 @@ DXY points because DXY is its worked example; the indicator is 4-pair.)
 - **THE FIX:** `pinebox-cli/judge/pbjudge.py`: a 32-byte signing key created by the judge on first use at `~/.config/pinebox/judge.key` (mode 0600, refuses if group/other-readable, outside every repo and evidence dir); `manifest.signature = HMAC-SHA256(key, bundle + ":" + artifact)`; `check_ticket` refuses `TICKET_UNSIGNED` (absent or non-verifying signature) and, with `--artifact <png|sha>`, `ARTIFACT_MISMATCH` unless the cited artifact is the ticket's frame or region.
 - **THE VERIFICATION:** ST-120 ARTIFACT_MISMATCH (ticket cited for the Backtest frame); ST-121 TICKET_UNSIGNED three ways (forgery, other host's key, signature removed); ST-122 genuine ticket ok signed:true, region opened.
 - **THE LESSON:** "the tool wrote it" needs a secret the agent's hand-assembly does not use; hashes prove consistency, not authorship. Tickets written before EN-193 are unsigned and now refuse - the archive keeps them as history, not as proof.
+# EN-194 - W2, the lock (P3f), and W3, phase wiring (P3g) (2026-11-03)
+- **THE FINDING:** P3 section 7's lock, alarm and commit gate and section 11's phase wiring were not built (V-66, V-67, V-68).
+- **THE MECHANISM PROBED FIRST:** omp 18.12.6 with a throwaway extension (-e /tmp/pb-stop-probe.ts): `session_stop` carries `last_assistant_message`; returning `{continue: true, additionalContext}` continued the session (PROBE_ACK) without erasing the message; `stop_hook_active` true on the second stop.
+- **THE FIX:**
+  - **Lock:** `pinebox-ext/index.ts` session_stop hook, scoped to sessions that called the pinebox tool; it runs `pbjudge claims --mode turn`, and a refusal (CLAIM_WITHOUT_TICKET / NO_TICKET, TICKET_ABSENT, TICKET_FAILED, TICKET_UNSIGNED, TICKET_CORRUPT) continues the session with the refusal appended. It allows at most 2 continues, then posts a CLAIM_UNRESOLVED notice.
+  - **Alarm:** `~/.omp/agent/rules/claim-evidence.md` (scope text, `interruptMode: never`, so the correction follows the message).
+  - **Commit lock:** `tools/git-hooks/ticket-check` runs from the PINEBOX commit-msg shim (installed by deploy.sh push) and from PLUTUS_VISION `.githooks/commit-msg` CHECK 3.
+  - **Phases:** `judge/phases.json`; `verify --phase NAME`; `phase --close NAME` refuses PHASE_TICKETS_MISSING and TICKET_REUSED; closes are hash-chained in evidence/phases.jsonl.
+  - **Judge self-report:** pbjudge reports ENFORCED or ENFORCEMENT_ABSENT, read from the deployed extension.
+- **THE VERIFICATION:** ST-123..ST-128 (RESULTS.jsonl).
+- **THE LESSON:** the lock earned its keep at once: in two real sessions an agent claimed "verified" without the ticket it held, and the lock made it cite the ticket.

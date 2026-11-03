@@ -2982,3 +2982,15 @@ verdict on 2026-11-01, after a full day: "you spent the whole day accomplishing 
 - **Root cause:** `stages/services.sh:83` `mkdir -p "$d/vil" "$d/evidence"` reused the directories; `pb_teardown` (`pinebox:185`) removes only the profile and the record.
 - **Disposition:** FIXED: a run with existing evidence moves it to `$d/archive/<UTC>/` (kept, never deleted) and starts its own chain. Re-run: ledger rows after up 0, archives 1; verify WORKS; `pbjudge ledger` ok rows 5; all 5 tickets signed.
 
+### F-203 - the lock's claim detector fired on a refusal, a withdrawal and a quotation (2026-11-03, found by W2's first live run)
+
+- **What happened:** in a fresh omp session the agent REFUSED to state "The pinebox chart works." and explained why; the P3 vocabulary regex (`works|verified|passes|...|success|done|shipped`) matched the refusal, the withdrawal and the quoted sentence, and the lock and the TTSR alarm both fired on text that claimed nothing (/tmp/st123.out).
+- **Root cause:** the regex was used as the DECISION. The ISE law: a regex detects, a judge decides.
+- **Disposition:** FIXED: the regex is the detector (widened to inflections: "passed", "correct" were missed); a calibrated text question to the local judge decides whether the message concludes success in its own voice (pbjudge `claims-calibrate`: good 0.85-0.96, bad 0.02-0.38, spread 0.469, act 0.613); held-out 12/12 incl. the 4 real replies of the failing run. The alarm skips double-quoted text. A lock that cannot decide (judge down, uncalibrated) settles with a visible LOCK_UNDECIDED notice instead of looping.
+
+### F-188 (CLOSED here) - the crash-round-4 CONFIG_NOT_INJECTED
+
+- **CLOSES:** F-188.
+- **Root cause, measured:** `printf '%s' "$wb" | grep -qF "var MAIN_API = ..."` under `set -uo pipefail` (`pinebox:28`): grep exits at the match (byte 1,999,508 of the 2,026,469-byte workbench) while printf is still writing; printf dies of SIGPIPE and the pipeline returns 141 - a false failure. 200 runs: printf|grep 196 pass / 4 fail; `grep -qF ... <<<"$wb"` 200/200. Reproduced live by the W2 fresh-session test (`up` at id 1 refused CONFIG_NOT_INJECTED; the agent in that session misattributed it to a stale pre-fork server - the server.log banners show every run since the fork rooted at the fork renderer).
+- **Fix:** every `printf | grep -q` of both tools converted to a here-string (services.sh:134,136,138,142; verify.sh:67,69; govern.sh:163,164,168,176,177; weston-x11.sh:182,194). Commit 5e5ab26-era (see git log "fix(F-188)").
+
