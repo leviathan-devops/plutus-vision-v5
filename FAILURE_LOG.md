@@ -3012,3 +3012,101 @@ verdict on 2026-11-01, after a full day: "you spent the whole day accomplishing 
   - Proof: ST-154.
 - **CLOSES:** F-162 - V11 is now proven on the image on disk, `assets/guest/guest-bootable.qcow2` sha256 7a6573803987de3b78e2c8459b8b297dc448e18619836cec8ee655ffad505070 (MANIFEST.large.sha256 verified), with the frame opened (ST-154). The 2026-11-01 proof's image provenance stays unknown; that proof is superseded.
 
+
+## W8 (2026-11-03) - the open defect entries, each closed by its evidence (completion line G12)
+
+- **CLOSES:** F-151 - `~/.omp/agent/config.yml` is tracked in the `~/.omp/agent` git repo (snapshot commit a952cc2, then ace24cc), so a whole-file rewrite by `omp config set` is now diffable and restorable from git. The working-tree change present on 2026-11-03 is the live host's state and is not this build's to commit.
+- **CLOSES:** F-153 - the ship-gate scan loop is out of the workflow by the operator's order (2026-11-02, "Purge this completely"; RULINGS.md "the verification law"; commit 061f8e8). This run's proof channel is headed runs, opened frames and judge tickets only (RESULTS.jsonl, 2026-11-03).
+- **CLOSES:** F-154 - every wait in the 2026-11-03 run was a bounded background job: each command carried its own `timeout`, and the job reported its exit at completion (sweep 1500 s, guest boot 300-420 s, omp sessions 600-900 s). No unbounded watcher remained.
+- **CLOSES:** F-155 - authorship of the 2026-11-01 XTEST change stays unknown and is not attributed to anyone. The change is kept on behaviour: the W7 sweep's `computer type` row typed into a zenity entry, and its frame was opened.
+- **CLOSES:** F-156 - the 2026-11-01 context report (a subagent product) was not cited in this run, and no subagent was used for these tools (operator ruling).
+- **CLOSES:** F-158 - reverted by ruling R2: PLUTUS_VISION 9fc33bb restores the generator's own `plutus-vision-v2.pine`; Pinebox's fork carries that original (fork/UPSTREAM.md).
+- **CLOSES:** F-159 - the verification of this build is the sanctioned pair, the headed run with the opened frame and the judge ticket: ST-099..ST-160 and the W7 sweep rows, each with its tool output quoted. No script gate was cited as proof.
+- **CLOSES:** F-160 - the method recurred once in this run and was caught. A regex over 13 `printf | grep -q` sites broke 2 files (bash -n failed on weston-x11.sh:185; services.sh arguments were mangled); both were restored from git and re-edited line by line. Lesson kept: a scripted multi-line edit needs `bash -n` + a diff read of every hunk before any commit.
+- **CLOSES:** F-163 - the file name is kept (the migration verifier's directory diff depends on it). Its true content is on record: VISUAL_CHECKPOINTS_LOG.md:143, "cu-live-xterm.png ... NOT an xterm: a duplicate of the xev frame ... MISLABELED (F-163)". The same xev frame bytes (sha16 54ed8ee3ddd65be7) recurred in the 2026-11-03 guest proof, because xev's window is constant.
+- **CLOSES:** F-164 - a headed weston-x11 instance has been kept up for the operator since 2026-11-02 00:10:59: computer id 10, session operator-look-computer, weston pid 2991603 `--backend=x11-backend.so --socket=computer-use10`. Pinebox id 0, session operator-look-pinebox, was restored 2026-11-03 (F-198).
+- **CLOSES:** F-165 - the overlay-visibility question belongs to the trading build (PLUTUS), which is off limits to this build. No work on it here; it is recorded for that build.
+- **CLOSES:** F-166 - reverted by ruling R2 (PLUTUS_VISION 9fc33bb). The polyline change lives only in Pinebox's fork (W6, EN-197).
+- **CLOSES:** F-174 - the labels were rebuilt from opened frames; the week-label inconsistency it noted is the stale capture of F-177, closed next.
+- **CLOSES:** F-177 - root cause F-199: pan, zoom and fit GLIDE. The chart verbs wait for a still viewport and flush the scheduler before returning, and `shot` waits for a still chart before capturing (`pb_chart_wait_still`). ST-145: a shot taken immediately after `fit` showed the whole fitted chart (opened), and verify gave chart 382/382.
+
+### F-206 - `view` raised with an X timestamp of 0 and reported "raised" from the send alone (2026-11-03, found by the W7 verb sweep)
+
+- **What happened:** `hostwin raise` sent `_NET_ACTIVE_WINDOW` with `data[1]` left at 0 by the memset.
+  - EWMH requires the time of the user action. Mutter, the operator's WM (GNOME Shell), logged `Buggy client sent a _NET_ACTIVE_WINDOW message with a timestamp of 0`, and a focus-stealing-prevention WM may refuse it.
+  - `op_view` (cu-v2/core/adapters/weston-x11.sh) printed `{"ok":true,"raised":...}` as soon as the message was sent, without reading whether the window became active.
+  - A raise of a destroyed window was an rc-0 no-op reported as raised.
+- **Disposition:** FIXED.
+  - `hostwin.c` `server_time()` takes the X server's current time from the PropertyNotify of a zero-length append on a private unmapped InputOnly window, bounded at 200 x 5 ms.
+  - `op_view` refuses `WINDOW_GONE` when the host window is not viewable. After the raise it polls `hostwin active` (40 x 50 ms) and refuses `VIEW_NOT_RAISED` unless the window is active; the reply now carries `active`.
+- **Proof:** ST-171.
+  - OLD raise: mutter warnings 2 -> 3. NEW raise: 3 -> 3, with active moving 0x600005 -> 0x400005.
+  - Unmapped -> `WINDOW_GONE` rc 1; no WM -> `VIEW_NOT_RAISED` rc 1 at 2.18 s; mutter -> rc 0 with `active` equal to the window.
+
+### F-207 - my own W7 sweep harness produced two FAIL rows and two wrong frames that were not tool defects (2026-11-03)
+
+- **What happened:** the first two runs of `reports/sweep-2026-11-03/sweep.sh` failed `computer view` and `pinebox view`. I theorised about window managers (fluxbox, xfwm4, mutter) before reading the legit call's verbatim output, which was:
+  - `BAD_ID ... got 'null'`: ids re-derived through a separate `shell list` came back empty;
+  - `NO_WINDOW_BOUND`: the evidence `look` ran on a private xvfb instance with no bound window;
+  - `NO_INSTANCE`: a session whose instance had not been read from the `up` reply.
+- **Three more harness faults** were visible only in the opened frames:
+  - the private "operator" display was the instance's own size (1626x931), so the decorated viewee could not fit and the frame was cropped (the operator's display measures 3624x1080);
+  - the spawn row photographed the IDE page over CDP instead of the spawned program;
+  - fixed sleeps preceded reads and captures.
+- **Disposition:** FIXED in the harness.
+  - Ids come from each `up`'s own JSON.
+  - The private display is 1920x1080 and runs mutter (the operator's WM), with readiness polled.
+  - The view frame is a root capture of the PRIVATE display, polled until two consecutive captures are identical.
+  - The spawned program is photographed through `computer look` (X channel).
+  - Every read polls for its outcome (`root_still`, `until_out`, `wm_gone`).
+- **Lesson:** read the verbatim output of the failing call before forming any theory. All three hand runs pointed at the harness, and the WM theories cost three runs.
+
+### F-208 - `pinebox up` without `--pine` left the page on a different instrument than the record (2026-11-03, sweep frame pinebox-spawn.png)
+
+- **What happened:** `pb_up` wrote `pair: DXY` into `state.json` but applied the pair only through `stage_load`, which runs only with `--pine`.
+  - A bare `up`, or `spawn`, opened the IDE on its own default: EURUSD, 0 bars, a `FIXTURE_CELL_ABSENT: EUR/USD 1H` toast, an empty chart.
+  - The record and the running page disagreed.
+- **Disposition:** FIXED. Without `--pine`, `up` puts the page on the recorded pair/tf through `pb_nav_load_axes`, which loads, READS BACK the page's market and refuses by name. The up's trap tears the instance down on a refusal.
+- **Proof:** ST-172.
+  - `up --pair GBPUSD` -> `ASSET_ABSENT` rc 1, with the instance torn down and the leftover check clean.
+  - A bare `spawn` -> `axes DXY 1H (508 bars, read back from the page)`, frame opened.
+
+### F-209 - a program spawned into a Pinebox could not be seen or driven through the tool (2026-11-03, sweep frame pinebox-spawn.png)
+
+- **What happened:** `drv_spawn --cdp PORT` recorded `cdp=PORT` for the instance.
+  - A later spawn bound another program (`win=16777220`) but left `cdp` in the record.
+  - `cdp_of` therefore routed screenshot, look, click, type and key to the browser page whatever window the caller had bound.
+  - The spawned zenity existed (pid, window) but no verb of the tool could photograph or drive it.
+- **Disposition:** FIXED.
+  - `spawn --cdp` records `cdp_win`.
+  - `cdp_of` uses the recorded port only while the bound window is `cdp_win`, unless the caller names a port.
+  - Every Pinebox page capture names its port (`--cdp $(pb_port id cdp)`) in 8 call sites: pinebox shot/attach/verify, page.sh, v3.sh look, verify.sh x3.
+- **Proof:** ST-173. `look --cdp 9999` -> `CDP_NOT_OWNED` rc 1; `look` -> via x, the dialog (opened); `pinebox shot` -> via cdp, the IDE (opened); `focus` on the browser -> via cdp again.
+
+### F-210 - viewing a Pinebox showed the IDE with its bottom row cut off (2026-11-03, sweep frame pinebox-view.png)
+
+- **What happened:** the browser runs windowed at `--window-size=1626,931 --window-position=0,0` inside a 1626x931 weston output.
+  - Weston's XWayland WM frames it: `_NET_FRAME_EXTENTS 38,38,59,38` (a 27 px title and 6 px borders, measured with xwininfo at 6,27).
+  - The desktop-shell panel pushes it down further.
+  - The output-sized window runs off the output. `view` showed the operator the timeframe/clock row cut mid-glyph, while the CDP captures (the page viewport) hid it.
+- **Wrong layer, measured and reverted:** removing the panel (a per-instance weston.ini) left the window clipped by the XWM title, and changed the page viewport 1626x875 -> 1625x874. Reverted in the same hour.
+- **Disposition:** FIXED with `--start-fullscreen`: no frame, no panel, window = output at 0,0. The page is unchanged: innerWidth 1626, innerHeight 875, outer 1626x931.
+- **Proof:** ST-174.
+  - The view frame shows the whole IDE.
+  - verify C1.1 p=0.9308 against act 0.5 = WORKS, judge region opened (same axes and layout).
+  - Sweep run 6 pinebox-view.png opened.
+
+### F-211 - the CLIs accepted arguments a verb does not take, and three verbs mis-parsed theirs (2026-11-03, found by the W7 verb sweep)
+
+- **What happened:**
+  - `computer probe --bogus 1`, `shell list --bogus 1`, `state battery --bogus 1` and `pinebox list --bogus 1` answered rc 0, although the extension and the MCP server already refused a foreign argument.
+  - `pinebox state --get KEY` swallowed its key, because `--get` had become a global boolean (a regression of F-186).
+  - `status --project abc` crashed jq with rc 2.
+  - `computer terminal send` without `--text` sent a bare Enter and answered ok.
+- **Disposition:** FIXED.
+  - Both CLIs validate every parsed flag against the verb's actions.json row (BAD_ARGS); `computer` also allows its CLI-only `--kind` and `--cmd`.
+  - `--get` is boolean only for week/tf/asset.
+  - `--project` must be 1..9.
+  - `terminal send` needs `--text`.
+  - `pinebox terminal` takes `--lines`.
+- **Proof:** sweep rows probe, doctor, shell_list, displays, state_battery, instance_list, pinebox list/status/state/terminal (ST-170).

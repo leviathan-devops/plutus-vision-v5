@@ -3780,3 +3780,17 @@ DXY points because DXY is its worked example; the indicator is 4-pair.)
   - `counts.polylines` is taken from the emitted geometry.
   - A Pine `chart.point` is read by INDEX under xloc bar_index. Measured on PineTS 0.10: `{"index":81,"price":101.447}`, xloc "bi". The reverted code read x/time only and dropped every point of a from_index polyline.
 - **THE VERIFICATION:** ST-160: `polylines: 1`, frame opened, the four anchors equal the page's bars at n-1-300/220/140/60 to the bar and the price. Completion line G11 now reads the fork.
+
+# EN-198 - W7: every verb of both tools driven headed, must-fail first (2026-11-03)
+- **THE INSTRUMENT:** `reports/sweep-2026-11-03/sweep.sh`.
+  - Each row runs a must-fail call whose named refusal token must appear at rc 1, then the legit call at rc 0. A visual verb's frame is copied and its sha recorded, and the frame is OPENED before the row counts.
+  - `view` raises its window on a PRIVATE 1920x1080 xvfb display running mutter (the operator's WM), never on :1.
+  - Every read polls for its outcome.
+- **THE FINDINGS AND FIXES:**
+  - tool defects: F-206 (view), F-208 (bare up), F-209 (CDP port ownership), F-210 (the browser clipped in view), F-211 (CLI arguments);
+  - harness defects: F-207.
+  - Six sweep runs: run 2 was 50/52; runs 3-5 were 54/54 and 57/57 PASS but their frames showed the F-208..F-210 deltas; run 6 was 57/57 with every frame free of deltas.
+- **THE COMPLETION LINE:** G16 in `tools/gap-firewall.sh`.
+  - It requires the earliest row's run time to be newer than the newest tool source, every verb of both actions.json files to have a row, every row PASS, and every frame row opened with a named delta note and its file's sha equal to the row's.
+  - Freshness reads the rows' own `ts`, never the file mtime: recording the opened frames rewrites the file. jq's `mktime` drops the `+04:00` offset (measured +4 h, the unsafe direction), so `date -d` reads it.
+  - Seven negative controls: a frame not opened, a FAIL row, a missing verb, an altered frame sha, a row older than the code, an empty delta note and an absent file. Each gave OPEN with that reason; the real rows give CLOSED.

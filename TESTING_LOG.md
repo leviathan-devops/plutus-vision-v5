@@ -2563,3 +2563,20 @@ forecast direction (rise to the resistance, fall to the support) matches.
 - **Route 10 - the CPU:** the guest printed `no avx2` (qemu default CPU model); booted with `-cpu host` it printed `avx2`, and the claim, the bundle and the TS source all ran in 0 s (rc 0).
 - **The verdict:** ROOT CAUSE = the guest CPU model. FIX = `-cpu host` (KVM) / `-cpu max` (TCG) in boot.sh and rebuild-add.sh. ST-154 PASS after the fix.
 - **The lesson:** routes 5-8 chased an artefact of the probe (trivial files that did no work look like a location effect). The CPU was the one input every probe shared and none varied - vary the shared input before bisecting the variable ones.
+
+## TEST RESULT - 2026-11-03 - T-68 - the W7 verb sweep, run 6 (the final harness, after the last tool change)
+- **What ran:** `bash reports/sweep-2026-11-03/sweep.sh` (output `run-6.txt`, rows `rows.jsonl`, frames `frames/*.png`).
+  - Covered: 26 computer verbs, 26 pinebox verbs and 5 refusal rows (computer look_cdp CDP_NOT_OWNED, view_gone WINDOW_GONE, view_unraised VIEW_NOT_RAISED; pinebox up_axes ASSET_ABSENT, spawn_ide).
+  - The leftover check was run before and after: compositors 2 (ids 10 and 0), registry 11,10,0. The operator display read `hostwin :1 active` = 0x0 before and after.
+- **The raw output:** `ROWS: 57  PASS: 57  FAIL: 0`.
+- **The frames:** 12 opened in the same turn; each named delta is recorded in its row (`frame.delta`), and none is open:
+  - `computer-screenshot/look`: SWEEP-ENTRY holds sweep-typed-77.
+  - `computer-view`: raised, whole window visible.
+  - `pinebox-up/look/run`: the EMA ribbon on DXY 1h, 508 bars, 5 triangles.
+  - `pinebox-shot` and `pinebox-verify`: the chart section, the fitted whole fixture.
+  - `pinebox-tab`: the Backtest room.
+  - `pinebox-spawn`: the spawned dialog via X.
+  - `pinebox-spawn_ide`: a bare up on DXY.
+  - `pinebox-view`: the whole IDE including the bottom row.
+- **The verdict:** PASS (ST-170). Gate G16 CLOSED; its negative controls are in EN-198.
+- **Not covered here:** `view --confirm` on the operator's own display. That raises a window in front of the operator and runs only when the operator asks; the private stand-in is the same code path with the same WM family.
