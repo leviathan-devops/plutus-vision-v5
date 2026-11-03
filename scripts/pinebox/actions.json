@@ -142,13 +142,13 @@
       "type": "string",
       "description": "spawn: the program (and its arguments) to start INSIDE the new instance, e.g. \"zenity --info --text hi\"; checked before anything is claimed (CMD_NOT_FOUND)"
     },
-    "judge": {
-      "type": "boolean",
-      "description": "verify: after the arithmetic verify, also ask the independent image judge about a fresh chart capture and write a content-addressed ticket (needs `clause`); a pass:false ticket is refused as JUDGE_FAILED"
-    },
     "clause": {
       "type": "string",
-      "description": "verify --judge: the clause id to judge, from judge/clauses.txt (calibrated: C1.1)"
+      "description": "verify: the judge clause ids to require, comma-separated (judge/clauses.txt); default: judge/bindings.json for the loaded script and week"
+    },
+    "arith": {
+      "type": "boolean",
+      "description": "verify: run ONLY the arithmetic checks (services, ports, week, bars, drawings, frame, pixels at the renderer's bar columns); the answer is UNJUDGED, never WORKS - nothing in it looked at what the chart shows"
     }
   },
   "actions": {
@@ -301,8 +301,8 @@
       "flags": [
         "id",
         "week",
-        "judge",
-        "clause"
+        "clause",
+        "arith"
       ]
     },
     "insert": {

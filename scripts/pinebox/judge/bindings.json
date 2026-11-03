@@ -1,0 +1,6 @@
+{
+ "_doc": "which clauses a render must satisfy (pbjudge clauses-for). universal: asked of every chart. scripts: by the loaded script's file name. month: the temporal clause for the requested ISO week's month, when one is calibrated.",
+ "universal": ["C0.1", "C1.2"],
+ "scripts": {"ema-ribbon.pine": ["C1.1", "C1.3"]},
+ "month": {"Jul": "C2.1"}
+}

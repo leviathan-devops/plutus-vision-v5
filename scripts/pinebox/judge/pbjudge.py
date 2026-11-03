@@ -27,7 +27,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 URL = os.environ.get("PB_JUDGE_URL", "http://127.0.0.1:8090").rstrip("/")
-MODEL = os.environ.get("PB_JUDGE_MODEL", "imajev-4b-Q6_K")
+MODEL = os.environ.get("PB_JUDGE_MODEL", "imajev-4b")   # the judge server of 2026-11-03 (torch runtime) names the model imajev-4b; a different model is a different act
 TIMEOUT = float(os.environ.get("PB_JUDGE_TIMEOUT_S", "120"))   # 120: the judge is SHARED; under load one call measured 47 s and two timed out at 60 s
 WINDOW_BUDGET = int(os.environ.get("PB_JUDGE_WINDOW_BUDGET", "15000"))  # default 15000          # blueprint section 2: REFUSE when (image + instructions + clauses + question + answer) > 15,000
 ANSWER_HEADROOM = 1000
@@ -95,14 +95,19 @@ def ask_noul(question, criteria, png, state):
     j, cid, ms, raw = call({"state": state, "questions": {"q": {"type": "noul", "instructions": question, "criteria": criteria}}}, png)
     a = j["answers"]["q"]
     if a.get("abstained"): refuse("JUDGE_ABSTAINED", "the judge abstained: the question is unanswerable as asked - rewrite the clause, not the threshold")
-    if a.get("modality") != "image": refuse("JUDGE_NO_VISION", f"the answer's modality is '{a.get('modality')}', not 'image': the projector is not seeing the picture")
+    # VISION PROOF: the server reports the sha256 of every image it decoded (usage.images); the sent image must be among them.
+    # (The previous server answered modality:"image"; this one does not, and a missing field is not a proof.)
+    seen = [i.get("sha256") for i in ((j.get("usage") or {}).get("images") or [])]
+    if sha(png) not in seen: refuse("JUDGE_NO_VISION", f"the judge did not report decoding the sent image (sent {sha(png)[:16]}, reported {[s[:16] for s in seen if s]}): its answer is not about the picture")
     return {"p": float(a["noul"]), "call_id": cid, "latency_ms": ms, "usage": j.get("usage"), "model": j.get("model"), "raw": raw, "state_truncated": j.get("state_truncated")}
 
 
 def ask_choice(question, labels, png, state):
     j, cid, ms, raw = call({"state": state, "questions": {"c": {"type": "choice", "instructions": question, "criteria": labels}}}, png)
     a = j["answers"]["c"]
-    return {"probs": a["probabilities"], "top": a["choice"], "top_p": float(a["confidence"]), "call_id": cid, "latency_ms": ms, "model": j.get("model"), "raw": raw}
+    # top_p is the TOP LABEL'S probability; the server's `confidence` is the distribution's concentration (TypeSafe docs: "Choice confidence
+    # summarizes distribution concentration"), measured 0.49 with MISSING_ELEMENT at 0.571 - reading it as top_p unclassified a correct class.
+    return {"probs": a["probabilities"], "top": a["choice"], "top_p": float(a["probabilities"][a["choice"]]), "call_id": cid, "latency_ms": ms, "model": j.get("model"), "raw": raw}
 
 
 # ───────────────────────────────────────────────── P3b · clauses and the packer ──
@@ -319,7 +324,10 @@ def cmd_calibrate(a):
         sweep.append({"threshold": th, "precision": round(tp / (tp + fp), 3) if tp + fp else None, "recall": round(tp / len(gp), 3)})
     if max(gp) < 0.5: refuse("CLAUSE_UNOBSERVABLE", f"max p over good frames is {max(gp):.3f} < 0.5: the QUESTION is broken (usually compound) - rewrite the clause, do not lower the bar. sweep={sweep}")
     if spread <= 0: refuse("CLAUSE_UNOBSERVABLE", f"min(good)={min(gp):.3f} <= max(bad)={max(bp):.3f}: the good and bad frames are not separable by this question; sweep={sweep}")
-    act = round((min(gp) + max(bp)) / 2, 4)                       # the midpoint of the gap: derived from data, recorded with the sweep beside it
+    # blueprint P3 5.4: a spread below 0.25 does not discriminate. (A midpoint below 0.5 with a wide gap is NOT a defect: measured 2026-11-03,
+    # good 0.934-0.939 vs bad 0.014-0.062 put the midpoint at 0.4978 and the old "act < 0.5" guard refused the clearest clause there is.)
+    if spread < 0.25: refuse("CLAUSE_UNOBSERVABLE", f"spread min(good)-max(bad) = {spread:.3f} < 0.25: the question does not discriminate; sweep={sweep}")
+    act = round(max(0.5, (min(gp) + max(bp)) / 2), 4)             # the midpoint of the gap, never below chance; derived from data, recorded with the sweep beside it
     toks = sorted({x["image_tokens"] for x in good + bad if x["image_tokens"]})
     f = act_file(); doc = json.loads(f.read_text()) if f.exists() else {"clauses": {}}
     if act < 0.5:
@@ -335,35 +343,75 @@ def cmd_calibrate(a):
 
 
 # ───────────────────────────────────────────────── P3e · the judgement ──
-def cmd_judge(a):
-    h = health(); ctext = clause(a.clause); act_doc, act_c = load_act(a.clause)
+def judge_one(a, cid, h, wlock):
+    """one clause: controls + the clause question (concurrent), then the ticket and the ledger row (serialised by wlock)"""
+    ctext = clause(cid); act_doc, act_c = load_act(cid)
     region_png, info = prep(a.region)                                   # REGION_EMPTY here -> INCONCLUSIVE, before any judge call
     frame_png = Path(a.frame or a.region).read_bytes()
     artifact = shaf(a.region)
-    state, ep = render_epoch(a.evidence, a.clause, artifact, a.week)
+    state, ep = render_epoch(a.evidence, cid, artifact, a.week)
     toks = (act_c.get("image_tokens_measured") or [None])[0]
-    if toks is None: refuse("THRESHOLD_UNCALIBRATED", f"no measured image cost for {a.clause} in act.json: the budget cannot be computed")
-    parts, total = pack(a.clause, ctext, state, toks)
-    ctl, r = ask_all(ctext, a.clause, region_png, state)                # controls (same clause, known-good + known-bad image) and the main question, concurrently
+    if toks is None: refuse("THRESHOLD_UNCALIBRATED", f"no measured image cost for {cid} in act.json: the budget cannot be computed")
+    parts, total = pack(cid, ctext, state, toks)
+    ctl, r = ask_all(ctext, cid, region_png, state)                # controls (same clause, known-good + known-bad image) and the main question, concurrently
     if r["state_truncated"]: refuse("BUDGET_EXCEEDED", "the adapter reports it truncated the state: the judgement would be about a document it did not receive")
     passed = bool(r["p"] >= act_c["act"] and ctl["separated"])
     cls = None; choice = None
     if not passed:
         choice = ask_choice(f"This image fails the claim '{ctext}'. Which one of these best describes what is wrong?", CLASSES, region_png, state)
         cls = choice["top"] if choice["top_p"] >= act_doc.get("class_min", 0.5) else "DEFECT_UNCLASSIFIED"
-    judgment = {"model": r["model"], "health": {k: h.get(k) for k in ("model", "modalities", "slot_ctx", "state_char_cap")}, "clause": a.clause, "clause_text": ctext,
+    judgment = {"model": r["model"], "health": {k: h.get(k) for k in ("model", "modalities", "slot_ctx", "state_char_cap")}, "clause": cid, "clause_text": ctext,
                 "question": question_for(ctext), "p": round(r["p"], 6), "threshold_act": act_c["act"], "act_rule": act_c["rule"], "controls": ctl, "class": cls,
                 "choice": None if choice is None else {"probs": choice["probs"], "top": choice["top"], "raw": choice["raw"]}, "state": state, "epoch": ep,
                 "budget": {"parts": parts, "total": total, "window_budget": WINDOW_BUDGET}, "capture": info, "call_id": r["call_id"], "latency_ms": r["latency_ms"],
                 "usage": r["usage"], "raw_response": r["raw"], "artifact_sha256": artifact, "week": a.week}
-    tid, man = write_ticket(a.evidence, a.clause, ctext, region_png, frame_png, judgment, passed, artifact)
-    c = db(a.evidence); c.execute("INSERT INTO analyses(clause,artifact_sha,pass,p,class,epoch_hash,ticket,created_at) VALUES (?,?,?,?,?,?,?,?)",
-                                  (a.clause, artifact, int(passed), r["p"], cls, ep["epoch_hash"], tid, time.strftime("%Y-%m-%dT%H:%M:%S%z"))); c.commit()
-    row = append_ledger(a.evidence, {"ticket": tid, "clause": a.clause, "verdict": "PASS" if passed else "FAIL", "class": cls, "artifact_sha256": artifact, "p": round(r["p"], 4), "epoch_hash": ep["epoch_hash"]})
+    with wlock:
+     tid, man = write_ticket(a.evidence, cid, ctext, region_png, frame_png, judgment, passed, artifact)
+     c = db(a.evidence); c.execute("INSERT INTO analyses(clause,artifact_sha,pass,p,class,epoch_hash,ticket,created_at) VALUES (?,?,?,?,?,?,?,?)",
+                                  (cid, artifact, int(passed), r["p"], cls, ep["epoch_hash"], tid, time.strftime("%Y-%m-%dT%H:%M:%S%z"))); c.commit()
+     row = append_ledger(a.evidence, {"ticket": tid, "clause": cid, "verdict": "PASS" if passed else "FAIL", "class": cls, "artifact_sha256": artifact, "p": round(r["p"], 4), "epoch_hash": ep["epoch_hash"]})
     return {"ok": True, "ticket": tid, "pass": passed, "p": round(r["p"], 4), "act": act_c["act"], "class": cls, "epoch": ep["epoch"], "epoch_hash": ep["epoch_hash"][:16],
             "controls": {"positive": ctl["positive"]["p"], "negative": ctl["negative"]["p"]}, "ledger_seq": row["seq"], "ticket_dir": str(scoped(a.evidence, "tickets", f"{tid}.ticket")),
             "enforcement": "ENFORCEMENT_ABSENT: no hook reads this ticket yet (blueprint P3f is not built); a success claim is NOT gated by it"}
 
+
+def cmd_judge(a):
+    """every clause named in --clause (comma list), judged CONCURRENTLY; one ticket per clause. A refusal on any clause refuses the whole call
+    (a run whose instrument failed on one clause has not been verified), naming the clause; the overall pass is the AND of every ticket."""
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+    cids = [c.strip() for c in a.clause.split(",") if c.strip()]
+    if not cids: refuse("CLAUSE_NOT_FOUND", "--clause named no clause")
+    for c in cids: clause(c); load_act(c)                               # unknown or uncalibrated clauses refuse BEFORE any judge call
+    h = health(); wlock = threading.Lock()
+    def run(c):
+        try: return c, judge_one(a, c, h, wlock), None
+        except Refused as e: return c, None, e
+    with ThreadPoolExecutor(max_workers=len(cids)) as ex: done = list(ex.map(run, cids))
+    for c, _, e in done:
+        if e is not None: raise Refused(e.token, f"clause {c}: {e.detail}")
+    res = {c: r for c, r, _ in done}
+    return {"ok": True, "pass": all(r["pass"] for r in res.values()), "clauses": cids, "failed": [c for c in cids if not res[c]["pass"]],
+            "tickets": {c: res[c]["ticket"] for c in cids}, "results": res,
+            "enforcement": "ENFORCEMENT_ABSENT: no hook reads these tickets yet (blueprint P3f is not built); a success claim is NOT gated by them"}
+
+
+def clauses_for(pine, week):
+    """the clauses a render must satisfy: the universal set, the script's own (by file name), and the month clause of the requested week if one is calibrated"""
+    b = json.loads((HERE / "bindings.json").read_text())
+    out = list(b.get("universal", []))
+    out += [c for c in b.get("scripts", {}).get(os.path.basename(pine or ""), []) if c not in out]
+    if week:
+        import datetime
+        m = re.match(r"^(\d{4})-W(\d{2})$", week)
+        if m:
+            mon = datetime.date.fromisocalendar(int(m.group(1)), int(m.group(2)), 1).strftime("%b")
+            c = b.get("month", {}).get(mon)
+            if c and c not in out: out.append(c)
+    usable = json.loads(act_file().read_text()).get("clauses", {})
+    missing = [c for c in out if c not in usable]
+    if missing: refuse("THRESHOLD_UNCALIBRATED", f"bound clauses {missing} have no calibrated act in act.json")
+    return out
 
 def main(argv):
     ap = argparse.ArgumentParser(prog="pbjudge"); sp = ap.add_subparsers(dest="verb")
@@ -372,6 +420,7 @@ def main(argv):
     j = sp.add_parser("judge"); j.add_argument("--clause", required=True); j.add_argument("--evidence", required=True); j.add_argument("--region", required=True); j.add_argument("--frame"); j.add_argument("--week")
     ck = sp.add_parser("check"); ck.add_argument("--evidence", required=True); ck.add_argument("ticket")
     lg = sp.add_parser("ledger"); lg.add_argument("--evidence", required=True)
+    cf = sp.add_parser("clauses-for"); cf.add_argument("--pine"); cf.add_argument("--week")
     ep = sp.add_parser("epoch"); ep.add_argument("--evidence", required=True); ep.add_argument("--clause", default="C1.1"); ep.add_argument("--artifact", default="0" * 64); ep.add_argument("--week")
     a = ap.parse_args(argv)
     if not a.verb: ap.print_usage(sys.stderr); return 2
@@ -380,6 +429,7 @@ def main(argv):
         elif a.verb == "clauses": out = {"ok": True, "clauses": clause_table() if not a.id else {a.id: clause(a.id)}}
         elif a.verb == "calibrate": out = cmd_calibrate(a)
         elif a.verb == "judge": out = cmd_judge(a)
+        elif a.verb == "clauses-for": out = {"ok": True, "clauses": clauses_for(a.pine, a.week)}
         elif a.verb == "check": out = check_ticket(a.evidence, a.ticket)
         elif a.verb == "ledger": out = check_ledger(a.evidence)
         elif a.verb == "epoch":

@@ -93,7 +93,7 @@ const SESSION_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{3,79}$/.test(process.env.CU_SESSI
   ? process.env.CU_SESSION_ID
   : `mcp-${process.pid}-${Date.now().toString(36)}`;
 
-// a JUDGED verify makes several calls to a judge shared with other sessions (22-47 s per call measured under load): it gets a longer bound than the other verbs
+// a judged verify makes several judge calls (about 1-1.3 s per clause measured 2026-11-03, clauses concurrent): it gets a longer bound than the other verbs
 const JUDGE_TIMEOUT_MS = Math.max(RUN_TIMEOUT_MS, 480000);
 function run(argv, timeoutMs = RUN_TIMEOUT_MS) {
   const { promise, resolve: done } = Promise.withResolvers();
@@ -126,7 +126,7 @@ const REFUSAL = /REFUSED\s+([A-Za-z0-9_:.\-]+)\s+[\u2014\u2013-]+\s*([\s\S]*)/;
 async function callTool(p) {
   const bad = validate(p);
   if (bad) return { ok: false, error: "BAD_ARGS", detail: bad };
-  const judged = p.verb === "verify" && p.judge === true;
+  const judged = p.verb === "verify" && p.arith !== true;   // verify judges by default (the arith-only path makes no model call)
   const bound = judged ? JUDGE_TIMEOUT_MS : RUN_TIMEOUT_MS;
   const r = await run(argvFor(p), bound);
   if (r.spawnError) return { ok: false, error: "CLI_SPAWN_FAILED", detail: `${r.spawnError} (CLI=${CLI})` };

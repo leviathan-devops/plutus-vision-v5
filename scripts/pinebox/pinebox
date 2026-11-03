@@ -11,7 +11,7 @@
 #   pinebox up      --id N [--week W] [--pair P] [--tf T] [--pine F] [--adapter A]
 #   pinebox spawn   --id N [--cmd "PROGRAM ARGS"] [up's flags]   a NEW instance (refuses INSTANCE_LIVE), then PROGRAM runs inside it
 #   pinebox attach  [--id N]                        re-open a PERSISTENT instance: its live state (ports, week, services, a fresh frame sha); NOT_UP if it is not up
-#   pinebox verify  [--id N] [--week W] [--judge --clause ID]   arithmetic verify; with --judge also an independent image judge + a content-addressed ticket (judge/pbjudge.py)
+#   pinebox verify  [--id N] [--week W] [--clause IDS] [--arith]   arithmetic verify; with --judge also an independent image judge + a content-addressed ticket (judge/pbjudge.py)
 #   pinebox down    --id N | --all
 #   pinebox list                                    every instance
 #   pinebox status  --id N [--project K]            the record, the last 5 refusals, measured memory
@@ -494,19 +494,29 @@ pb_verify() {
   pb_bind; local d; d="$(pb_dir "$ID")"
   [ -s "$d/state.json" ] || refuse NOT_UP "pinebox instance $ID is not up"
   local w; w="$(flag week "$(pb_rec_get "$ID" .week)")"; [ -n "$w" ] || w="$(pb_rec_get "$ID" .week)"
-  [ -n "$(flag judge)" ] || { stage_verify "$ID" "$d" "$w"; return; }
-  # --judge (blueprint P3e): the arithmetic verify runs FIRST and is never replaced; then a FRESH chart-ELEMENT capture goes to the independent judge
-  # (judge/pbjudge.py: controls, one typed question, a content-addressed ticket the TOOL writes). A pass:false ticket is a refusal, never a WORKS.
-  local cid vout reg jout
-  cid="$(flag clause)"; [ -n "$cid" ] || refuse BAD_ARGS "verify --judge needs --clause ID (the ids are in judge/clauses.txt; list them: python3 $PB_HOME/judge/pbjudge.py clauses)"
+  # THE VERIFICATION LAW (operator 2026-11-02): the arithmetic checks alone cannot see what the chart shows (a render with one moving average where
+  # the script draws two passes all eight), so they never answer WORKS on their own. They run FIRST (cheap, they refuse a broken page before any
+  # model call); then a fresh capture of the chart ELEMENT goes to the independent judge for EVERY clause the render must satisfy (judge/bindings.json:
+  # the universal clauses, the loaded script's own, the requested week's month clause), concurrently, one content-addressed ticket per clause.
+  # WORKS only when every ticket says pass:true. `--arith` runs the arithmetic part alone and answers UNJUDGED - never WORKS.
+  local vout cl reg jout pine
   vout="$(stage_verify "$ID" "$d" "$w")" || exit $?
-  reg="$d/judge-region.png"
-  pb_c3 "pinebox verify --judge" "$COMPUTER" screenshot --id "$ID" --out "$reg" --section chart >/dev/null || exit $?
-  jout="$(python3 "$PB_HOME/judge/pbjudge.py" judge --clause "$cid" --evidence "$d/evidence" --region "$reg" --week "$w" 2>"$d/judge.err")" || pb_forward_refusal "$d/judge.err"
-  if [ "$(jq -r '.pass' <<<"$jout")" != true ]; then
-    refuse JUDGE_FAILED "clause $cid: the independent judge failed this frame (p=$(jq -r '.p' <<<"$jout") < act $(jq -r '.act' <<<"$jout"), class $(jq -r '.class' <<<"$jout")); ticket $(jq -r '.ticket' <<<"$jout") pass:false is kept under $d/evidence/tickets/ - the arithmetic verify said WORKS, the pixels did not"
+  if [ -n "$(flag arith)" ]; then
+    jq -nc --argjson v "$vout" '{verdict:"UNJUDGED", verify:$v, note:"arithmetic checks only: nothing here looked at what the chart shows; this is not a verification"}'; return
   fi
-  jq -nc --argjson v "$vout" --argjson j "$jout" '{verdict:"WORKS", verify:$v, judge:$j}'
+  cl="$(flag clause)"
+  if [ -z "$cl" ]; then
+    pine="$(pb_rec_get "$ID" .load.pine)"
+    cl="$(python3 "$PB_HOME/judge/pbjudge.py" clauses-for --pine "$pine" --week "$w" 2>"$d/judge.err" | jq -r '.clauses | join(",")')" || pb_forward_refusal "$d/judge.err"
+    [ -n "$cl" ] || pb_forward_refusal "$d/judge.err"
+  fi
+  reg="$d/judge-region.png"
+  pb_c3 "pinebox verify" "$COMPUTER" screenshot --id "$ID" --out "$reg" --section chart >/dev/null || exit $?
+  jout="$(python3 "$PB_HOME/judge/pbjudge.py" judge --clause "$cl" --evidence "$d/evidence" --region "$reg" --week "$w" 2>"$d/judge.err")" || pb_forward_refusal "$d/judge.err"
+  if [ "$(jq -r '.pass' <<<"$jout")" != true ]; then
+    refuse JUDGE_FAILED "the independent judge failed this frame on $(jq -r '[.failed[] as $c | .results[$c] | "\($c) p=\(.p) < act \(.act) class \(.class) ticket \(.ticket[0:16])"] | join("; ")' <<<"$jout") (clauses judged: $cl; tickets under $d/evidence/tickets/) - the arithmetic checks passed, the pixels did not"
+  fi
+  jq -nc --argjson v "$vout" --argjson j "$jout" '{verdict:"WORKS", verify:$v, judge:{clauses:$j.clauses, tickets:$j.tickets, p:($j.results|map_values(.p)), act:($j.results|map_values(.act)), enforcement:$j.enforcement}}'
 }
 
 pb_view() {
@@ -543,7 +553,7 @@ done
 set -- "${_argv[@]}"
 PB_ARGS=("$@")
 case "$PB_VERB" in help|-h|--help) usage; exit 2 ;; esac
-BOOL_FLAGS="$BOOL_FLAGS --judge --get "     # `verify --judge` and `--get` (week|tf|asset) are booleans beside the core's own (set here: the shared core is not edited for one verb)
+BOOL_FLAGS="$BOOL_FLAGS --arith --get "     # `verify --arith` and `--get` (week|tf|asset) are booleans beside the core's own (set here: the shared core is not edited for one verb)
 parse_flags "$@"
 # a bare positional after --put K is the value; booleans the parser needs to know
 case "$PB_VERB" in

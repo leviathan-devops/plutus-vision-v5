@@ -1,74 +1,80 @@
 {
  "clauses": {
-  "C1.1": {
-   "act": 0.558,
+  "C0.1": {
+   "act": 0.5,
    "bad": [
     {
+     "file": "w5-bad-hidden.png",
+     "image_tokens": 972,
+     "p": 0.0258,
+     "sha256": "65c1ba27e2c2c145"
+    },
+    {
      "file": "w5-good-4h.png",
-     "image_tokens": 1201,
-     "p": 0.1128,
+     "image_tokens": 972,
+     "p": 0.0217,
      "sha256": "8f2954f4c5a527c0"
     },
     {
-     "file": "w5-bad-candles-only.png",
-     "image_tokens": 1201,
-     "p": 0.2075,
-     "sha256": "486896953d627dcd"
-    },
-    {
-     "file": "w5-bad-one-ma.png",
-     "image_tokens": 1201,
-     "p": 0.3387,
-     "sha256": "6d49f6690b28874c"
-    },
-    {
-     "file": "w5-bad-hidden.png",
-     "image_tokens": 1201,
-     "p": 0.1674,
-     "sha256": "65c1ba27e2c2c145"
+     "file": "n13-A-apr-blank.png",
+     "image_tokens": 972,
+     "p": 0.0313,
+     "sha256": "0a2deca4a28b5a71"
     }
    ],
-   "clause_text": "a price chart with candlestick bars and two overlaid coloured moving-average lines",
-   "derived_at": "2026-11-02T01:41:47+0400",
+   "clause_text": "a price chart with candlestick bars",
+   "derived_at": "2026-11-03T12:18:11+0400",
    "good": [
     {
      "file": "w5-good-default.png",
-     "image_tokens": 1201,
-     "p": 0.7835,
+     "image_tokens": 972,
+     "p": 0.9309,
      "sha256": "192a4c694ec98fc5"
     },
     {
      "file": "w5-good-recoloured.png",
-     "image_tokens": 1201,
-     "p": 0.7773,
+     "image_tokens": 972,
+     "p": 0.9292,
      "sha256": "0833f375f04d3f82"
     },
     {
      "file": "w5-good-reload.png",
-     "image_tokens": 1201,
-     "p": 0.7932,
+     "image_tokens": 972,
+     "p": 0.9341,
      "sha256": "4c0c5b9ca6ff8b68"
     },
     {
      "file": "w5-good-panned-small.png",
-     "image_tokens": 1201,
-     "p": 0.8302,
+     "image_tokens": 972,
+     "p": 0.9325,
      "sha256": "883cbd58d0952530"
     },
     {
      "file": "w5-bad-off-data.png",
-     "image_tokens": 1201,
-     "p": 0.8093,
+     "image_tokens": 972,
+     "p": 0.9316,
      "sha256": "20266466e5ccc831"
+    },
+    {
+     "file": "w5-bad-candles-only.png",
+     "image_tokens": 972,
+     "p": 0.9455,
+     "sha256": "486896953d627dcd"
+    },
+    {
+     "file": "w5-bad-one-ma.png",
+     "image_tokens": 972,
+     "p": 0.9296,
+     "sha256": "6d49f6690b28874c"
     }
    ],
    "image_tokens_measured": [
-    1201
+    972
    ],
-   "max_bad": 0.3387,
-   "min_good": 0.7773,
+   "max_bad": 0.0313,
+   "min_good": 0.9292,
    "rule": "midpoint(min(good p), max(bad p))",
-   "spread": 0.4386,
+   "spread": 0.8979,
    "sweep": [
     {
      "precision": 1.0,
@@ -87,85 +93,182 @@
     },
     {
      "precision": 1.0,
-     "recall": 0.4,
+     "recall": 1.0,
      "threshold": 0.8
     },
     {
-     "precision": null,
-     "recall": 0.0,
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.9
+    }
+   ]
+  },
+  "C1.1": {
+   "act": 0.5,
+   "bad": [
+    {
+     "file": "w5-good-4h.png",
+     "image_tokens": 996,
+     "p": 0.0138,
+     "sha256": "8f2954f4c5a527c0"
+    },
+    {
+     "file": "w5-bad-candles-only.png",
+     "image_tokens": 996,
+     "p": 0.0349,
+     "sha256": "486896953d627dcd"
+    },
+    {
+     "file": "w5-bad-one-ma.png",
+     "image_tokens": 996,
+     "p": 0.0615,
+     "sha256": "6d49f6690b28874c"
+    },
+    {
+     "file": "w5-bad-hidden.png",
+     "image_tokens": 996,
+     "p": 0.0153,
+     "sha256": "65c1ba27e2c2c145"
+    }
+   ],
+   "clause_text": "a price chart with candlestick bars and two overlaid coloured moving-average lines",
+   "derived_at": "2026-11-03T12:14:54+0400",
+   "good": [
+    {
+     "file": "w5-good-default.png",
+     "image_tokens": 996,
+     "p": 0.936,
+     "sha256": "192a4c694ec98fc5"
+    },
+    {
+     "file": "w5-good-recoloured.png",
+     "image_tokens": 996,
+     "p": 0.9341,
+     "sha256": "0833f375f04d3f82"
+    },
+    {
+     "file": "w5-good-reload.png",
+     "image_tokens": 996,
+     "p": 0.9363,
+     "sha256": "4c0c5b9ca6ff8b68"
+    },
+    {
+     "file": "w5-good-panned-small.png",
+     "image_tokens": 996,
+     "p": 0.9391,
+     "sha256": "883cbd58d0952530"
+    },
+    {
+     "file": "w5-bad-off-data.png",
+     "image_tokens": 996,
+     "p": 0.9352,
+     "sha256": "20266466e5ccc831"
+    }
+   ],
+   "image_tokens_measured": [
+    996
+   ],
+   "max_bad": 0.0615,
+   "min_good": 0.9341,
+   "rule": "midpoint(min(good p), max(bad p))",
+   "spread": 0.8726,
+   "sweep": [
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.5
+    },
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.6
+    },
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.7
+    },
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.8
+    },
+    {
+     "precision": 1.0,
+     "recall": 1.0,
      "threshold": 0.9
     }
    ]
   },
   "C1.2": {
-   "act": 0.5348,
+   "act": 0.5,
    "bad": [
     {
      "file": "w5-good-4h.png",
-     "image_tokens": 1198,
-     "p": 0.1926,
+     "image_tokens": 993,
+     "p": 0.0245,
      "sha256": "8f2954f4c5a527c0"
     },
     {
      "file": "w5-bad-hidden.png",
-     "image_tokens": 1198,
-     "p": 0.2159,
+     "image_tokens": 993,
+     "p": 0.0299,
      "sha256": "65c1ba27e2c2c145"
     }
    ],
    "clause_text": "a price axis with numeric labels down the right-hand side of the chart",
-   "derived_at": "2026-11-02T01:43:18+0400",
+   "derived_at": "2026-11-03T12:15:17+0400",
    "good": [
     {
      "file": "w5-good-default.png",
-     "image_tokens": 1198,
-     "p": 0.8653,
+     "image_tokens": 993,
+     "p": 0.9658,
      "sha256": "192a4c694ec98fc5"
     },
     {
      "file": "w5-good-recoloured.png",
-     "image_tokens": 1198,
-     "p": 0.862,
+     "image_tokens": 993,
+     "p": 0.9662,
      "sha256": "0833f375f04d3f82"
     },
     {
      "file": "w5-good-reload.png",
-     "image_tokens": 1198,
-     "p": 0.8537,
+     "image_tokens": 993,
+     "p": 0.9639,
      "sha256": "4c0c5b9ca6ff8b68"
     },
     {
      "file": "w5-good-panned-small.png",
-     "image_tokens": 1198,
-     "p": 0.8704,
+     "image_tokens": 993,
+     "p": 0.9714,
      "sha256": "883cbd58d0952530"
     },
     {
      "file": "w5-bad-off-data.png",
-     "image_tokens": 1198,
-     "p": 0.8652,
+     "image_tokens": 993,
+     "p": 0.9675,
      "sha256": "20266466e5ccc831"
     },
     {
      "file": "w5-bad-candles-only.png",
-     "image_tokens": 1198,
-     "p": 0.8723,
+     "image_tokens": 993,
+     "p": 0.9736,
      "sha256": "486896953d627dcd"
     },
     {
      "file": "w5-bad-one-ma.png",
-     "image_tokens": 1198,
-     "p": 0.8586,
+     "image_tokens": 993,
+     "p": 0.9664,
      "sha256": "6d49f6690b28874c"
     }
    ],
    "image_tokens_measured": [
-    1198
+    993
    ],
-   "max_bad": 0.2159,
-   "min_good": 0.8537,
+   "max_bad": 0.0299,
+   "min_good": 0.9639,
    "rule": "midpoint(min(good p), max(bad p))",
-   "spread": 0.6378,
+   "spread": 0.934,
    "sweep": [
     {
      "precision": 1.0,
@@ -188,215 +291,225 @@
      "threshold": 0.8
     },
     {
-     "precision": null,
-     "recall": 0.0,
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.9
+    }
+   ]
+  },
+  "C1.3": {
+   "act": 0.5,
+   "bad": [
+    {
+     "file": "w5-bad-candles-only.png",
+     "image_tokens": 999,
+     "p": 0.0281,
+     "sha256": "486896953d627dcd"
+    },
+    {
+     "file": "w5-bad-one-ma.png",
+     "image_tokens": 999,
+     "p": 0.0353,
+     "sha256": "6d49f6690b28874c"
+    },
+    {
+     "file": "w5-good-4h.png",
+     "image_tokens": 999,
+     "p": 0.0336,
+     "sha256": "8f2954f4c5a527c0"
+    },
+    {
+     "file": "w5-bad-hidden.png",
+     "image_tokens": 999,
+     "p": 0.0265,
+     "sha256": "65c1ba27e2c2c145"
+    }
+   ],
+   "clause_text": "small green upward-pointing triangles sitting on top of some of the candlestick bars",
+   "derived_at": "2026-11-03T12:15:21+0400",
+   "good": [
+    {
+     "file": "w5-good-default.png",
+     "image_tokens": 999,
+     "p": 0.9403,
+     "sha256": "192a4c694ec98fc5"
+    },
+    {
+     "file": "w5-good-recoloured.png",
+     "image_tokens": 999,
+     "p": 0.923,
+     "sha256": "0833f375f04d3f82"
+    },
+    {
+     "file": "w5-good-reload.png",
+     "image_tokens": 999,
+     "p": 0.9425,
+     "sha256": "4c0c5b9ca6ff8b68"
+    },
+    {
+     "file": "w5-good-panned-small.png",
+     "image_tokens": 999,
+     "p": 0.9264,
+     "sha256": "883cbd58d0952530"
+    },
+    {
+     "file": "w5-bad-off-data.png",
+     "image_tokens": 999,
+     "p": 0.9368,
+     "sha256": "20266466e5ccc831"
+    }
+   ],
+   "image_tokens_measured": [
+    999
+   ],
+   "max_bad": 0.0353,
+   "min_good": 0.923,
+   "rule": "midpoint(min(good p), max(bad p))",
+   "spread": 0.8877,
+   "sweep": [
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.5
+    },
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.6
+    },
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.7
+    },
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.8
+    },
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.9
+    }
+   ]
+  },
+  "C2.1": {
+   "act": 0.5,
+   "bad": [
+    {
+     "file": "n13-A-apr-blank.png",
+     "image_tokens": 987,
+     "p": 0.0193,
+     "sha256": "0a2deca4a28b5a71"
+    },
+    {
+     "file": "n13-B-plus2s.png",
+     "image_tokens": 987,
+     "p": 0.0198,
+     "sha256": "4ff419a4796480b7"
+    },
+    {
+     "file": "n13-C-plus6s.png",
+     "image_tokens": 987,
+     "p": 0.0199,
+     "sha256": "11ca90c4694f6646"
+    },
+    {
+     "file": "w5-bad-off-data.png",
+     "image_tokens": 987,
+     "p": 0.0257,
+     "sha256": "20266466e5ccc831"
+    }
+   ],
+   "clause_text": "the word Jul written in the labels along the bottom time axis",
+   "derived_at": "2026-11-03T12:15:26+0400",
+   "good": [
+    {
+     "file": "w5-good-default.png",
+     "image_tokens": 987,
+     "p": 0.9436,
+     "sha256": "192a4c694ec98fc5"
+    },
+    {
+     "file": "w5-good-recoloured.png",
+     "image_tokens": 987,
+     "p": 0.9424,
+     "sha256": "0833f375f04d3f82"
+    },
+    {
+     "file": "w5-good-reload.png",
+     "image_tokens": 987,
+     "p": 0.9445,
+     "sha256": "4c0c5b9ca6ff8b68"
+    },
+    {
+     "file": "w5-good-panned-small.png",
+     "image_tokens": 987,
+     "p": 0.9335,
+     "sha256": "883cbd58d0952530"
+    },
+    {
+     "file": "w5-bad-candles-only.png",
+     "image_tokens": 987,
+     "p": 0.9392,
+     "sha256": "486896953d627dcd"
+    },
+    {
+     "file": "w5-bad-one-ma.png",
+     "image_tokens": 987,
+     "p": 0.9448,
+     "sha256": "6d49f6690b28874c"
+    }
+   ],
+   "image_tokens_measured": [
+    987
+   ],
+   "max_bad": 0.0257,
+   "min_good": 0.9335,
+   "rule": "midpoint(min(good p), max(bad p))",
+   "spread": 0.9078,
+   "sweep": [
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.5
+    },
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.6
+    },
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.7
+    },
+    {
+     "precision": 1.0,
+     "recall": 1.0,
+     "threshold": 0.8
+    },
+    {
+     "precision": 1.0,
+     "recall": 1.0,
      "threshold": 0.9
     }
    ]
   }
  },
  "health_at_calibration": {
-  "backend": "llama:200",
+  "backend": "torch",
   "image_contract": "multipart/form-data: image[] + request",
-  "log_dir": "/home/leviathan/imajev-runtime/log",
   "modalities": [
    "text",
    "image"
   ],
-  "model": "imajev-4b-Q6_K",
+  "model": "imajev-4b",
+  "model_batch_size": 32,
   "ok": true,
-  "runtime": "gguf",
-  "slot_ctx": 49152,
-  "slots": 3,
-  "state_cap_unit": "tokens (POST /tokenize vs GET /slots n_ctx)",
+  "runtime": "torch",
   "state_char_cap": 24000
  },
- "unobservable": {
-  "C1.3": {
-   "bad": [
-    {
-     "file": "w5-bad-candles-only.png",
-     "image_tokens": 1204,
-     "p": 0.1345,
-     "sha256": "486896953d627dcd"
-    },
-    {
-     "file": "w5-bad-one-ma.png",
-     "image_tokens": 1204,
-     "p": 0.1832,
-     "sha256": "6d49f6690b28874c"
-    },
-    {
-     "file": "w5-good-4h.png",
-     "image_tokens": 1204,
-     "p": 0.1435,
-     "sha256": "8f2954f4c5a527c0"
-    },
-    {
-     "file": "w5-bad-hidden.png",
-     "image_tokens": 1204,
-     "p": 0.166,
-     "sha256": "65c1ba27e2c2c145"
-    }
-   ],
-   "clause_text": "small green upward-pointing triangles sitting on top of some of the candlestick bars",
-   "derived_at": "2026-11-02T01:44:39+0400",
-   "good": [
-    {
-     "file": "w5-good-default.png",
-     "image_tokens": 1204,
-     "p": 0.6487,
-     "sha256": "192a4c694ec98fc5"
-    },
-    {
-     "file": "w5-good-recoloured.png",
-     "image_tokens": 1204,
-     "p": 0.602,
-     "sha256": "0833f375f04d3f82"
-    },
-    {
-     "file": "w5-good-reload.png",
-     "image_tokens": 1204,
-     "p": 0.6272,
-     "sha256": "4c0c5b9ca6ff8b68"
-    },
-    {
-     "file": "w5-good-panned-small.png",
-     "image_tokens": 1204,
-     "p": 0.705,
-     "sha256": "883cbd58d0952530"
-    },
-    {
-     "file": "w5-bad-off-data.png",
-     "image_tokens": 1204,
-     "p": 0.5759,
-     "sha256": "20266466e5ccc831"
-    }
-   ],
-   "sweep": [
-    {
-     "precision": 1.0,
-     "recall": 1.0,
-     "threshold": 0.5
-    },
-    {
-     "precision": 1.0,
-     "recall": 0.8,
-     "threshold": 0.6
-    },
-    {
-     "precision": 1.0,
-     "recall": 0.2,
-     "threshold": 0.7
-    },
-    {
-     "precision": null,
-     "recall": 0.0,
-     "threshold": 0.8
-    },
-    {
-     "precision": null,
-     "recall": 0.0,
-     "threshold": 0.9
-    }
-   ],
-   "would_be_act": 0.3795
-  },
-  "C2.1": {
-   "bad": [
-    {
-     "file": "n13-A-apr-blank.png",
-     "image_tokens": 1186,
-     "p": 0.1411,
-     "sha256": "0a2deca4a28b5a71"
-    },
-    {
-     "file": "n13-B-plus2s.png",
-     "image_tokens": 1186,
-     "p": 0.1343,
-     "sha256": "4ff419a4796480b7"
-    },
-    {
-     "file": "n13-C-plus6s.png",
-     "image_tokens": 1186,
-     "p": 0.1363,
-     "sha256": "11ca90c4694f6646"
-    },
-    {
-     "file": "w5-bad-off-data.png",
-     "image_tokens": 1186,
-     "p": 0.145,
-     "sha256": "20266466e5ccc831"
-    }
-   ],
-   "clause_text": "a time axis whose date labels are all in July",
-   "derived_at": "2026-11-02T03:04:13+0400",
-   "good": [
-    {
-     "file": "w5-good-default.png",
-     "image_tokens": 1186,
-     "p": 0.6003,
-     "sha256": "192a4c694ec98fc5"
-    },
-    {
-     "file": "w5-good-recoloured.png",
-     "image_tokens": 1186,
-     "p": 0.5799,
-     "sha256": "0833f375f04d3f82"
-    },
-    {
-     "file": "w5-good-reload.png",
-     "image_tokens": 1186,
-     "p": 0.5846,
-     "sha256": "4c0c5b9ca6ff8b68"
-    },
-    {
-     "file": "w5-good-panned-small.png",
-     "image_tokens": 1186,
-     "p": 0.6293,
-     "sha256": "883cbd58d0952530"
-    },
-    {
-     "file": "w5-bad-candles-only.png",
-     "image_tokens": 1186,
-     "p": 0.6899,
-     "sha256": "486896953d627dcd"
-    },
-    {
-     "file": "w5-bad-one-ma.png",
-     "image_tokens": 1186,
-     "p": 0.57,
-     "sha256": "6d49f6690b28874c"
-    }
-   ],
-   "sweep": [
-    {
-     "precision": 1.0,
-     "recall": 1.0,
-     "threshold": 0.5
-    },
-    {
-     "precision": 1.0,
-     "recall": 0.5,
-     "threshold": 0.6
-    },
-    {
-     "precision": null,
-     "recall": 0.0,
-     "threshold": 0.7
-    },
-    {
-     "precision": null,
-     "recall": 0.0,
-     "threshold": 0.8
-    },
-    {
-     "precision": null,
-     "recall": 0.0,
-     "threshold": 0.9
-    }
-   ],
-   "would_be_act": 0.3575
-  }
- }
+ "unobservable": {}
 }

@@ -2950,3 +2950,20 @@ verdict on 2026-11-01, after a full day: "you spent the whole day accomplishing 
 - **Disposition:** FIXED as D. (1) adapter: no lock, questions of one request in parallel, backlog 128 (backup `/home/leviathan/imajev-runtime/systemone-server.py.bak-lock-20261102164518`; restarted `imajev-systemone.service`); (2) engine: drop-in `/etc/systemd/system/imajev-engine.service.d/image-tokens.conf` replaces `--image-min-tokens 1024` with `--image-max-tokens 1024` (original unit untouched); (3) `pbjudge.prep` default width 1280 (native element). Headed proof, `pinebox verify --judge --clause C1.1` on instance 1: EMA ribbon WORKS p=0.697 controls 0.908/0.117; one-MA render REFUSED JUDGE_FAILED p=0.1495 class MISSING_ELEMENT (frame /tmp/jf-one-ma.png opened: legend "One MA", one yellow line, no blue line, no triangles). Operator focus 0x0 before and after.
 - **Not reached and why:** 47-80 ms is the TEXT floor; an image call cannot be cheaper than prefilling its image tokens, and C proves that cutting tokens below what the clause needs makes the judge blind. The remaining lever is the controls: they are fixed images re-judged every call (2 of the 3 prefills), the blueprint's "every call" rule (P3 5.4).
 - **Also:** C (390 tokens) is the model card's resize bound; the engine prints "Qwen-VL models require at minimum 1024 image tokens to function correctly on grounding tasks" - a grounding (box) warning; this judge reads no boxes, and D measured no loss.
+### F-197 - a chart panned onto the fixture's flat padding passed the arithmetic chart check (2026-11-03, found by the judge on the default path)
+
+- **What happened:** `chart --op pan --dx 3` then plain `verify`: the eight arithmetic checks passed; the judge failed C0.1/C1.1/C1.3 (p 0.05/0.02/0.03, class EMPTY_CHART); the opened frame `/tmp/w1-G.png` shows no candles, only the flat 101.263 line past Jul 21.
+- **Root cause:** `pinebox-cli/chartprobe.js` counted every bar whose time is in the visible range; the fixture's padding bars have high == low and draw no candle (the F-187 class).
+- **Disposition:** FIXED: only MOVING bars count; flat ones are reported (`flat`). Re-run: the same pan answers `CHART_EMPTY_RANGE ... no MOVING bar is in view (3 flat padding bars only)`.
+
+### F-198 - the operator's persistent Pinebox id 0 was dead and its id was handed to a test session (2026-11-03)
+
+- **What happened:** `pinebox list --session operator-look-pinebox` -> `alive:false`. Its Chrome died 2026-11-02 14:41:51 (`Failed to send GetTerminationStatus message to zygote`; no OOM kill in `journalctl -k`), its Xwayland exited 20:19:44. Today a test session's `up` reaped the dead row (the registry frees a claim whose runtime is gone) and was given id 0, reusing `/run/user/1000/pinebox/i0` (old logs and frames kept; the old Chrome profile and state record replaced).
+- **Root cause:** the death is UNDETERMINED (another session, 01a18656, was active on the host from 11:23). The reuse is the registry's designed stale-reap; my pre-run check (`leftover.sh`) printed "compositors total: 1 (expect 2)" one round earlier and I did not stop on it.
+- **Disposition:** the operator's instance was RESTORED: `up --session operator-look-pinebox --id 0 --pine ema-ribbon.pine` -> READY slot :4, ports 9741/9754/9851/9222, `verify` WORKS on 5 clauses, chart frame opened. Rule: a leftover check that differs from its expectation stops the run.
+
+### F-199 - after `chart --op fit`, an immediate `verify` refused CHART_NOT_DRAWN (rate 0.4634, floor 0.466) (2026-11-03, OPEN)
+
+- **What happened:** pan off the data, `fit`, `verify`: 177 of 382 in-view bars at their columns in the frame. Three other sessions' verifies of the same chart passed.
+- **Root cause (hypothesis, not measured):** the F-177 stale capture: the bitmap lags the renderer after a viewport change. OPEN, next wave.
+

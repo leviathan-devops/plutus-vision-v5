@@ -155,7 +155,7 @@ stage_verify() {
   pst="$(jq -r '.state' <<<"$probe_a")"; pin="$(jq -r '.inView' <<<"$probe_a")"; ptot="$(jq -r '.total' <<<"$probe_a")"; pvr="$(jq -c '.vr' <<<"$probe_a")"
   case "$pst" in
     NOT_READY)   refuse CHART_NOT_READY "the page has no renderer to ask yet: $(jq -r '.why' <<<"$probe_a")" ;;
-    EMPTY_RANGE) refuse CHART_EMPTY_RANGE "the renderer holds $ptot bars but none is in view (visible range: $pvr) - the chart is panned or zoomed off its data; nothing is there to read" ;;
+    EMPTY_RANGE) refuse CHART_EMPTY_RANGE "the renderer holds $ptot bars but no MOVING bar is in view ($(jq -r '.flat // 0' <<<"$probe_a") flat padding bars only; visible range: $pvr) - the chart is panned or zoomed off its data; nothing is there to read" ;;
     OK) ;;
     *)           refuse CHART_PROBE_UNKNOWN "the renderer probe answered state '$pst' - not a state this verifier knows" ;;
   esac
@@ -174,5 +174,5 @@ stage_verify() {
   add_check chart "renderer: $pin of $ptot bars in view; pixels: $hits of $cand at their columns in the renderer's own colours ($pcol), rate $rate >= $floor$([ "$unchanged" = 1 ] && printf '; pixels identical to the previous frame (a static chart), proven current by this cross-check')"
 
   [[ "$id" =~ ^(0|[1-9])$ ]] || refuse BAD_ID "verdict for a non-canonical instance id '$id'"   # the function's OWN id, not the global $ID that require_id happened to set
-  jq -nc --argjson id "$id" --arg want "$want" --argjson checks "$checks" '{ok:true,id:$id,week:$want,verdict:"WORKS",checks:$checks}'
+  jq -nc --argjson id "$id" --arg want "$want" --argjson checks "$checks" '{ok:true,id:$id,week:$want,verdict:"ARITH_OK",checks:$checks}'
 }
