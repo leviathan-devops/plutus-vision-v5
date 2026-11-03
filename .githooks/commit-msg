@@ -52,4 +52,12 @@ if printf '%s' "$MSG" | grep -qiE '\b(verified|passed|tested|works|green|done|co
   fi
 fi
 
+# CHECK 3 — the Pinebox judge's commit lock (P3 blueprint section 7): every judge ticket the message cites must exist on this host, carry the
+# judge's signature and say pass:true. The check lives in the PINEBOX repo (tools/git-hooks/ticket-check); a missing checker is not a pass.
+TC="${PB_TICKET_CHECK:-$HOME/JARVIS_WORKSPACE/Shared_Workspace/PINEBOX/tools/git-hooks/ticket-check}"
+if grep -qiE '\btickets?\b[^0-9a-f]{0,40}[0-9a-f]{12,64}' "$MSG_FILE"; then
+  [ -x "$TC" ] || { echo "REJECT(P3): the message cites a judge ticket but the ticket checker is not installed at $TC" >&2; exit 1; }
+  "$TC" "$MSG_FILE" || exit 1
+fi
+
 exit 0
