@@ -170,3 +170,10 @@ constant. Without the control, a scene read of `0` would be indistinguishable fr
 | reports/goal-2026-11-03/frames/n9-p2-chart.png | a8107318534362b0 | one of four concurrent Pinebox charts (EMA ribbon, 1042x785) during the nine-session round | no delta |
 | reports/goal-2026-11-03/frames/n9-c3.png | c761ba24f594ca5e | one of five concurrent computers: 'typed-n3-9-c3' in its own dialog | no delta |
 | reports/sweep-2026-11-03/frames/pinebox-view.png | (rows.jsonl) | view --confirm raised the Pinebox over a private mutter display at its fixed 1626x931, whole IDE visible | no delta |
+
+## CHECKPOINT cu-v2-pinebox-gap-closure-complete-2026-11-03 (2026-11-03, session ckpt-visual, instance 1 slot :5, torn down after capture; operator focus 0x0 before and after)
+
+| frame | sha256 (16) | what it shows | ruling |
+|---|---|---|---|
+| checkpoints/cu-v2-pinebox-gap-closure-complete-2026-11-03/visual/runtime-state.png | ed5f873e1226f8d0 | the full Pine IDE 1626x875 at the end of the gap closure: tabs PINE IDE / BACKTEST, EMA Ribbon source, run bar 2026-W28 · FIXTURE · DXY · 1H · 508 bars · rail :9854 · station UP, chart with EMA 20/50 and crossover triangles; verify WORKS on 5 clauses | no delta |
+| checkpoints/cu-v2-pinebox-gap-closure-complete-2026-11-03/visual/runtime-chart.png | e599950b565de721 | the chart element only (1042x785): legend EMA Ribbon, price axis 100.400-102.100, time axis Jul 2 / Jul 9 / Jul 16, last price 101.263 | no delta |
