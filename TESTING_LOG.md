@@ -2580,3 +2580,23 @@ forecast direction (rise to the resistance, fall to the support) matches.
   - `pinebox-view`: the whole IDE including the bottom row.
 - **The verdict:** PASS (ST-170). Gate G16 CLOSED; its negative controls are in EN-198.
 - **Not covered here:** `view --confirm` on the operator's own display. That raises a window in front of the operator and runs only when the operator asks; the private stand-in is the same code path with the same WM family.
+
+## TEST RESULT - 2026-11-03 - T-69 - the W8 ta audit, round 11 (after the last fix of the audit's findings)
+- **What ran:**
+  - `ta plan` → `stage1` → `stage2 run`;
+  - `reports/audit/ta/adjudicate.py` (130 adjudications, each citing a round-11 capture);
+  - `reports/audit/ta/probes.sh` (21 probes through the deployed pinebox / computer / pbjudge, judged by code against expected rc and token; P-4 re-run with a real judged ticket after the probe-prep fault);
+  - `stage2 close` → `stage3 run` → `reports/audit/ta/stage3.sh` → `stage3 close`.
+- **Instances:** pinebox session ta-probe and computer session ta-probe-cu. Leftover check before and after: only these two besides the operator's.
+- **The raw verdicts:**
+  - `VERDICT stage1 cu-pinebox/ready PASS (1 pass, 0 fail, 0 blocked, 1 warn)`
+  - `VERDICT stage2 cu-pinebox/ready PASS (1 pass, 0 fail, 0 blocked, 0 warn)`
+  - `VERDICT stage3 cu-pinebox/ready PASS (1 pass, 0 fail, 0 blocked, 15 warn)`
+  - The 15 warns are the 13 process rulings and the ledger-closed recurrence, listed by ta for the operator.
+- **The ledger:** `ta rounds --verify` → hash chain intact. Rounds 1–2 stage 1 REJECT (fixed); round 9 stage 2 REJECT (F-219, fixed); rounds 10–11 PASS.
+- **The frames opened during the audit:**
+  - the pruned fork's IDE and Backtest room;
+  - the 1920×987 delta (F-216) and its fix at 1626×875;
+  - the time-anchored polyline (P-12);
+  - the F-219 re-run zigzag.
+- **The verdict:** PASS (ST-180, ST-181).

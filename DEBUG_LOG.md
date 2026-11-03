@@ -3794,3 +3794,23 @@ DXY points because DXY is its worked example; the indicator is 4-pair.)
   - It requires the earliest row's run time to be newer than the newest tool source, every verb of both actions.json files to have a row, every row PASS, and every frame row opened with a named delta note and its file's sha equal to the row's.
   - Freshness reads the rows' own `ts`, never the file mtime: recording the opened frames rewrites the file. jq's `mktime` drops the `+04:00` offset (measured +4 h, the unsafe direction), so `date -d` reads it.
   - Seven negative controls: a frame not opened, a FAIL row, a missing verb, an altered frame sha, a row older than the code, an empty delta note and an absent file. Each gave OPEN with that reason; the real rows give CLOSED.
+
+# EN-199 - W8: the independent audit (ruling R3) - ta over eleven rounds, PASS at round 11 (2026-11-03)
+- **THE AUDIT:** `ta` (thanatos-audit). The project, gates, drivers and copied verdicts are in `reports/audit/ta/`; the verdict file is `reports/audit/AUDIT_W8_2026-11-03.md` (AUDIT VERDICT: PASS).
+- **The proof channel:** the deployed tools on the headed host. This is a host channel declared on RULINGS.md:15 and implemented in `ta` (disclosed). Its live controls:
+  - a non-product exec does not count;
+  - a judge refuses on that exec alone;
+  - a product exec counts.
+- **The seven sealed gates** (G-W1..G-W7) check each wave's RESULTS rows by their signed tickets (`pbjudge check`) and frame shas. Each was proven able to fail first, with four negative controls.
+- **WHAT THE AUDIT FOUND:**
+  - stage 1: the fork's unit-test files and the audit's own allow-list (S1_SCOPE);
+  - stage 2 candidates: F-212 (dead fork files and exports), the ship packager's skipping secret scan, unnamed judge thresholds and traceback-on-bad-env, the silent phase rejections, the page server's success over a missing fixture and its stale E1 week;
+  - stage 2 probes: F-217 (LEDGER_HOLE relabel and the fail-open trap) and F-219 (load blank page, round 9 REJECT);
+  - proving the fixes headed: F-213 … F-216, F-218 and F-220.
+  - Every finding was fixed in code, deployed (`deploy.sh push`, IDENTICAL) and re-audited.
+- **THE AUDITOR CHANGES (disclosed):** the host channel, and ledger closure of an auditor-side S1 recurrence (two later clean stage-1 rounds; the chain must verify). `ta selftest` → `PASS (42 lies, 0 missed)` after each change.
+- **ROUND 11:**
+  - stage 1 PASS;
+  - stage 2 PASS: 7 re-runs PASS / METHOD_OK, 130 candidates adjudicated with captures, 21 probes held by code;
+  - stage 3 PASS: 10 rulings observed through product captures, 1 by its code-graph node, 13 process rulings, the recurrence closed on the ledger, a host baseline of 2854 files unchanged.
+- Completion line G13 CLOSED.

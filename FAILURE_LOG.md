@@ -3110,3 +3110,87 @@ verdict on 2026-11-01, after a full day: "you spent the whole day accomplishing 
   - `terminal send` needs `--text`.
   - `pinebox terminal` takes `--lines`.
 - **Proof:** sweep rows probe, doctor, shell_list, displays, state_battery, instance_list, pinebox list/status/state/terminal (ST-170).
+
+### F-212 - the fork carried 116 files Pinebox never loads, and 9 exports nothing calls (2026-11-03, found by the W8 ta audit)
+
+- **What happened:** ta stage 2 (rounds 4–7) flagged 72 detector candidates inside files no Pinebox process loads: noVNC with pako (109 files), `app.js`, `browser-polyfill.js`, `trade-canvas.js`, `_agent-desk.js`, `backtest-room/lifecycle.mjs`, `lib/clean-spawn.cjs`, `charts/build.mjs`. It also flagged 9 exports with no reference: 8 whose only callers were upstream's own tests (removed in round 1), plus `resolveVelaCtor`, orphaned by the `loadVela` removal.
+- **Mechanism:** the R1 fork copied the whole upstream renderer tree, including the Electron dashboard's pieces. Pinebox serves `pine.html` only.
+- **Reach, measured:**
+  - the live page's CDP resource list on both tabs: 32 paths;
+  - the static import closure of the three node entries: 12 modules, with control `lib/run.mjs` present;
+  - `pv-server.py`;
+  - every remaining reference from reachable code is a comment.
+- **Disposition:** FIXED. The files and exports were removed and recorded in `fork/UPSTREAM.md`. Proof: a fresh `up` on the pruned fork, both tabs, verify WORKS (C1.1 p=0.9215); frames opened (IDE and Backtest room intact).
+
+### F-213 - the IDE page made two failing requests on every load (2026-11-03)
+
+- **What happened:** `tabs/pineshell.js:47` resolved its asset base to `./`, the page's directory, so it requested `/pineshell.css` (404) and re-injected a stylesheet `pine.html:9` already links. `pine.html` declared no icon, so the browser's automatic `/favicon.ico` was a 404 too.
+- **Disposition:** FIXED. The asset base is the script's own directory, a sheet the page already links is not injected again, and an empty icon is declared. Measured on that run's `server.log`: **0 404s** (it was 1 + 1 per load).
+
+### F-214 - the gate week did not survive a tab switch or a reload (2026-11-03; the EN-195 queued item)
+
+- **What happened:** the shell re-mounts the IDE on every tab activation (`container.innerHTML = fragment`, `tabs/pineshell.js:138`). The local mirror (`pine-persist.mjs`) kept source, tab, market and tabs, but not the week. After `tab --to backtest` → `tab --to pine` the week input was empty, and `verify` refused WEEK_MISMATCH ("the IDE is set to '<none>'").
+- **Disposition:** FIXED. `plutus.pine.week` is persisted on every change and every persist, validated as YYYY-Www or YYYY-MM-DD, and restored at mount; `importWorkspace` keeps the mirror's week.
+- **Proof:** after a tab round-trip the week reads 2026-W28 and verify WORKS (C1.1 p=0.9128); after a reload, 2026-W28 again. A malformed stored value restores nothing, and verify refuses by name.
+
+### F-215 - `tab` answered before the target tab had mounted (2026-11-03)
+
+- **What happened:** `pb_nav_tab` answered `ok` once the pane carried the active class. The next verb then read a half-mounted IDE: the week was empty right after `tab --to pine` returned, and the restored value appeared a moment later.
+- **Disposition:** FIXED. `tab` polls the target's own readiness, bounded at 20 s, else refuses TAB_NOT_READY:
+  - **pine:** the week control, the renderer, the canvas, and the mirror's week restored;
+  - **room:** its speed select and timeline.
+  - Measured: 0.5 s, and the week reads right on return.
+
+### F-216 - the instance's page geometry followed the operator's window manager (2026-11-03)
+
+- **What happened:** after `--start-fullscreen` (F-210), pages rendered at 1920×987 instead of the calibrated 1626×875.
+- **Mechanism:** weston's x11 host window advertised WM_NORMAL_HINTS min 128×128 / max 8192×8192. The operator's mutter maximized it on HDMI-3 (1920×1043 at 1704,37), libweston-13 resized its output to follow (`weston_renderer_resize_output`), Xwayland's root followed the output, and the fullscreen browser followed the root.
+- **Wrong layer, measured and reverted first:** removing the desktop-shell panel.
+- **Disposition:** FIXED.
+  - `nofocus.so` (NOFOCUS_FIXED=1) pins the host window to min = max = its created size before the map.
+  - Only maps on the x11 backend's own connection are pinned. Measured: weston's XWM frame windows 0x400003 and 0x200028 had been pinned too, at 1625×930 and 1701×1027.
+  - `up` reads the pin back (HOST_WINDOW_RESIZABLE).
+- **Proof:** host window 1626×931 with `state=[]`, hints min = max = 1626×931, Xwayland root 1626×931, page iw 1626 / ih 875; verify C1.1 p=0.9198; frame opened.
+
+### F-217 - the claim lock named a missing ledger TICKET_CORRUPT, and the honest name would have failed OPEN (2026-11-03, ta stage 2 probe P-4)
+
+- **What happened:** `pbjudge.py cmd_claims` relabelled every refusal outside its list as TICKET_CORRUPT. A clean ticket whose evidence had no ledger was reported as tampered (detail "no ledger.jsonl").
+- **The trap behind it:** the extension's `LOCK_REFUSALS` lacked LEDGER_HOLE. Reporting the true token would have sent the lock down its LOCK_UNDECIDED (fail-open) branch.
+- **Disposition:** FIXED.
+  - LEDGER_HOLE is in the claims check's token order and in `LOCK_REFUSALS`.
+  - An unknown refusal is raised, never relabelled.
+  - Every token the check emits is in the lock's refusal set (checked mechanically).
+- **Proof:** deployed judge: LEDGER_HOLE rc 1 for the ledger-less evidence, OK rc 0 with the live ledger. A fresh omp session (`--no-rules`, so the TTSR alarm stays out) printed `PINEBOX LOCK REFUSED LEDGER_HOLE` and continued the session.
+
+### F-218 - a withdrawal that quoted the refused ticket id was refused again on every turn (2026-11-03)
+
+- **What happened:** in that session, after the agent withdrew its claim, each withdrawal still quoted the ticket id and was refused four times, ending CLAIM_UNRESOLVED.
+- **Mechanism:** `pbjudge.py:533` let the calibrated claim judge decide only for text that cites no id. Any text citing a failing ticket was refused, claim or not.
+- **Disposition:** FIXED, in turn mode only:
+  - a cited failing ticket refuses only text that CLAIMS success;
+  - text without success words is no claim;
+  - text with success words goes to the calibrated judge.
+  - The commit lock stays strict.
+- **Proof:**
+  - the claim → LEDGER_HOLE rc 1;
+  - the withdrawal → OK (p=0.0488 against act 0.6134);
+  - a plain mention → OK;
+  - commit mode on the withdrawal → LEDGER_HOLE.
+  - Live session: one refusal of the claim, then the quoting explanation was accepted and the session settled.
+
+### F-219 - `load` on a pair/tf the fixture lacks left the page blank and out of step with its record (2026-11-03, ta stage 2 round 9 defect F-1, probe P-20)
+
+- **What happened:** `pinebox load --tf 4H` (the fixture carries DXY 1H only) refused RUN_FAILED CHART_NOT_LOADED, a downstream symptom. It left the page on fixture:DXY 240 with 0 bars and the page's own FIXTURE_CELL_ABSENT status, while `state.json` kept DXY 1H. This is the class F-184 fixed for tf/asset and F-208 for a bare `up`, still open on the load path.
+- **Disposition:** FIXED. `stage_load` puts the page on its axes through `pb_nav_load_axes` (load, read back, refuse by name, put back) before the script runs.
+- **Proof:**
+  - `load --tf 4H` → TF_SET_FAILED, "the page was put back on DXY 1H (508 bars)";
+  - `--pair EURUSD` → ASSET_ABSENT, page put back;
+  - the legitimate load draws the zigzag (frame opened);
+  - ta round 10 widened probe G-W6 held.
+
+### F-220 - the page server's RAM was hidden by the host's python capability (2026-11-03, found while closing the RAM ruling)
+
+- **What happened:** `pinebox status` reported `memory_mb.instance` 639 with `lower_bound:true` and `unreadable: server pid`.
+- **Mechanism:** this host's `/usr/bin/python3.12` carries `cap_linux_immutable=ep`. The server gained CAP_LINUX_IMMUTABLE at exec (CapEff 0x200) and the kernel made it non-dumpable: its `/proc` smaps became root-owned. The server never uses the capability.
+- **Disposition:** FIXED. The server runs under `setpriv --no-new-privs` (the kernel grants no file capability), and the CLI refuses SETPRIV_ABSENT when `setpriv` is missing.
+- **Proof:** CapEff 0, NoNewPrivs 1. `status`: instance **652 MB**, server 16 MB counted, `unreadable:null`, `lower_bound:false`. In ta stage 3: 633 / 638 MB.
