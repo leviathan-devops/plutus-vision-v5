@@ -2994,3 +2994,21 @@ verdict on 2026-11-01, after a full day: "you spent the whole day accomplishing 
 - **Root cause, measured:** `printf '%s' "$wb" | grep -qF "var MAIN_API = ..."` under `set -uo pipefail` (`pinebox:28`): grep exits at the match (byte 1,999,508 of the 2,026,469-byte workbench) while printf is still writing; printf dies of SIGPIPE and the pipeline returns 141 - a false failure. 200 runs: printf|grep 196 pass / 4 fail; `grep -qF ... <<<"$wb"` 200/200. Reproduced live by the W2 fresh-session test (`up` at id 1 refused CONFIG_NOT_INJECTED; the agent in that session misattributed it to a stale pre-fork server - the server.log banners show every run since the fork rooted at the fork renderer).
 - **Fix:** every `printf | grep -q` of both tools converted to a here-string (services.sh:134,136,138,142; verify.sh:67,69; govern.sh:163,164,168,176,177; weston-x11.sh:182,194). Commit 5e5ab26-era (see git log "fix(F-188)").
 
+### F-205 - the guest runtime (CU blueprint section 9 L1, V11) was boot-only and then could not boot the current tool (2026-11-03, found by W5)
+
+- **What happened:** five stacked mechanisms, found in order by driving the guest headed:
+  1. The tool inside the guest refused `NO_SESSION` at `shell up`: session scoping (2026-11-01) was never threaded into `boot.sh`.
+  2. `cli.sh` never forwarded a guest instance's actions: `op_forward` was reachable only from a retired test, so every verb after the boot ran natively against nothing.
+  3. The guest image (2026-11-01) had no bun, and the session registry needs `bun:sqlite`, so it refused `NO_REGISTRY`.
+  4. ROOT CAUSE of the 7-minute silent hang: qemu's default CPU model hides AVX2, and bun then never returns. Measured in the guest: `no avx2` -> registry claim rc 143 at 15 s (also as a bundle, also from /tmp); `-cpu host` -> claim, bundle and TS source rc 0 in 0 s. The ruled-out routes (directory modes, ownership, auto-install, transpiler cache) are recorded in TESTING_LOG T-67.
+  5. A forwarded `--session` appended after `--` became the spawned app's argument (`xev --session ...`).
+- **Disposition:** FIXED:
+  - the session is passed to the guest's `shell up` and right after the verb on every forward;
+  - `needs_id` forwards every action of a runtime=guest instance (shell_down stays host-side and kills qemu by token);
+  - screenshot/look frames are copied back to the host;
+  - the in-guest `shell up` is bounded (`CU_GUEST_UP_S`, 120 s) with its output in `guest-up.out`;
+  - qemu runs `-cpu host` under KVM and `-cpu max` under TCG;
+  - new image `7a657380` (bun 1.4.2 musl + libstdc++/libgcc) built by `cu-v2/core/guest/rebuild-add.sh`, with the previous images kept as `.prev`/`.prev2`.
+  - Proof: ST-154.
+- **CLOSES:** F-162 - V11 is now proven on the image on disk, `assets/guest/guest-bootable.qcow2` sha256 7a6573803987de3b78e2c8459b8b297dc448e18619836cec8ee655ffad505070 (MANIFEST.large.sha256 verified), with the frame opened (ST-154). The 2026-11-01 proof's image provenance stays unknown; that proof is superseded.
+

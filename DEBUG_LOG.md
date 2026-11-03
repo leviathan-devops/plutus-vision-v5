@@ -3768,3 +3768,7 @@ DXY points because DXY is its worked example; the indicator is 4-pair.)
   - Overlays plotting 0/1000 do not stretch this renderer's autoscale (candle-based; frames opened), so A3's real trigger is a price-axis drag.
   - A pan past the start of the data overscrolls to the last visible bar: the frame shows empty time and one candle, `range` reports one hour, and the next pan refuses NAV_NO_EFFECT. This is honest behaviour.
   - A page that reloads comes back with its week control empty: verify refuses WEEK_MISMATCH until `week --set`. Honest, but `load` could restore the recorded week; queued for W8.
+# EN-196 - W5: computer look, the adapters and the guest driven headed (2026-11-03)
+- **THE FIX:** `computer look` (`cu-v2/core/drive.sh` drv_look; actions.json; the forwarder attaches the frame) + `fresh`; `pinebox look`/`run` now attach their frame in the extension (only shot/up/load did); F-205 (above).
+- **THE VERIFICATION:** ST-151..ST-156 (RESULTS.jsonl), every frame opened. ST-150 (the image part at the tool boundary) runs in a fresh omp session; the default `opencode-go` route is exhausted (`503 go_pool_exhausted`: 2 of 3 keys quota-dead), so test sessions use `openrouter/nvidia/nemotron-3.5-lightning:free`.
+- **NOT DONE, by design:** a capture through the VNC channel needs weston's PAM login (the operator's password); `view --confirm` raises a window on the operator's screen.

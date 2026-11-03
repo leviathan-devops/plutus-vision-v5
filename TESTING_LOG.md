@@ -2547,3 +2547,19 @@ forecast direction (rise to the resistance, fall to the support) matches.
   - negative controls: one flipped byte in a scratch copy of each package -> `REFUSED PACKAGE_CORRUPT` [EXIT=1] (both); pinebox with `LIVE_CU` pointed at an empty dir -> `REFUSED REQUIRES_COMPUTER_USE` [EXIT=1].
 - **The verdict:** PASS for the save (the state is preserved, packaged, and the packaged bytes equal the live install). NOT a completion: the tools are not finished (firewall exit 1). Deployment: the live install already equalled the repo (`deploy.sh status` IDENTICAL); `--install` was not run because nothing differed - the read-only verify is the deploy proof.
 - **Also observed:** a third compositor on the host, `socket=computer-use11`, registry id 11, owned by session `01a18656-e9b8-773c-acb5-57bddabae762` (started 11:23:37) - not one of the operator's two and not provably this session's; left untouched (F-155 rule).
+
+## TEST RESULT - 2026-11-03 - T-67 - the guest runtime hang (F-205): every route, and the one that held
+
+### HOST (each probe a snapshot boot of the guest image, the live sealed tool streamed in, steps bounded by `timeout`)
+- **Route 1 - bounded and recorded the in-guest `shell up`:** it still hung; nothing was written before the deadline.
+- **Route 2 - in-guest process table:** `cli.sh shell up` was waiting on `bun registry-cli.ts ... claim w5-guest computer 7`.
+- **Route 3 - step timings:** `bun --version`, `bun -e`, and a `bun:sqlite` WAL query on /tmp all ran in 0 s; `bun registry-cli.ts ... all` hung 25 s (rc 143).
+- **Route 4 - module bisect:** importing even `scope-guard.ts` (node:path, node:os only) hung; inline `bun -e` code did not.
+- **Route 5 - location:** `/tmp/sg.ts` (a copy) ran; the same file in `/opt/computer-use/scoped` hung; a trivial `.ts` in `/opt`, `/opt/probe` and `/opt/computer-use` ran, but hung in `scoped/` and `core/` (later shown to be noise: the trivial files did no work).
+- **Route 6 - directory modes:** fresh root-owned dirs with modes 1775/2775/3775 ran; `chmod -R a-st` on the tree did not help.
+- **Route 7 - ownership:** `chown -R root:root` did not help.
+- **Route 8 - bun auto-install / transpiler cache:** `--no-install`, `BUN_CONFIG_NO_INSTALL=1` and `BUN_RUNTIME_TRANSPILER_CACHE_PATH=0` did not help.
+- **Route 9 - bundle:** `bun build` of the registry, run from /tmp: still hung, so location was never the cause.
+- **Route 10 - the CPU:** the guest printed `no avx2` (qemu default CPU model); booted with `-cpu host` it printed `avx2`, and the claim, the bundle and the TS source all ran in 0 s (rc 0).
+- **The verdict:** ROOT CAUSE = the guest CPU model. FIX = `-cpu host` (KVM) / `-cpu max` (TCG) in boot.sh and rebuild-add.sh. ST-154 PASS after the fix.
+- **The lesson:** routes 5-8 chased an artefact of the probe (trivial files that did no work look like a location effect). The CPU was the one input every probe shared and none varied - vary the shared input before bisecting the variable ones.
