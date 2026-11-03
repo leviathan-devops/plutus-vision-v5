@@ -3756,3 +3756,15 @@ DXY points because DXY is its worked example; the indicator is 4-pair.)
   - **Judge self-report:** pbjudge reports ENFORCED or ENFORCEMENT_ABSENT, read from the deployed extension.
 - **THE VERIFICATION:** ST-123..ST-128 (RESULTS.jsonl).
 - **THE LESSON:** the lock earned its keep at once: in two real sessions an agent claimed "verified" without the ticket it held, and the lock made it cite the ticket.
+
+# EN-195 - W4: A1/A3 proven headed, the three v3 refusal tokens, a still chart before any capture (2026-11-03)
+- **THE FINDING:** A1/A3 were code-closed only; `run` reported a compile error as RUN_FAILED; the chart verbs said CHART_ABSENT where the blueprint says CANVAS_ABSENT; an asset/tf set never read the page back; `shot` could capture a chart mid-glide (F-177).
+- **THE FIX:**
+  - `stages/load.sh`: RUN_FAILED + PINE_COMPILE_ERROR -> PINE_COMPILE_FAILED.
+  - `stages/v3_nav.sh`: CANVAS_ABSENT, and after `loadBars` the page's market is read back: ASSET_SET_FAILED / TF_SET_FAILED unless it names the requested `fixture:<pair>` / timeframe (15/30/60/240).
+  - `pb_chart_wait_still` (6 still animation frames, then a scheduler flush) is shared by the chart verbs and `shot`.
+- **THE VERIFICATION:** ST-140..ST-145 (RESULTS.jsonl), every visual one opened. ASSET_SET_FAILED has no natural trigger on this page - the IDE either takes the selection or refuses the load - and was driven by an explicitly labelled fault injection on the live page.
+- **OBSERVED, NOT DEFECTS:**
+  - Overlays plotting 0/1000 do not stretch this renderer's autoscale (candle-based; frames opened), so A3's real trigger is a price-axis drag.
+  - A pan past the start of the data overscrolls to the last visible bar: the frame shows empty time and one candle, `range` reports one hour, and the next pan refuses NAV_NO_EFFECT. This is honest behaviour.
+  - A page that reloads comes back with its week control empty: verify refuses WEEK_MISMATCH until `week --set`. Honest, but `load` could restore the recorded week; queued for W8.
