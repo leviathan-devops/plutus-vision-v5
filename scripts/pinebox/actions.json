@@ -149,6 +149,18 @@
     "arith": {
       "type": "boolean",
       "description": "verify: run ONLY the arithmetic checks (services, ports, week, bars, drawings, frame, pixels at the renderer's bar columns); the answer is UNJUDGED, never WORKS - nothing in it looked at what the chart shows"
+    },
+    "phase": {
+      "type": "string",
+      "description": "verify: judge exactly the clauses this phase of judge/phases.json requires (P3g)"
+    },
+    "close": {
+      "type": "string",
+      "description": "phase: the phase to close; refuses PHASE_TICKETS_MISSING unless the last judged frame has a passing signed ticket for each required clause"
+    },
+    "lines": {
+      "type": "number",
+      "description": "terminal --read: how many lines of the instance's terminal to return (1..5000, default 50)"
     }
   },
   "actions": {
@@ -261,7 +273,8 @@
       "flags": [
         "id",
         "send",
-        "read"
+        "read",
+        "lines"
       ]
     },
     "state": {
@@ -302,7 +315,8 @@
         "id",
         "week",
         "clause",
-        "arith"
+        "arith",
+        "phase"
       ]
     },
     "insert": {
@@ -413,6 +427,15 @@
         "speed",
         "date",
         "n"
+      ]
+    },
+    "phase": {
+      "argv": [
+        "phase"
+      ],
+      "flags": [
+        "id",
+        "close"
       ]
     }
   }

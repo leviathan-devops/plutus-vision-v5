@@ -50,13 +50,17 @@ stage_page() {
   # --renderer-process-limit=1` took a lone instance from 784.5 MB (three baselines 768.7 / 783.4 / 801.5) to 747.7 / 747.6 MB at 70 s, frames identical
   # apart from the clock, verify WORKS. REJECTED by the same measurement: --no-zygote --no-sandbox (+80 MB), --in-process-gpu (no change), site isolation
   # off (no change), a lean-flag set (-8 MB, inside the +-17 MB noise). PB_CHROME_FLAGS appends more flags for the next measurement.
+  # --start-fullscreen (W7 sweep, 2026-11-03): windowed, weston's XWayland WM framed the output-sized browser (27 px title, 6 px border:
+  # _NET_FRAME_EXTENTS 38,38,59,38) and its desktop-shell panel pushed it further down, so `view` showed the operator the IDE with its bottom row cut
+  # mid-glyph (frame pinebox-view.png). Fullscreen = no frame, no panel, window = output at 0,0; the PAGE is unchanged (measured: innerWidth 1626,
+  # innerHeight 875, outer 1626x931 - the calibrated geometry), so every CDP capture and every calibrated clause holds.
   # the flags and WHY each is there: blueprint section 7E. --ozone-platform=x11 pins it to
   # this instance's X display (the core also strips the operator's Wayland socket).
   out="$("$COMPUTER" shell spawn --id "$id" --cdp "$cdp" -- google-chrome-stable \
         --app="$url" --user-data-dir="$profile" --no-first-run --no-default-browser-check \
         --remote-debugging-port="$cdp" --remote-debugging-address=127.0.0.1 \
         --remote-allow-origins="http://127.0.0.1:$cdp" \
-        --window-size=1626,931 --window-position=0,0 \
+        --window-size=1626,931 --window-position=0,0 --start-fullscreen \
         --disable-gpu --disable-gpu-compositing --disable-accelerated-2d-canvas \
         --use-gl=swiftshader --enable-unsafe-swiftshader --ozone-platform=x11 \
         --enable-features=NetworkServiceInProcess2 --renderer-process-limit=1 $extra 2>"$d/spawn.err")" \
@@ -111,7 +115,7 @@ pb_cdp_names_page() {
 stage_frame() {
   local id="$1" d="$2" out
   local colours frame_rec
-  out="$("$COMPUTER" screenshot --id "$id" --out "$d/frame.png" 2>"$d/shot.err")" || pb_forward_refusal "$d/shot.err"
+  out="$("$COMPUTER" screenshot --id "$id" --cdp "$(pb_port "$id" cdp)" --out "$d/frame.png" 2>"$d/shot.err")" || pb_forward_refusal "$d/shot.err"
   # the tool already refuses a 1-colour frame; this re-checks the CONTRACT we record, so a
   # malformed/empty tool reply can never be stored as a successful frame
   frame_rec="$(jq -c '{path, bytes, colours}' <<<"$out" 2>/dev/null)" \

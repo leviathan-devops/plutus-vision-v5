@@ -4,6 +4,12 @@
 # validated (numbers range-checked, names allowlisted) before they reach the page's JavaScript.
 
 # the chart renderer's handle, or {absent:true}; shared prologue for the chart expressions
+# pb_chart_wait_still ID: wait in the page until the chart's viewport holds still for 6 animation frames (bounded 4 s) - pan, zoom and fit glide
+# (F-199), and a capture taken mid-glide is a stale frame (F-177) - then ask the scheduler to paint now. A page with no chart renderer returns at once.
+pb_chart_wait_still() {
+  pb_v3_eval "$1" "new Promise(res=>{const P=window.PlutusPineShell; const r=P?.chart?.rendererControl?.renderer; if(!r) return res({absent:true}); let last='', still=0; const t0=performance.now(); (function f(){ const v=JSON.stringify(r.coords.getViewport()); still = v===last ? still+1 : 0; last=v; if(still>=6 || performance.now()-t0>4000){ r.scheduler.invalidate(1); r.scheduler.flushNow(); res({still:still>=6, ms:Math.round(performance.now()-t0)}); } else requestAnimationFrame(f); })(); })"
+}
+
 PB_CHART_HEAD="const P=window.PlutusPineShell; const r=P?.chart?.rendererControl?.renderer; if(!r) return {absent:true};"
 PB_CHART_SNAP="(function(){${PB_CHART_HEAD} return {range:P.chart.getVisibleRange?.()??null,width:r.coords?.width??null,height:r.coords?.height??null};})()"
 
@@ -19,7 +25,21 @@ pb_nav_tab() {
   [ "$(jq -r '.missing // false' <<<"$res")" = false ] || refuse TAB_NOT_FOUND "no navigation button for '$to' on this page"
   active="$(jq -r '.active' <<<"$res")"
   [ "$active" = "$page" ] || refuse TAB_SWITCH_FAILED "tab $to did not become active (the active pane is '$active')"
-  jq -nc --argjson id "$id" --arg a "$to" '{ok:true,id:$id,verb:"tab",active:$a}'
+  # READY, not just ACTIVE (W8, 2026-11-03): the shell RE-MOUNTS a tab's content on activation, and `ok` came back before the IDE had
+  # re-mounted (measured: the week input read empty right after `tab --to pine` returned; the restored value appeared a moment later), so
+  # the next verb read a half-mounted page. Poll the TARGET's own readiness, bounded, and refuse by name when it never arrives.
+  local ready_js r="" i
+  case "$to" in
+    pine) ready_js="(function(){const P=document.querySelector('#pine-shell-root'); const w=P&&P.querySelector('.pine-week'); const rr=window.PlutusPineShell&&window.PlutusPineShell.chart&&window.PlutusPineShell.chart.rendererControl&&window.PlutusPineShell.chart.rendererControl.renderer; let s=null; try{s=localStorage.getItem('plutus.pine.week')}catch(e){} const valid=typeof s==='string'&&/^\d{4}-W\d{2}$|^\d{4}-\d{2}-\d{2}$/.test(s); const wk=!!w&&(!valid||w.value===s); return {ready:!!(w&&rr&&wk&&P.querySelector('canvas')), week:w?w.value:null, stored:s, renderer:!!rr};})()" ;;
+    backtest) ready_js="(function(){const P=document.querySelector('#page-backtest-room'); const R=window.PlutusBacktestRoom; const sel=!!P&&[...P.querySelectorAll('select')].some(s=>[...s.options].some(o=>o.value==='0.5')); const tl=!!P&&!!P.querySelector('input[type=range]'); return {ready:!!(R&&sel&&tl), room:!!R, speed:sel, timeline:tl};})()" ;;
+  esac
+  for i in $(seq 1 80); do
+    r="$(pb_v3_eval "$id" "$ready_js")" || exit $?
+    [ "$(jq -r '.ready' <<<"$r")" = true ] && break
+    sleep 0.25
+  done
+  [ "$(jq -r '.ready' <<<"$r")" = true ] || refuse TAB_NOT_READY "tab $to is active but its content did not finish mounting within 20 s: $r"
+  jq -nc --argjson id "$id" --arg a "$to" --argjson r "$r" '{ok:true,id:$id,verb:"tab",active:$a,ready:$r}'
 }
 
 pb_nav_chart() {
@@ -34,7 +54,8 @@ pb_nav_chart() {
       js="r.panBy(Number($dx));" ;;
     zoom)
       dir="$(flag dir IN)"; dir="${dir^^}"                       # IN/OUT in any case: `--dir in` is what an agent types first
-      case "$dir" in IN) step=1.25 ;; OUT) step=0.8 ;; *) refuse BAD_ARGS "zoom --dir must be IN or OUT (got '$dir')" ;; esac
+      case "$dir" in IN) step=1 ;; OUT) step=-1 ;;   # zoomByStep(direction) is exp(direction*KEY_ZOOM_STEP) (workbench.bundle.js:37454): a SIGN, not a factor - 1.25 and 0.8 both zoomed IN (F-200)
+      *) refuse BAD_ARGS "zoom --dir must be IN or OUT (got '$dir')" ;; esac
       js="r.zoomByStep($step);" ;;
     fit)
       # "frame ALL loaded bars" (blueprint P2: the "I cannot see anything" fix). The renderer's own fitContent() frames only the LAST 200 bars (measured on 508 loaded: 201 in
@@ -52,9 +73,12 @@ pb_nav_chart() {
     *) refuse BAD_ARGS "unknown chart op '$op' (pan|zoom|fit|view|resize)" ;;
   esac
   before="$(pb_v3_eval "$id" "$PB_CHART_SNAP")" || exit $?
-  [ "$(jq -r '.absent // false' <<<"$before")" = false ] || refuse CHART_ABSENT "the chart renderer is not mounted"
+  [ "$(jq -r '.absent // false' <<<"$before")" = false ] || refuse CANVAS_ABSENT "the chart canvas is not on the page (no renderer mounted): nothing to pan, zoom, fit or read"
   if [ -n "$js" ]; then
     res="$(pb_v3_eval "$id" "(function(){${PB_CHART_HEAD} ${js} return {ok:true};})()")" || exit $?
+    # F-199 ROOT CAUSE (workbench.bundle.js panBy -> glideRightOffset, zoomByStep -> zoomTo): pan and zoom ANIMATE. The verb used to return and read
+    # `after` mid-glide, and a shot/verify right after it saw a chart still moving. Wait until the viewport is still, then read `after`.
+    [ "$(jq -r '.nobars // false' <<<"$res")" = true ] || pb_chart_wait_still "$id" >/dev/null || exit $?
     [ "$(jq -r '.nobars // false' <<<"$res")" = false ] || refuse NO_BARS "the chart holds no bars: there is nothing to frame (load a script first)"
   fi
   after="$(pb_v3_eval "$id" "$PB_CHART_SNAP")" || exit $?
@@ -70,7 +94,8 @@ pb_nav_chart() {
     [ "$(jq -r '.all' <<<"$cover")" = true ] || refuse FIT_INCOMPLETE "fit left part of the $(jq -r '.total' <<<"$cover") loaded bars out of view (range $(jq -c '.vr' <<<"$cover"), bars $(jq -r '.first' <<<"$cover")..$(jq -r '.last' <<<"$cover"))"
     after="$(jq -c --argjson c "$cover" '. + {allBarsInView:true,total:$c.total}' <<<"$after")"
   fi
-  jq -nc --argjson id "$id" --arg op "$op" --argjson b "$before" --argjson a "$after" '{ok:true,id:$id,verb:"chart",op:$op,before:$b,after:$a}'
+  local settled_ms=0; [ "$op" != view ] && { settled_ms="$(pb_chart_settle "$id")" || exit $?; }
+  jq -nc --argjson id "$id" --arg op "$op" --argjson b "$before" --argjson a "$after" --argjson s "$settled_ms" '{ok:true,id:$id,verb:"chart",op:$op,before:$b,after:$a,settled_ms:$s}'
 }
 
 # asset and tf share ONE loader so they COMPOSE: each takes the other's current value from the
@@ -96,6 +121,12 @@ pb_nav_load_axes() {   # VERB SYMBOL TF
       *)     refuse TF_SET_FAILED "the fixture has no bars for $pair at $tf$rb" ;;
     esac
   fi
+  # READ BACK (v3 expansion section E: ASSET_SET_FAILED / TF_SET_FAILED): bars loaded is not the same as the selector having taken the value - the
+  # page's own market must now name the requested instrument and timeframe (measured shape: {symbol:"fixture:DXY", timeframe:"60"}).
+  local msym mtf want_tf; msym="$(jq -r '.market.symbol // ""' <<<"$res")"; mtf="$(jq -r '.market.timeframe // ""' <<<"$res")"
+  case "$tf" in 15m) want_tf=15 ;; 30m) want_tf=30 ;; 1H) want_tf=60 ;; 4H) want_tf=240 ;; esac
+  case "$msym" in *"$pair"|*"${pair//\//}") ;; *) [ "$verb" = asset ] && refuse ASSET_SET_FAILED "the page loaded $bars bars but its market is '$msym', not $pair: the instrument selector did not take the value" ;; esac
+  [ "$mtf" = "$want_tf" ] || { [ "$verb" = tf ] && refuse TF_SET_FAILED "the page loaded $bars bars but its timeframe is '$mtf', not $tf ($want_tf)"; }
   pb_rec "$id" ".nav = $(jq -nc --arg s "$sym" --arg t "$tf" '{symbol:$s,tf:$t}')"
   jq -nc --argjson id "$id" --arg v "$verb" --arg s "$sym" --arg t "$tf" --argjson r "$res" \
     '{ok:true,id:$id,verb:$v,symbol:$s,timeframe:$t,bars:$r.bars,market:$r.market}'

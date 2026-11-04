@@ -68,7 +68,7 @@ pb_port_holder() {
 pb_pid_is_ours() {
   local c; c="$(tr '\0' ' ' < "/proc/$1/cmdline" 2>/dev/null)" || return 1
   [ -n "$c" ] || return 1
-  case "$c" in *server.mjs*|*pv-server.py*|*vil-rail*|*control.mjs*|*"${PB_HOME:-/nonexistent}"*|*"${PV_ROOT:-/nonexistent}/scripts"*) return 0 ;; esac
+  case "$c" in *server.mjs*|*pv-server.py*|*vil-rail*|*control.mjs*|*"${PB_HOME:-/nonexistent}"*|*"${PB_FORK:-/nonexistent}/scripts"*) return 0 ;; esac
   return 1
 }
 

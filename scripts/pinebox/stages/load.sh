@@ -37,18 +37,29 @@ stage_load() {
   need bun LOAD_UNAVAILABLE
   cdp="$(pb_port "$id" cdp)"; srv="$(pb_port "$id" server)"
 
+  # THE AXES FIRST (W8, ta stage 2 round 9 defect F-1): pv-load switched the page's market itself, and on a pair/tf the fixture lacks it left
+  # the page on an EMPTY chart (measured: fixture:DXY 240, 0 bars, the page's own FIXTURE_CELL_ABSENT) while state.json kept DXY 1H, and the
+  # refusal named a downstream symptom (RUN_FAILED CHART_NOT_LOADED). The nav path loads the cell, READS BACK the page's market, refuses
+  # ASSET_ABSENT / TF_SET_FAILED by name and puts the page back on the recorded axes; on success it records them. Its axis set is the tool
+  # schema's (DXY, EURUSD, GBPUSD x 15m, 30m, 1H, 4H). The refusal token follows the axis that changed.
+  local sym="${pair//\//}" cur axis=tf
+  cur="$(pb_rec_get "$id" .nav.symbol)"; [ "$sym" = "${cur:-DXY}" ] || axis=asset
+  PB_ID="$id"; pb_nav_load_axes "$axis" "$sym" "$tf" >/dev/null || exit $?
+
   # pv-load resolves nothing against cwd but its own tree; PV_* name this instance's IDE
-  out="$(cd "$PV_ROOT" && PV_CDP_PORT="$cdp" PV_SERVER_PORT="$srv" timeout 170 bun scripts/pv-load.mjs "$abs" "$pair" "$tf" 2>"$d/load.err")"; lrc=$?
+  out="$(cd "$PB_FORK" && PV_CDP_PORT="$cdp" PV_SERVER_PORT="$srv" timeout 170 bun scripts/pv-load.mjs "$abs" "$pair" "$tf" 2>"$d/load.err")"; lrc=$?
   if [ "$lrc" -ne 0 ]; then
     # the exit code is the CAUSE when stderr is empty: 124 is the 170s deadline, anything else with no
     # message is a failure to even run (cd, bun) - never an empty "PINE_LOAD_FAILED ()"
     [ "$lrc" -ne 124 ] || refuse PINE_LOAD_TIMEOUT "pv-load did not finish within 170s (source $abs, $pair $tf)"
     local line tok; line="$(grep -m1 -E '^[A-Z_]+:' "$d/load.err" || tail -1 "$d/load.err")"
-    [ -n "$line" ] || line="PINE_LOAD_FAILED: pv-load exited $lrc with no message on stderr (is bun runnable from $PV_ROOT?)"
+    [ -n "$line" ] || line="PINE_LOAD_FAILED: pv-load exited $lrc with no message on stderr (is bun runnable from $PB_FORK?)"
     tok="$(printf '%s' "$line" | sed -nE 's/^([A-Z_]+):.*/\1/p')"
     # a compiler/bun log level at the head of a stderr line (`ERROR: ...`, `WARNING: ...`) is not pv-load's token and must
     # not be minted into the refusal ledger as one
     case "$tok" in ERROR|WARNING|WARN|INFO|DEBUG|FATAL|NOTE|TRACE) tok="" ;; esac
+    # v3 expansion section B: a script that does not compile is PINE_COMPILE_FAILED (the station reports it as RUN_FAILED + PINE_COMPILE_ERROR)
+    [ "$tok" = RUN_FAILED ] && [[ "$line" == *PINE_COMPILE_ERROR* ]] && { tok=PINE_COMPILE_FAILED; line="${line/PINE_COMPILE_ERROR /}"; }
     refuse "${tok:-PINE_LOAD_FAILED}" "$(printf '%s' "$line" | sed -E 's/^[A-Z_]+: *//') (source $abs, $pair $tf)"
   fi
   result="$(jq -c . <<<"$out")" || refuse PINE_LOAD_FAILED "pv-load returned non-JSON output, so no successful load can be recorded: $(printf '%s' "$out" | tail -1)"

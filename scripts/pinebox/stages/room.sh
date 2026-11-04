@@ -19,7 +19,7 @@
 # operator's ~/.plutus-dashboard.
 
 # the dashboard source tree that owns the room. ONE explicit location, overridable, REFUSED when absent.
-PB_DASH_SRC="${PINEBOX_DASHBOARD_SRC:-/home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS/GITHUB-PLUTUS-DASHBOARD/plutus-shell/src/dashboard}"
+PB_DASH_SRC="${PINEBOX_DASHBOARD_SRC:-$PB_HOME/fork/dashboard}"   # the backtest room from the fork (R1)
 
 pb_room_health() {   # PORT : this port answers as a plutus-backtest-room that is bound to THIS port
   curl -s -m 2 "http://127.0.0.1:$1/health" 2>/dev/null \
@@ -70,7 +70,7 @@ stage_room() {
   need curl ROOM_UNAVAILABLE; need jq ROOM_UNAVAILABLE   # pb_room_health needs both: without them a healthy room read as ROOM_DOWN
   room="$(pb_port "$id" room)" && srv="$(pb_port "$id" server)" || pb_fail "$id" BAD_ID "could not derive the room port for instance '$id'"
   [[ "$room" =~ ^[0-9]+$ && "$srv" =~ ^[0-9]+$ ]] || pb_fail "$id" BAD_ID "the derived ports are not numbers (room '$room', server '$srv')"
-  fix="$PV_ROOT/fixtures/bars/$week.json"
+  fix="$PB_FORK/fixtures/bars/$week.json"
   [ -f "$fix" ] || pb_fail "$id" FIXTURE_ABSENT "no bars fixture for week '$week': $fix"
 
   # a fresh, instance-scoped database and HOME on every up; the room refuses to init without the base table

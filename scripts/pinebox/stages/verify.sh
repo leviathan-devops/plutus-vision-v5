@@ -8,7 +8,7 @@
 #   the page is silently talking to ANOTHER instance's ports
 #   a blank/error frame is reported as a successful render
 # Every check below REFUSES with its own token, so an agent cannot proceed on a false premise:
-#   WEEK_MISMATCH · RAIL_DOWN · STATION_DOWN · PORTS_MISMATCH · NO_BARS · NO_DRAWINGS · FRAME_BLANK
+#   WEEK_MISMATCH · RAIL_DOWN · STATION_DOWN · PORTS_MISMATCH · NO_BARS · NO_SCRIPT_LOADED · NO_DRAWINGS · FRAME_BLANK
 #   CHART_NOT_READY · CHART_EMPTY_RANGE · CHART_NOT_SETTLED · CHART_NOT_DRAWN  (asked of the renderer itself, then checked in the pixels)
 #
 # stage_week_set ID LABEL      drive the IDE's own week control (.pine-week) and verify it took
@@ -64,9 +64,9 @@ stage_verify() {
   # 3 · THE PAGE must be talking to THIS instance (the cross-contamination failure).
   local page; page="$(curl -s -m 4 "http://127.0.0.1:$srv/pine.html")"
   # fixed-string matches: a case-pattern with embedded escapes silently never matched (measured)
-  printf '%s' "$page" | grep -qF "\"apiBase\": \"http://127.0.0.1:$srv\"" \
+  grep -qF "\"apiBase\": \"http://127.0.0.1:$srv\"" <<<"$page" \
     || refuse PORTS_MISMATCH "the page served on :$srv does not name its own apiBase - it would read another instance's data"
-  printf '%s' "$page" | grep -qF "\"railBases\": [\"http://127.0.0.1:$rail\"]" \
+  grep -qF "\"railBases\": [\"http://127.0.0.1:$rail\"]" <<<"$page" \
     || refuse PORTS_MISMATCH "the page served on :$srv does not name this instance's rail :$rail"
   add_check ports "apiBase+rail are this instance's"
 
@@ -96,19 +96,27 @@ stage_verify() {
   wk_mon="$(python3 -c 'import datetime,sys; y,w=sys.argv[1].split("-W"); d=datetime.datetime.combine(datetime.date.fromisocalendar(int(y),int(w),1), datetime.time(0), datetime.timezone.utc); print(int(d.timestamp()*1000))' "$want" 2>/dev/null)" \
     || refuse BAD_ARGS "cannot compute the bounds of week $want"
   wk_end=$((wk_mon + 7*86400000))
-  cov="$(node "$CORE/cdp.mjs" "$cdp" evaluate "(()=>{const r=window.PlutusPineShell?.chart?.rendererControl?.renderer; if(!r) return null; let n=0,m=0; for(const b of r.bars){ if(b.time>=$wk_mon && b.time<$wk_end){ n++; if(b.high>b.low||b.open!==b.close) m++; } } return JSON.stringify({n,m,first:r.bars[0].time,last:r.bars[r.bars.length-1].time});})()" 2>/dev/null | jq -r '.value // empty')"
+  cov="$(node "$CORE/cdp.mjs" "$cdp" evaluate "(()=>{const r=window.PlutusPineShell?.chart?.rendererControl?.renderer; if(!r) return null; const B=r.bars||[]; if(!B.length) return JSON.stringify({total:0}); let n=0,m=0; for(const b of B){ if(b.time>=$wk_mon && b.time<$wk_end){ n++; if(b.high>b.low||b.open!==b.close) m++; } } return JSON.stringify({total:B.length,n,m,first:B[0].time,last:B[B.length-1].time});})()" 2>/dev/null | jq -r '.value // empty')"
   [ -n "$cov" ] || refuse CDP_UNREADABLE "could not read the loaded bars from the page over CDP :$cdp to check they cover week $want"
+  # an EMPTY chart is NO_BARS, never "unreadable": r.bars[0] on an empty array threw, and the throw was reported as CDP_UNREADABLE (F-223, fault-injected)
+  bars="$(jq -r '.total' <<<"$cov")"
+  [ "$bars" -gt 0 ] 2>/dev/null || refuse NO_BARS "the page's chart holds no bars (renderer bars=$bars) - the chart has nothing to draw"
   covn="$(jq -r '.n' <<<"$cov")"; covm="$(jq -r '.m' <<<"$cov")"
   [ "$covn" -gt 0 ] || refuse WEEK_MISMATCH "no loaded bar falls in week $want (Monday $(date -u -d @$((wk_mon/1000)) +%F) to Sunday): the bars span $(date -u -d @$(( $(jq -r '.first' <<<"$cov")/1000 )) +%F) .. $(date -u -d @$(( $(jq -r '.last' <<<"$cov")/1000 )) +%F) - an indicator read here would be read on another week's price action"
-  python3 -c 'import sys; sys.exit(0 if int(sys.argv[1]) >= 0.5*int(sys.argv[2]) else 1)' "$covm" "$covn" \
+  # WEEK_MOVING_MIN: at least half of the week's loaded bars must MOVE (range > 0) - fewer means flat padding, not data (named: ta stage 2 D-179)
+  local WEEK_MOVING_MIN=0.5
+  python3 -c 'import sys; sys.exit(0 if int(sys.argv[1]) >= float(sys.argv[3])*int(sys.argv[2]) else 1)' "$covm" "$covn" "$WEEK_MOVING_MIN" \
     || refuse WEEK_MISMATCH "week $want holds $covn loaded bars but only $covm of them move (range > 0): the data does not cover that week, the rest is flat padding - an indicator read here would be read on another week's price action"
   add_check weekbars "$covm of $covn bars in $want move"
 
-  # 5 · DID ANYTHING ACTUALLY DRAW? counts from the load the instance recorded.
-  bars="$(pb_rec_get "$id" ".load.result.bars")"; onchart="$(pb_rec_get "$id" ".load.result.onChart")"
-  [ "${bars:-0}" -gt 0 ] 2>/dev/null || refuse NO_BARS "no bars are loaded (bars=${bars:-0}) - the chart has nothing to draw"
+  # 5 · DID ANYTHING ACTUALLY DRAW? THE BARS FROM THE PAGE ($bars, counted in 4b), the drawings from the load the instance recorded (F-223,
+  # 2026-11-04). The bars were read from the load RECORD: after a bare `up` (no script loaded) the record is null, and verify announced "no
+  # bars ... nothing to draw" over a page drawing 508 candles - an agent then looped up/down/week for 10 minutes.
+  # verify judges the script YOU loaded: with nothing loaded through pinebox, a WORKS ticket would be minted for the IDE's own buffer script
+  [ -n "$(pb_rec_get "$id" ".load.result")" ] || refuse NO_SCRIPT_LOADED "nothing was loaded into instance $id (the page holds $bars bars and shows the IDE's own buffer) - load your indicator first: pinebox load --pine FILE (or up --pine FILE)"
+  onchart="$(pb_rec_get "$id" ".load.result.onChart")"
   [ "${onchart:-0}" -gt 0 ] 2>/dev/null || refuse NO_DRAWINGS "the script compiled but drew nothing (onChart=${onchart:-0}) - an empty chart is not a working indicator"
-  add_check drawn "$bars bars, $onchart drawn"
+  add_check drawn "$bars bars on the page, $onchart drawn by the loaded script"
 
   # 6 · THE PIXELS, AND THEY MUST BE NEW. A capture byte-identical to the one before it is not a
   # second look - it is the same frame, so nothing was re-rendered (the "identical bytes, 5 boxes then
@@ -116,7 +124,7 @@ stage_verify() {
   local fresh freshsha prevfresh
   fresh="$d/verify-frame.png"
   prevfresh="$d/frame.png"
-  frame_json="$("$COMPUTER" screenshot --id "$id" --out "$fresh" 2>"$d/verify-shot.err")" \
+  frame_json="$("$COMPUTER" screenshot --id "$id" --cdp "$(pb_port "$id" cdp)" --out "$fresh" 2>"$d/verify-shot.err")" \
     || refuse CAPTURE_FAILED "could not capture and measure the frame: $(tail -1 "$d/verify-shot.err")"
   # Freshness belongs to the CHART PIXELS, not the PNG container: the UTC
   # footer changes every second, so byte hashes differ on an unchanged chart.
@@ -169,10 +177,72 @@ stage_verify() {
     || refuse FRESHNESS_CHECK_FAILED "the pixel cross-check instrument itself failed: $(tail -1 "$d/chartpx.err") - this is NOT a verdict about the frame"
   rate="$(jq -r '.rate' <<<"$rj")"; hits="$(jq -r '.hits' <<<"$rj")"; cand="$(jq -r '.candidates' <<<"$rj")"; pcol="$(jq -r '"up "+.up+" down "+.down' <<<"$probe_a")"
   floor="$(python3 -c 'import sys; sys.path.insert(0,sys.argv[1]); import chartpx; print(chartpx.RENDER_HIT_FLOOR)' "$PB_HOME")"
+  # F-199 / F-177 (measured 2026-11-03): after a viewport change the canvas repaints up to ~1.5 s after the renderer's state moves (`pan`, `fit`,
+  # then an immediate verify: 177 of 382 at their columns; 1.5 s later 382 of 382). The renderer is the truth, the bitmap catches up: re-capture
+  # and re-check until the pixels match or PB_SETTLE_S (default 6) runs out - only THEN is it CHART_NOT_DRAWN. A chart that never draws still refuses.
+  local settle_end=$((SECONDS + ${PB_SETTLE_S:-6})) tries=1
+  while ! python3 -c 'import sys; sys.exit(0 if float(sys.argv[1]) >= float(sys.argv[2]) else 1)' "$rate" "$floor" && [ "$SECONDS" -lt "$settle_end" ]; do
+    sleep 0.5; tries=$((tries + 1))
+    "$COMPUTER" screenshot --id "$id" --cdp "$(pb_port "$id" cdp)" --out "$fresh" >/dev/null 2>"$d/verify-shot.err" || refuse CAPTURE_FAILED "re-capture while settling failed: $(tail -1 "$d/verify-shot.err")"
+    probe_a="$(probe_read)" || refuse CDP_UNREADABLE "renderer probe failed while settling: ${probe_a#REFUSE }"
+    [ "$(jq -r '.state' <<<"$probe_a")" = OK ] || break
+    pin="$(jq -r '.inView' <<<"$probe_a")"; printf '%s' "$probe_a" > "$d/chartprobe.json"
+    rj="$(python3 "$PB_HOME/chartpx.py" render "$d/chartprobe.json" "$fresh" 2>"$d/chartpx.err")" || refuse FRESHNESS_CHECK_FAILED "the pixel cross-check instrument failed: $(tail -1 "$d/chartpx.err")"
+    rate="$(jq -r '.rate' <<<"$rj")"; hits="$(jq -r '.hits' <<<"$rj")"; cand="$(jq -r '.candidates' <<<"$rj")"; unchanged=0
+  done
   python3 -c 'import sys; sys.exit(0 if float(sys.argv[1]) >= float(sys.argv[2]) else 1)' "$rate" "$floor" \
     || { [ "$unchanged" = 1 ] && refuse NO_FRESH_FRAME "the chart pixels are unchanged since the last frame AND the renderer's bars are not on screen in them (rate $rate, floor $floor): this capture is stale, not a second look"; refuse CHART_NOT_DRAWN "the renderer says $pin of $ptot bars are in view (colours: $pcol) but only $hits of $cand of them are on screen at their columns in those colours (rate $rate, floor $floor): the chart did not draw what it holds"; }
   add_check chart "renderer: $pin of $ptot bars in view; pixels: $hits of $cand at their columns in the renderer's own colours ($pcol), rate $rate >= $floor$([ "$unchanged" = 1 ] && printf '; pixels identical to the previous frame (a static chart), proven current by this cross-check')"
 
+  # 7 · TEMPORAL AND PRICE ANCHORING (P3 blueprint section 15 C2, A1 and A3) - arithmetic, read from the renderer probe that the pixels were checked against.
+  # A1: the requested ISO week must have MOVING bars in view (the operator's failure: a week labelled correctly with its bars scrolled away).
+  # A3: the price axis must be on the script's data, not blown out by an overlay: the visible scale must stay within PB_PRICE_SPAN_MAX (default 3)
+  #     times the fixture's own price span. Measured 2026-11-03 over fit / three zooms / three pans: 1.25-1.51; the off-data frame (w1-G) was 16.
+  local anch; anch="$(python3 - "$d/chartprobe.json" "$want" "${PB_PRICE_SPAN_MAX:-3}" <<'PYA'
+import json, sys, datetime as dt
+p = json.load(open(sys.argv[1])); y, w = sys.argv[2].split("-W"); lim = float(sys.argv[3])
+mon = dt.datetime.combine(dt.date.fromisocalendar(int(y), int(w), 1), dt.time(), dt.timezone.utc)
+a, b = mon.timestamp() * 1000, (mon + dt.timedelta(days=7)).timestamp() * 1000
+n = sum(1 for t in p.get("times", []) if a <= t < b)
+sc, al = p.get("scale"), p.get("all")
+span = (sc["max"] - sc["min"]) / (al["hi"] - al["lo"]) if sc and al and al["hi"] > al["lo"] else None
+print(json.dumps({"week_bars": n, "week": sys.argv[2], "span": None if span is None else round(span, 2), "lim": lim, "scale": sc, "data": al}))
+PYA
+)" || refuse FRESHNESS_CHECK_FAILED "the anchoring instrument failed"
+  [ "$(jq -r '.week_bars' <<<"$anch")" -gt 0 ] \
+    || refuse WEEK_NOT_IN_VIEW "the requested week $want has no moving bar in view (visible range $(jq -c '.vr' "$d/chartprobe.json")): the chart is labelled $want but shows another week's price action - pan or fit to it"
+  [ "$(jq -r '.span // empty' <<<"$anch")" != "" ] && python3 -c 'import sys; sys.exit(0 if float(sys.argv[1]) <= float(sys.argv[2]) else 1)' "$(jq -r '.span' <<<"$anch")" "$(jq -r '.lim' <<<"$anch")" \
+    || refuse PRICE_BAND_MISMATCH "the price axis spans $(jq -c '.scale' <<<"$anch") = $(jq -r '.span' <<<"$anch") x the data's own range $(jq -c '.data' <<<"$anch") (limit $(jq -r '.lim' <<<"$anch")): the candles are crushed by something drawn far off the price - the bars cannot be read"
+  add_check anchor "$(jq -r '"week \(.week): \(.week_bars) moving bars in view; price axis \(.span)x the data range (limit \(.lim))"' <<<"$anch")"
+
   [[ "$id" =~ ^(0|[1-9])$ ]] || refuse BAD_ID "verdict for a non-canonical instance id '$id'"   # the function's OWN id, not the global $ID that require_id happened to set
   jq -nc --argjson id "$id" --arg want "$want" --argjson checks "$checks" '{ok:true,id:$id,week:$want,verdict:"ARITH_OK",checks:$checks}'
+}
+
+# pb_chart_settle ID - after a viewport change, wait until the captured chart shows what the renderer holds (F-177 / F-199: the bitmap repaints
+# up to ~1.5 s after the renderer's state moves). Bars in view: until the pixels at the renderer's bar columns match (the verify criterion).
+# No bar in view: until three captures 0.5 s apart are identical in the chart pane. Prints the settle time in ms; refuses CHART_NOT_SETTLED
+# after PB_SETTLE_S (default 6). Used by every viewport verb so a `shot`/`look`/`verify` taken after it is current.
+pb_chart_settle() {
+  local id="$1" d cdp probe st rj rate floor f prev same=0 lastvr="" t0=$SECONDS end=$((SECONDS + ${PB_SETTLE_S:-6})) ms0
+  d="$(pb_dir "$id")"; cdp="$(pb_port "$id" cdp)"; f="$d/settle.png"; prev="$d/settle-prev.png"; ms0=$(date +%s%N)
+  floor="$(python3 -c 'import sys; sys.path.insert(0,sys.argv[1]); import chartpx; print(chartpx.RENDER_HIT_FLOOR)' "$PB_HOME")"
+  rm -f "$prev"
+  while :; do
+    "$COMPUTER" screenshot --id "$id" --cdp "$(pb_port "$id" cdp)" --out "$f" >/dev/null 2>"$d/settle.err" || refuse CAPTURE_FAILED "capture while settling failed: $(tail -1 "$d/settle.err")"
+    probe="$(node "$CORE/cdp.mjs" "$cdp" evaluate "$(cat "$PB_HOME/chartprobe.js")" 2>>"$d/settle.err" | jq -r '.value // empty')"
+    st="$(jq -r '.state // empty' <<<"$probe" 2>/dev/null)"
+    if [ "$st" = OK ] && [ "$(jq -c '.vr' <<<"$probe")" = "${lastvr:-}" ]; then   # the renderer must be still too (two probes, same range)
+      printf '%s' "$probe" > "$d/settle-probe.json"
+      rj="$(python3 "$PB_HOME/chartpx.py" render "$d/settle-probe.json" "$f" 2>>"$d/settle.err")" && rate="$(jq -r '.rate' <<<"$rj")" \
+        && python3 -c 'import sys; sys.exit(0 if float(sys.argv[1]) >= float(sys.argv[2]) else 1)' "$rate" "$floor" && break
+    elif [ -f "$prev" ]; then
+      python3 "$PB_HOME/chartpx.py" changed "$prev" "$f" 2>>"$d/settle.err"; [ $? -eq 1 ] && same=$((same + 1)) || same=0
+      [ "$same" -ge 2 ] && break
+    fi
+    cp "$f" "$prev"; lastvr="$(jq -c '.vr' <<<"$probe" 2>/dev/null)"
+    [ "$SECONDS" -lt "$end" ] || refuse CHART_NOT_SETTLED "the captured chart did not catch up with the renderer within ${PB_SETTLE_S:-6} s (state $st, rate ${rate:-n/a}, floor $floor)"
+    sleep 0.5
+  done
+  echo $(( ($(date +%s%N) - ms0) / 1000000 ))
 }

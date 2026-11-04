@@ -40,8 +40,8 @@ pb_preflight() {
   local week="$1" instance_id="${2:-0}" fix renderer
   # the id becomes part of a file path below: only a canonical decimal may reach it
   [[ "$instance_id" =~ ^(0|[1-9])$ ]] || refuse BAD_ID "instance id must be a canonical decimal 0..9, got '$instance_id'"
-  fix="$PV_ROOT/fixtures/bars/$week.json"
-  renderer="${PINEBOX_RENDERER_ROOT:-$PV_ROOT/pine-ide/ide/renderer}"
+  fix="$PB_FORK/fixtures/bars/$week.json"
+  renderer="${PINEBOX_RENDERER_ROOT:-$PB_FORK/pine-ide/ide/renderer}"
   # the renderer root is read, never written, but it is still an input: absolute, free of control
   # characters, a real directory, and carrying the page we are about to rewrite
   case "$renderer" in /*) ;; *) refuse BAD_ARGS "PINEBOX_RENDERER_ROOT must be an absolute path, got '$renderer'" ;; esac
@@ -51,7 +51,7 @@ pb_preflight() {
   # the fixtures tree and would have been loaded as the bars fixture)
   [[ "$week" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || refuse BAD_ARGS "week must be a date YYYY-MM-DD naming a fixture, got '$week'"
   [ -f "$fix" ] || refuse FIXTURE_ABSENT "no bars fixture for week '$week': $fix"
-  [ -d "$PV_ROOT/pine-ide/pine-station/node_modules/pinets" ] || refuse ENGINE_ABSENT "run npm install in $PV_ROOT/pine-ide/pine-station"
+  [ -d "$PB_FORK/pine-ide/pine-station/node_modules/pinets" ] || refuse ENGINE_ABSENT "run npm install in $PB_FORK/pine-ide/pine-station"
   local inject_err="$PB_ROOT/i${instance_id}.inject.err"
   mkdir -p "$(dirname "$inject_err")"
   python3 "$PB_HOME/inject.py" --check "$renderer/pine.html" >/dev/null 2>"$inject_err" \
@@ -66,12 +66,12 @@ stage_services() {
   # stage serves on it - it is not read here so no one mistakes it for a wired service)
   st="$(pb_port "$id" station)" && rail="$(pb_port "$id" rail)" && srv="$(pb_port "$id" server)" \
     || refuse BAD_ID "could not derive the port block for instance '$id'"
-  fix="$PV_ROOT/fixtures/bars/$week.json"
-  renderer="${PINEBOX_RENDERER_ROOT:-$PV_ROOT/pine-ide/ide/renderer}"
+  fix="$PB_FORK/fixtures/bars/$week.json"
+  renderer="${PINEBOX_RENDERER_ROOT:-$PB_FORK/pine-ide/ide/renderer}"
   # ── station: supervised with a bounded memory cap, exactly as pv-ide.sh does ──
   # (the 2026-10-11 incident: an unsupervised station leaked to ~33 GB RSS+swap)
-  env -C "$PV_ROOT/pine-ide/pine-station" PINE_STATION_PORT="$st" PINE_STATION_HOST=127.0.0.1 \
-      PLUTUS_BARS_FIXTURE="$fix" PLUTUS_LIVE_ROOT="$PV_ROOT" PINE_STATION_RSS_CAP_MB=2560 \
+  env -C "$PB_FORK/pine-ide/pine-station" PINE_STATION_PORT="$st" PINE_STATION_HOST=127.0.0.1 \
+      PLUTUS_BARS_FIXTURE="$fix" PLUTUS_LIVE_ROOT="$PB_FORK" PLUTUS_CANON_PINE="$PB_FORK/canon/absent.pine" PINE_STATION_RSS_CAP_MB=2560 \
       setsid bash -c 'n=0; while [ "$n" -lt 20 ]; do node --max-old-space-size=1536 server.mjs; c=$?; n=$((n+1)); echo "[pinebox] station exited ($c) - restart $n/20 in 1s"; sleep 1; done; echo "[pinebox] station gave up after 20 restarts"' \
       >> "$d/station.log" 2>&1 < /dev/null 6>&- 7>&- 8>&- &
   pb_svc_record "$id" station "$!"
@@ -80,10 +80,19 @@ stage_services() {
          refuse STATION_WILL_NOT_COMPILE "POST /run on :$st never answered success:true - $d/station.log: $(tail -2 "$d/station.log" | tr '\n' ' ')"; }
 
   # ── rail: its ledger and evidence live INSIDE the instance, never in the live tree ──
+  # EVIDENCE IS PER `up` (found 2026-11-03: instance 1's ledger carried 50 rows from three earlier sessions, so a new session's repeat alarm and
+  # epoch narrated another session's verdicts, and its ledger refused on their unsigned tickets). The previous run's evidence and rail ledger are
+  # KEPT (moved to archive/<UTC stamp>/, never deleted - they are evidence) and this run starts its own chain.
+  if [ -n "$(ls -A "$d/evidence" 2>/dev/null)" ] || [ -n "$(ls -A "$d/vil" 2>/dev/null)" ]; then
+    local arch; arch="$d/archive/$(date -u +%Y%m%dT%H%M%SZ)"; mkdir -p "$arch"
+    [ -d "$d/evidence" ] && mv -- "$d/evidence" "$arch/evidence"; [ -d "$d/vil" ] && mv -- "$d/vil" "$arch/vil"
+  fi
+  # the last judged frame belongs to the run that judged it (a phase close reads it): archived with that run's evidence, never inherited
+  [ -f "$d/judge-region.png" ] && { mkdir -p "$d/archive/last-judged"; mv -- "$d/judge-region.png" "$d/archive/last-judged/judge-region-$(date -u +%Y%m%dT%H%M%SZ).png"; }
   mkdir -p "$d/vil" "$d/evidence"
   env PLUTUS_VIL_PORT="$rail" PLUTUS_STATION_URL="http://127.0.0.1:$st" \
       PLUTUS_VIL_DIR="$d/vil" PLUTUS_VIL_EVIDENCE="$d/evidence" \
-      setsid node "$PV_ROOT/pine-ide/pine-ide/vil-rail.mjs" >> "$d/rail.log" 2>&1 < /dev/null 6>&- 7>&- 8>&- &
+      setsid node "$PB_FORK/pine-ide/pine-ide/vil-rail.mjs" >> "$d/rail.log" 2>&1 < /dev/null 6>&- 7>&- 8>&- &
   pb_svc_record "$id" rail "$!"
   if pb_wait 15 pb_http_answers "http://127.0.0.1:$rail/"; then pb_rec "$id" '.rail = "up"'
   else
@@ -109,8 +118,14 @@ stage_services() {
   ptoken="$(od -An -N16 -tx1 /dev/urandom 2>/dev/null | tr -d ' \n')"
   [[ "$ptoken" =~ ^[0-9a-f]{32}$ ]] || pb_fail "$id" AUTH_TOKEN_UNAVAILABLE "could not read 16 random bytes from /dev/urandom for the per-instance token"
   ports="$(jq -c --arg t "$ptoken" '. + {authToken:$t}' <<<"$ports")" || pb_fail "$id" BAD_PORTS "could not attach the per-instance token to the port block"
-  env PYTHONDONTWRITEBYTECODE=1 PV_FIXTURE="$fix" PINEBOX_PORTS="$ports" PV_TERM_TOKEN="$ptoken" \
-      setsid python3 "$PV_ROOT/scripts/pv-server.py" "$srv" "$renderer" >> "$d/server.log" 2>&1 < /dev/null 6>&- 7>&- 8>&- &
+  # NO_NEW_PRIVS (W8, 2026-11-03): this host's /usr/bin/python3.12 carries the file capability cap_linux_immutable=ep, so every python3
+  # process GAINED a capability at exec and the kernel made it non-dumpable - the server's /proc smaps became root-owned and `status`
+  # reported the instance's RAM as a lower bound (`unreadable: server pid`). The server needs no capability: setpriv --no-new-privs makes
+  # the kernel grant none (measured: CapEff 0, smaps owned by the user), so it runs least-privileged and its memory is counted.
+  need setpriv SETPRIV_ABSENT
+  # PYTHONPATH: pv-server.py imports `inject` (this tool's inject.py); in the fork its own sys.path entry (scripts/pinebox) does not exist
+  env PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$PB_HOME" PV_FIXTURE="$fix" PINEBOX_PORTS="$ports" PV_TERM_TOKEN="$ptoken" \
+      setsid setpriv --no-new-privs python3 "$PB_FORK/scripts/pv-server.py" "$srv" "$renderer" >> "$d/server.log" 2>&1 < /dev/null 6>&- 7>&- 8>&- &
   pb_svc_record "$id" server "$!"
   pb_wait 20 pb_http_ok "http://127.0.0.1:$srv/pine.html" \
     || pb_fail "$id" "SERVICE_DOWN:server" "pine.html never answered 200 on :$srv - $d/server.log: $(tail -2 "$d/server.log" | tr '\n' ' ')"
@@ -123,15 +138,18 @@ stage_services() {
   pb_fetch() { local body rc n; for n in 1 2 3; do body="$(curl -s -m "$2" "$1")"; rc=$?; [ "$rc" -eq 0 ] && [ -n "$body" ] && { printf '%s' "$body"; return 0; }; sleep 1; done; return 1; }
   local served; served="$(pb_fetch "http://127.0.0.1:$srv/pine.html" 6)" \
     || pb_fail "$id" "SERVICE_DOWN:server" "pine.html on :$srv could not be read (3 tries): the server answered the readiness probe and then not a body - $d/server.log: $(tail -2 "$d/server.log" | tr '\n' ' ')"
-  printf '%s' "$served" | grep -q "\"apiBase\": \"http://127.0.0.1:$srv\"" \
+  grep -qF "\"apiBase\": \"http://127.0.0.1:$srv\"" <<<"$served" \
     || pb_fail "$id" CONFIG_NOT_INJECTED "the page served on :$srv does not name apiBase :$srv - the instance would use another instance's server"
-  printf '%s' "$served" | grep -q "\"pineStation\": \"http://127.0.0.1:$st\"" \
+  grep -qF "\"pineStation\": \"http://127.0.0.1:$st\"" <<<"$served" \
     || pb_fail "$id" CONFIG_NOT_INJECTED "the page served on :$srv does not name pineStation :$st"
-  printf '%s' "$served" | grep -qE "PlutusPineShellConfig *= *\{[^}]*\"railBases\": *\[\"http://127\.0\.0\.1:$rail\"\]" \
+  grep -qE "PlutusPineShellConfig *= *\{[^}]*\"railBases\": *\[\"http://127\.0\.0\.1:$rail\"\]" <<<"$served" \
     || pb_fail "$id" CONFIG_NOT_INJECTED "the page served on :$srv does not name this instance's rail :$rail in PlutusPineShellConfig - the engine would fall back to the default rail"
   local wb; wb="$(pb_fetch "http://127.0.0.1:$srv/charts/workbench.bundle.js" 20)" \
     || pb_fail "$id" "SERVICE_DOWN:server" "workbench.bundle.js on :$srv could not be read (3 tries of 20 s): a fetch failure is not 'the config was not injected' - $d/server.log: $(tail -2 "$d/server.log" | tr '\n' ' ')"
-  printf '%s' "$wb" | grep -qF "var MAIN_API = \"http://127.0.0.1:$srv\";" \
+  # F-188 ROOT CAUSE (measured 2026-11-03): `printf "$wb" | grep -q` under `set -o pipefail` (pinebox:28) - grep exits at the match (byte 1,999,508 of
+  # 2,026,469) while printf is still writing, printf dies of SIGPIPE, the pipeline reports 141: a FALSE CONFIG_NOT_INJECTED in 4 of 200 runs.
+  # A here-string has no second process (200/200). Every `printf | grep -q` of both tools was converted for the same reason.
+  grep -qF "var MAIN_API = \"http://127.0.0.1:$srv\";" <<<"$wb" \
     || pb_fail "$id" CONFIG_NOT_INJECTED "the workbench served on :$srv does not name this instance's MAIN_API - its fixture feed would use another instance"
   printf '  services  station :%s · rail :%s (%s) · server :%s  (apiBase/pineStation verified in the served bytes)\n' \
     "$st" "$rail" "$(jq -r .rail "$d/state.json")" "$srv" >&2

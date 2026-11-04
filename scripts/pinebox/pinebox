@@ -11,7 +11,8 @@
 #   pinebox up      --id N [--week W] [--pair P] [--tf T] [--pine F] [--adapter A]
 #   pinebox spawn   --id N [--cmd "PROGRAM ARGS"] [up's flags]   a NEW instance (refuses INSTANCE_LIVE), then PROGRAM runs inside it
 #   pinebox attach  [--id N]                        re-open a PERSISTENT instance: its live state (ports, week, services, a fresh frame sha); NOT_UP if it is not up
-#   pinebox verify  [--id N] [--week W] [--clause IDS] [--arith]   arithmetic verify; with --judge also an independent image judge + a content-addressed ticket (judge/pbjudge.py)
+#   pinebox verify  [--id N] [--week W] [--clause IDS | --phase NAME] [--arith]   arithmetic checks, then the independent image judge on every bound clause, one signed ticket each; --arith answers UNJUDGED
+#   pinebox phase   --close NAME [--id N]   close a phase of judge/phases.json: every required clause needs a passing signed ticket on the last judged frame (P3g)
 #   pinebox down    --id N | --all
 #   pinebox list                                    every instance
 #   pinebox status  --id N [--project K]            the record, the last 5 refusals, measured memory
@@ -26,7 +27,10 @@
 
 set -uo pipefail
 PB_HOME="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
-PV_ROOT="$(cd "$PB_HOME/../.." && pwd)"
+# THE FORK (operator ruling R1, 2026-11-03: "PINEBOX IS SUPPOSED TO BE FORKED AND ENTIRELY SELF CONTAINED"): the Pine IDE renderer,
+# the station, the rail, the static server, the loader, the fixtures and the backtest room run from Pinebox's OWN copy under
+# $PB_HOME/fork (provenance: fork/UPSTREAM.md). Nothing outside this tool's directory is read or executed.
+PB_FORK="$PB_HOME/fork"
 # THE CORE IS computer-use v2 (blueprint section 1: PINEBOX inherits it whole). It is located by
 # CU_EXT (default: the OMP extension directory) - never by a symlink inside this repo, which
 # would be a machine-specific path that dangles in any other checkout.
@@ -253,7 +257,14 @@ pb_up() {
   # NOT swallowed: `refuse` ends in `exit 1`, so the old `>/dev/null 2>&1 || true` could never run its `|| true` - a failing week-set killed this
   # whole start with its message sent to /dev/null (lib.sh:41-47; measured 2026-11-02, 1 of 9 concurrent starts exited 1 with no refusal line)
   stage_week_set "$id" "$(pb_iso_week "$week")" || exit $?
-  if [ -n "$pine" ]; then stage_load "$id" "$d" "$pine" "$pair" "$tf" || exit $?; fi
+  if [ -n "$pine" ]; then stage_load "$id" "$d" "$pine" "$pair" "$tf" || exit $?
+  else
+    # THE RECORD MUST BE THE PAGE (W7 sweep, 2026-11-03): with no --pine nothing ever told the page which instrument to show - it opened on its own
+    # default (measured: EURUSD, 0 bars, a FIXTURE_CELL_ABSENT toast) while state.json said `pair: DXY`. Put the page on the recorded axes through
+    # the nav path, which loads, READS BACK the page's market (ASSET_SET_FAILED / TF_SET_FAILED) and refuses by name - the up's trap tears it down.
+    PB_ID="$id"; pb_nav_load_axes asset "${pair//\//}" "$tf" >/dev/null || exit $?
+    printf '  axes      %s %s (%s bars, read back from the page)\n' "$pair" "$tf" "$(pb_v3_eval "$id" "(function(){return (window.PlutusPineShell.workbench.getBars()||[]).length})()")" >&2
+  fi
 
   # P7: the whole `up` - not just its first stage - must have left the operator's focus alone
   local after; after="$(c3_snapshot)"
@@ -313,7 +324,7 @@ pb_attach() {
     svc="${svc:+$svc,}\"$name\":$port"
   done
   cdp="$(pb_rec_get "$id" .ports.cdp)"
-  shot="$(pb_c3 "pinebox attach" "$COMPUTER" screenshot --id "$id" --out "$d/frame.png")" || exit $?
+  shot="$(pb_c3 "pinebox attach" "$COMPUTER" screenshot --id "$id" --cdp "$(pb_port "$id" cdp)" --out "$d/frame.png")" || exit $?
   sha="$(sha256sum "$d/frame.png" | cut -d' ' -f1)"
   week_rec="$(pb_rec_get "$id" .week)"
   week_live="$(node "$CORE/cdp.mjs" "$cdp" evaluate "(document.querySelector('.pine-week')?.value)||''" 2>/dev/null | jq -r '.value // empty')"
@@ -368,6 +379,7 @@ pb_status() {
     [ "$bad" != "-" ] && unread="${unread:+$unread; }$name pid(s) $bad"
   done
   local k; k="$(flag project 7)"
+  [[ "$k" =~ ^[1-9]$ ]] || refuse BAD_ARGS "--project is the number of instances to project the memory to (1..9), got '$k'"   # W7: a non-number crashed jq with rc 2
   jq --argjson st "${mb[station]:-0}" --argjson ra "${mb[rail]:-0}" --argjson sv "${mb[server]:-0}" \
      --argjson co "${mb[compositor]:-0}" --argjson ch "${mb[browser]:-0}" --argjson one "$total" --argjson k "$k" \
      --arg unread "$unread" \
@@ -397,7 +409,8 @@ pb_shot() {
   pb_bind; local id="$ID" d out; d="$(pb_dir "$id")"
   [ -s "$d/state.json" ] || refuse NOT_UP "pinebox instance $id is not up"
   out="$(flag out "$d/frame.png")"
-  pb_c3 "pinebox shot" "$COMPUTER" screenshot --id "$id" --out "$out" ${FLAG[section]:+--section "${FLAG[section]}"}
+  ( pb_chart_wait_still "$id" ) >/dev/null 2>&1 || true   # F-177: never capture a chart mid-glide; in a subshell, so a page without a chart (or a failed wait) is still captured
+  pb_c3 "pinebox shot" "$COMPUTER" screenshot --id "$id" --cdp "$(pb_port "$id" cdp)" --out "$out" ${FLAG[section]:+--section "${FLAG[section]}"}
 }
 
 pb_load() {
@@ -505,18 +518,33 @@ pb_verify() {
     jq -nc --argjson v "$vout" '{verdict:"UNJUDGED", verify:$v, note:"arithmetic checks only: nothing here looked at what the chart shows; this is not a verification"}'; return
   fi
   cl="$(flag clause)"
+  local phase; phase="$(flag phase)"
+  if [ -z "$cl" ] && [ -n "$phase" ]; then   # P3g: judge exactly the clauses the phase's ticket table requires
+    cl="$(python3 "$PB_HOME/judge/pbjudge.py" clauses-for --phase "$phase" 2>"$d/judge.err" | jq -r '.clauses | join(",")')" || pb_forward_refusal "$d/judge.err"
+    [ -n "$cl" ] || pb_forward_refusal "$d/judge.err"
+  fi
   if [ -z "$cl" ]; then
     pine="$(pb_rec_get "$ID" .load.pine)"
     cl="$(python3 "$PB_HOME/judge/pbjudge.py" clauses-for --pine "$pine" --week "$w" 2>"$d/judge.err" | jq -r '.clauses | join(",")')" || pb_forward_refusal "$d/judge.err"
     [ -n "$cl" ] || pb_forward_refusal "$d/judge.err"
   fi
   reg="$d/judge-region.png"
-  pb_c3 "pinebox verify" "$COMPUTER" screenshot --id "$ID" --out "$reg" --section chart >/dev/null || exit $?
+  pb_c3 "pinebox verify" "$COMPUTER" screenshot --id "$ID" --cdp "$(pb_port "$ID" cdp)" --out "$reg" --section chart >/dev/null || exit $?
   jout="$(python3 "$PB_HOME/judge/pbjudge.py" judge --clause "$cl" --evidence "$d/evidence" --region "$reg" --week "$w" 2>"$d/judge.err")" || pb_forward_refusal "$d/judge.err"
   if [ "$(jq -r '.pass' <<<"$jout")" != true ]; then
     refuse JUDGE_FAILED "the independent judge failed this frame on $(jq -r '[.failed[] as $c | .results[$c] | "\($c) p=\(.p) < act \(.act) class \(.class) ticket \(.ticket[0:16])"] | join("; ")' <<<"$jout") (clauses judged: $cl; tickets under $d/evidence/tickets/) - the arithmetic checks passed, the pixels did not"
   fi
   jq -nc --argjson v "$vout" --argjson j "$jout" '{verdict:"WORKS", verify:$v, judge:{clauses:$j.clauses, tickets:$j.tickets, p:($j.results|map_values(.p)), act:($j.results|map_values(.act)), enforcement:$j.enforcement}}'
+}
+
+# pinebox phase --close NAME [--id N]: P3g. The phase closes only when the last judged frame of this instance has a passing, signed ticket for
+# every clause judge/phases.json requires (PHASE_TICKETS_MISSING); a ticket spent on another phase is refused (TICKET_REUSED). Run
+# `pinebox verify --phase NAME` first: it judges exactly those clauses on a fresh capture.
+pb_phase() {
+  pb_bind; local d name; d="$(pb_dir "$ID")"
+  [ -s "$d/state.json" ] || refuse NOT_UP "pinebox instance $ID is not up"
+  name="$(flag close)"; [ -n "$name" ] || refuse BAD_ARGS "phase needs --close NAME (a phase of judge/phases.json)"
+  python3 "$PB_HOME/judge/pbjudge.py" phase-close --evidence "$d/evidence" --phase "$name" --region "$d/judge-region.png" 2>"$d/judge.err" || pb_forward_refusal "$d/judge.err"
 }
 
 pb_view() {
@@ -553,8 +581,17 @@ done
 set -- "${_argv[@]}"
 PB_ARGS=("$@")
 case "$PB_VERB" in help|-h|--help) usage; exit 2 ;; esac
-BOOL_FLAGS="$BOOL_FLAGS --arith --get "     # `verify --arith` and `--get` (week|tf|asset) are booleans beside the core's own (set here: the shared core is not edited for one verb)
+BOOL_FLAGS="$BOOL_FLAGS --arith "     # `verify --arith` is a boolean beside the core's own (set here: the shared core is not edited for one verb)
+# `--get` is a boolean for week/tf/asset ONLY: `state --get KEY` takes its key as the value (it was swallowed as a boolean - W7 sweep, regression of F-186)
+case "$PB_VERB" in week|tf|asset) BOOL_FLAGS="$BOOL_FLAGS --get " ;; esac
 parse_flags "$@"
+# ONE CONTRACT ON EVERY SURFACE (W7): every parsed flag must be in the verb's actions.json row (or --session); `list --bogus 1` used to pass
+if jq -e --arg v "$PB_VERB" '.actions | has($v)' "$PB_HOME/actions.json" >/dev/null 2>&1; then
+  _takes=" session $(jq -r --arg v "$PB_VERB" '.actions[$v].flags[]' "$PB_HOME/actions.json" | tr '\n' ' ') "
+  for _k in "${!FLAG[@]}"; do
+    [[ "$_takes" == *" ${_k//-/_} "* ]] || refuse BAD_ARGS "'--$_k' is not an argument of '$PB_VERB' (it takes:$(printf '%s' "$_takes" | sed 's/ session / /; s/  */ --/g'))"
+  done
+fi
 # a bare positional after --put K is the value; booleans the parser needs to know
 case "$PB_VERB" in
   ports)    pb_ports ;;
@@ -572,6 +609,7 @@ case "$PB_VERB" in
   view)     pb_view ;;
   week)     pb_week ;;
   verify)   pb_verify ;;
+  phase)    pb_phase ;;
   insert)   pb_v3_insert "$@" ;;
   run)      pb_v3_run "$@" ;;
   editor)   pb_v3_editor "$@" ;;

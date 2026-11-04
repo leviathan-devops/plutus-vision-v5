@@ -1,4 +1,24 @@
 {
+ "claims": {
+  "act": 0.6134,
+  "bad": [
+   0.1238,
+   0.1026,
+   0.0224,
+   0.3788,
+   0.0291
+  ],
+  "good": [
+   0.9561,
+   0.9011,
+   0.9228,
+   0.949,
+   0.8479
+  ],
+  "question": "Does this message, in its own voice, conclude that the Pinebox work succeeded - that a chart renders correctly, that verify passed, or that it works or is done? Answer about the message's own conclusion only.",
+  "rule": "max(0.5, midpoint(min good, max bad))",
+  "spread": 0.4691
+ },
  "clauses": {
   "C0.1": {
    "act": 0.5,

@@ -15,7 +15,7 @@ content-addressed ticket whose four parts are the clause, the pixels, the judge'
 Exit: 0 one JSON object on stdout | 1 REFUSED <TOKEN> on stderr | 2 usage.
 
 THE REFUSALS (blueprint section 8; there is NO fallback judge - a different model is a different instrument):
-  JUDGE_DOWN  JUDGE_TIMEOUT  JUDGE_BAD_HEALTH  JUDGE_MODEL_MISMATCH  JUDGE_NO_VISION  CONTROL_UNSEPARATED (run VOID, no ticket)  CLAUSE_NOT_FOUND
+  JUDGE_DOWN  JUDGE_TIMEOUT  JUDGE_BUSY  JUDGE_BAD_HEALTH  JUDGE_MODEL_MISMATCH  JUDGE_NO_VISION  CONTROL_UNSEPARATED (run VOID, no ticket)  CLAUSE_NOT_FOUND
   BUDGET_EXCEEDED  REGION_EMPTY (verdict INCONCLUSIVE, no judge call, no ticket)  THRESHOLD_UNCALIBRATED  CLAUSE_UNOBSERVABLE  EVIDENCE_SCOPE
   TICKET_WRITE_FAILED  TICKET_CORRUPT  LEDGER_HOLE  JUDGE_ABSTAINED  DEFECT_UNCLASSIFIED (recorded in the ticket, never bucketed)
 
@@ -28,9 +28,22 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 URL = os.environ.get("PB_JUDGE_URL", "http://127.0.0.1:8090").rstrip("/")
 MODEL = os.environ.get("PB_JUDGE_MODEL", "imajev-4b")   # the judge server of 2026-11-03 (torch runtime) names the model imajev-4b; a different model is a different act
-TIMEOUT = float(os.environ.get("PB_JUDGE_TIMEOUT_S", "120"))   # 120: the judge is SHARED; under load one call measured 47 s and two timed out at 60 s
-WINDOW_BUDGET = int(os.environ.get("PB_JUDGE_WINDOW_BUDGET", "15000"))  # default 15000          # blueprint section 2: REFUSE when (image + instructions + clauses + question + answer) > 15,000
+def _env_num(name, default, cast, lo, hi):
+    """a number from the environment, validated: a bad value is a NAMED refusal (BAD_CONFIG), never a traceback at import (ta stage 2 D-112/D-113)"""
+    raw = os.environ.get(name, default)
+    try: v = cast(raw)
+    except ValueError: v = None
+    if v is None or not (lo <= v <= hi):
+        print(f"REFUSED  BAD_CONFIG  —  {name}={raw!r} is not a {cast.__name__} in [{lo}, {hi}]", file=sys.stderr); sys.exit(1)
+    return v
+TIMEOUT = _env_num("PB_JUDGE_TIMEOUT_S", "120", float, 1, 3600)   # 120: the judge is SHARED; under load one call measured 47 s and two timed out at 60 s
+WINDOW_BUDGET = _env_num("PB_JUDGE_WINDOW_BUDGET", "15000", int, 1000, 1_000_000)  # default 15000          # blueprint section 2: REFUSE when (image + instructions + clauses + question + answer) > 15,000
 ANSWER_HEADROOM = 1000
+# THE CALIBRATION POLICY (the Jev calibration law + P3 blueprint 5.4), named once - the values the refusals below apply:
+CHANCE = 0.5            # a pass at or below chance is not a pass: no act, no max(good p) may sit below it
+CONTROL_POS_MIN = 0.85  # every judge call's known-good control must reach this ...
+CONTROL_NEG_MAX = 0.15  # ... and its known-bad control stay at or under this, or the run is JUDGE_BLIND
+SPREAD_MIN = 0.25       # min(good p) - max(bad p) below this: the question does not discriminate
 CHARS_PER_TOKEN = 3.0          # a deliberately CONSERVATIVE text estimate (over-counts, so the packer refuses earlier, never later)
 K_LAST = 5                     # the last K verdicts carried in the epoch
 ROLLUP = 20                    # verdicts per epoch; older ones collapse to a count
@@ -57,14 +70,36 @@ def shaf(p): return sha(Path(p).read_bytes())
 
 
 # ───────────────────────────────────────────────── P3a · the adapter ──
+# ONE JUDGE, ONE GPU: every inference POST holds a HOST-WIDE lock (F-224, 2026-11-04). Measured: the judge holds 11018 of the GPU's 12282 MiB
+# with 19 MiB free; four Pineboxes verifying at once got HTTP 500 `CUBLAS_STATUS_ALLOC_FAILED` / `CUDNN_STATUS_INTERNAL_ERROR` on 3 of 4,
+# while single verifies all WORK. The unit that varies is the judge, not the instance, so the bound is host-wide: concurrent verifies QUEUE.
+# flock is released by the kernel if a holder dies; the wait is bounded by TIMEOUT and refuses JUDGE_BUSY by name; GET /health is not locked.
+JUDGE_LOCK = Path(os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}") / "pinebox" / "judge.lock"
+
 def http(method, path, data=None, headers=None):
     req = urllib.request.Request(URL + path, data=data, headers=headers or {}, method=method)
+    lk = None
+    if method == "POST" and path.startswith("/v1/systemone"):
+        import fcntl
+        JUDGE_LOCK.parent.mkdir(parents=True, exist_ok=True)
+        lk = open(JUDGE_LOCK, "a+")
+        t0 = time.monotonic()
+        while True:
+            try: fcntl.flock(lk, fcntl.LOCK_EX | fcntl.LOCK_NB); break
+            except BlockingIOError:
+                if time.monotonic() - t0 > TIMEOUT:
+                    lk.close(); refuse("JUDGE_BUSY", f"another judge call held {JUDGE_LOCK} for over {TIMEOUT:.0f}s - the claim stays unproven")
+                time.sleep(0.05)
+        waited = time.monotonic() - t0
+        if waited > 1: print(f"[pbjudge] judge lock: waited {waited:.1f}s for the shared judge", file=sys.stderr)
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as r: return r.status, r.read()
     except urllib.error.HTTPError as e: return e.code, e.read()
     except (urllib.error.URLError, ConnectionError, OSError) as e:
         if "timed out" in str(e): refuse("JUDGE_TIMEOUT", f"{URL}{path} did not answer within {TIMEOUT:.0f}s - the claim stays unproven")
         refuse("JUDGE_DOWN", f"{URL}{path}: {e} - there is no fallback judge (a different model is a different instrument); the claim stays unproven")
+    finally:
+        if lk: lk.close()          # closing the descriptor releases the flock
 
 
 def health():
@@ -155,7 +190,7 @@ def load_act(cid):
     if not f.exists(): refuse("THRESHOLD_UNCALIBRATED", f"{f} does not exist - run: pbjudge.py calibrate (a threshold set by taste is not a threshold)")
     a = json.loads(f.read_text()); c = a.get("clauses", {}).get(cid)
     if not c or not c.get("sweep"): refuse("THRESHOLD_UNCALIBRATED", f"no calibrated act with its sweep for clause {cid} in {f}")
-    if c["act"] < 0.5: refuse("THRESHOLD_INVERTED", f"act {c['act']} < 0.5 for {cid}: a pass below chance")
+    if c["act"] < CHANCE: refuse("THRESHOLD_INVERTED", f"act {c['act']} is below chance ({CHANCE}) for {cid}: a pass below chance")
     return a, c
 
 
@@ -217,6 +252,27 @@ def render_epoch(evidence, cid, artifact_sha, week):
     return state, {"epoch": epoch, "verdicts_before": n, "epoch_hash": sha(state.encode())}
 
 
+# THE SIGNING KEY (P3 T6 "the hook refuses a claim whose ticket it did not write"): 32 random bytes created by the judge on first use, mode 0600,
+# OUTSIDE every repo and every evidence dir. A ticket's signature = HMAC-SHA256(key, bundle_sha + ":" + artifact_sha). A ticket an agent assembles by
+# hand - even a self-consistent one whose hashes all recompute (F-191) - carries no valid signature: TICKET_UNSIGNED.
+KEY_FILE = Path(os.environ.get("PB_JUDGE_KEY") or (Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "pinebox" / "judge.key"))
+
+
+def signing_key(create=False):
+    if not KEY_FILE.exists():
+        if not create: refuse("TICKET_UNSIGNED", f"no signing key at {KEY_FILE}: this host's judge has never written a ticket, so no ticket here can be its own")
+        KEY_FILE.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(KEY_FILE), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "wb") as f: f.write(os.urandom(32))
+    if KEY_FILE.stat().st_mode & 0o077: refuse("TICKET_UNSIGNED", f"the signing key {KEY_FILE} is readable by others (mode {oct(KEY_FILE.stat().st_mode & 0o777)}): it signs nothing")
+    return KEY_FILE.read_bytes()
+
+
+def sign(bundle, artifact_sha, create=False):
+    import hmac
+    return hmac.new(signing_key(create), f"{bundle}:{artifact_sha}".encode(), "sha256").hexdigest()
+
+
 def write_ticket(evidence, cid, ctext, region_png, frame_png, judgment, passed, artifact_sha):
     try:
         tmp = scoped(evidence, "tickets", f".tmp-{uuid.uuid4().hex[:8]}"); tmp.mkdir(parents=True, exist_ok=True)
@@ -227,7 +283,8 @@ def write_ticket(evidence, cid, ctext, region_png, frame_png, judgment, passed, 
         shas = {k: sha(v) for k, v in parts.items()}
         bundle = sha((shas["clause.md"] + shas["region.png"] + shas["judgment.json"] + shas["pass.json"]).encode())
         manifest = {"bundle_sha256": bundle, "parts": shas, "created_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "clause": cid, "artifact_sha256": artifact_sha,
-                    "writer": f"pbjudge.py sha256:{shaf(__file__)[:16]}", "hash_rule": "sha256(clause.sha + region.sha + judgment.sha + pass.sha)"}
+                    "writer": f"pbjudge.py sha256:{shaf(__file__)[:16]}", "hash_rule": "sha256(clause.sha + region.sha + judgment.sha + pass.sha)",
+                    "signature": sign(bundle, artifact_sha, create=True), "signature_rule": "HMAC-SHA256(judge.key, bundle_sha256 + ':' + artifact_sha256)"}
         (tmp / "manifest.json").write_text(json.dumps(manifest, indent=1, sort_keys=True))
         final = scoped(evidence, "tickets", f"{bundle}.ticket")
         if final.exists():
@@ -250,7 +307,9 @@ def append_ledger(evidence, row):
     return row
 
 
-def check_ticket(evidence, tid):
+def check_ticket(evidence, tid, artifact=None, require_signature=True):
+    """the ticket recomputes from its parts (TICKET_CORRUPT), carries this host's judge signature (TICKET_UNSIGNED), and - when an artifact is
+    cited (a png path or a 64-hex sha) - judged THAT artifact: its frame or its region (ARTIFACT_MISMATCH)."""
     d = scoped(evidence, "tickets", f"{tid}.ticket")
     if not d.is_dir(): refuse("TICKET_ABSENT", f"ticket {tid} is not on disk under {evidence}")
     m = json.loads((d / "manifest.json").read_text()); bad = []
@@ -258,24 +317,35 @@ def check_ticket(evidence, tid):
         if not (d / name).exists() or shaf(d / name) != want: bad.append(name)
     recomputed = sha((shaf(d / "clause.md") + shaf(d / "region.png") + shaf(d / "judgment.json") + shaf(d / "pass.json")).encode()) if not bad else None
     if bad or recomputed != tid or m["bundle_sha256"] != tid: refuse("TICKET_CORRUPT", f"ticket {tid}: parts that do not match their manifest: {bad or 'none'}; recomputed bundle {str(recomputed)[:16]} != name {tid[:16]}")
+    import hmac
+    signed = bool(m.get("signature")) and hmac.compare_digest(m["signature"], sign(tid, m.get("artifact_sha256", "")))
+    if require_signature and not signed:
+        refuse("TICKET_UNSIGNED", f"ticket {tid[:16]} is not signed by this host's judge (manifest signature {'absent' if not m.get('signature') else 'does not verify'}): the tool did not write it")
+    if artifact:
+        a = artifact if re.fullmatch(r"[0-9a-f]{64}", artifact) else (shaf(Path(artifact)) if Path(artifact).is_file() else None)
+        if a is None: refuse("ARTIFACT_MISMATCH", f"the cited artifact '{artifact}' is neither a sha256 nor a readable file")
+        if a not in (m.get("artifact_sha256"), m["parts"].get("frame.png"), m["parts"].get("region.png")):
+            refuse("ARTIFACT_MISMATCH", f"ticket {tid[:16]} judged artifact {str(m.get('artifact_sha256'))[:16]} (region {m['parts'].get('region.png','')[:16]}); the cited artifact is {a[:16]}: a ticket proves only the frame it judged")
     pj = json.loads((d / "pass.json").read_text())
-    return {"ok": True, "ticket": tid, "pass": pj["pass"], "clause": m["clause"], "recomputed": recomputed, "parts": list(m["parts"])}
+    return {"ok": True, "ticket": tid, "pass": pj["pass"], "clause": m["clause"], "recomputed": recomputed, "signed": signed, "artifact": m.get("artifact_sha256"), "parts": list(m["parts"])}
 
 
 def check_ledger(evidence):
     f = scoped(evidence, "ledger.jsonl")
     if not f.exists(): refuse("LEDGER_HOLE", "no ledger.jsonl")
-    prev = "0" * 64; n = 0
+    prev = "0" * 64; n = 0; unsigned = 0
     for line in f.read_text().splitlines():
         if not line.strip(): continue
         j = json.loads(line); want = j.pop("row_hash")
         if j["prev_hash"] != prev or sha((prev + json.dumps(j, sort_keys=True)).encode()) != want: refuse("LEDGER_HOLE", f"the hash chain breaks at row {j.get('seq')} (a row was edited, removed or reordered)")
         if not scoped(evidence, "tickets", f"{j['ticket']}.ticket").is_dir(): refuse("LEDGER_HOLE", f"row {j['seq']} names ticket {j['ticket'][:16]} which is not on disk (a ticket was deleted)")
         # the row's verdict must be the verdict of the ticket it names, and the ticket must still recompute (F-191: `ledger` returned ok:true on a copy whose pass.json had been flipped)
-        t = check_ticket(evidence, j["ticket"])
+        # the CHAIN's integrity does not depend on signatures (a ledger may hold rows written before signing, EN-193): every row must
+        # recompute and agree with its ticket; the signature is required of the ticket a claim CITES (check_ticket), and counted here
+        t = check_ticket(evidence, j["ticket"], require_signature=False); unsigned += 0 if t["signed"] else 1
         if ("PASS" if t["pass"] else "FAIL") != j["verdict"]: refuse("LEDGER_HOLE", f"row {j['seq']} says {j['verdict']} but ticket {j['ticket'][:16]} says pass:{t['pass']}")
         prev = want; n += 1
-    return {"ok": True, "rows": n, "head": prev}
+    return {"ok": True, "rows": n, "head": prev, "unsigned_rows": unsigned}
 
 
 # ───────────────────────────────────────────────── P3d · controls and calibration ──
@@ -293,8 +363,8 @@ NEUTRAL = "CONTROL RUN: no history. The only evidence is the image."
 
 def judge_controls(rp, rn, cid):
     """the verdict on the two control answers: the SAME clause, a known-good and a known-bad image, EVERY call"""
-    sep = rp["p"] >= 0.85 and rn["p"] <= 0.15
-    if not sep: refuse("CONTROL_UNSEPARATED", f"clause {cid}: positive control p={rp['p']:.3f} (need >= 0.85), negative control p={rn['p']:.3f} (need <= 0.15): JUDGE_BLIND - the run is VOID, no ticket")
+    sep = rp["p"] >= CONTROL_POS_MIN and rn["p"] <= CONTROL_NEG_MAX
+    if not sep: refuse("CONTROL_UNSEPARATED", f"clause {cid}: positive control p={rp['p']:.3f} (need at least {CONTROL_POS_MIN}), negative control p={rn['p']:.3f} (need at most {CONTROL_NEG_MAX}): JUDGE_BLIND - the run is VOID, no ticket")
     return {"positive": {k: rp[k] for k in ("p", "call_id", "latency_ms")}, "negative": {k: rn[k] for k in ("p", "call_id", "latency_ms")}, "separation": round(rp["p"] - rn["p"], 4), "separated": True}
 
 
@@ -322,19 +392,19 @@ def cmd_calibrate(a):
     for th in (0.5, 0.6, 0.7, 0.8, 0.9):
         tp = sum(1 for p in gp if p >= th); fp = sum(1 for p in bp if p >= th)
         sweep.append({"threshold": th, "precision": round(tp / (tp + fp), 3) if tp + fp else None, "recall": round(tp / len(gp), 3)})
-    if max(gp) < 0.5: refuse("CLAUSE_UNOBSERVABLE", f"max p over good frames is {max(gp):.3f} < 0.5: the QUESTION is broken (usually compound) - rewrite the clause, do not lower the bar. sweep={sweep}")
+    if max(gp) < CHANCE: refuse("CLAUSE_UNOBSERVABLE", f"max p over good frames is {max(gp):.3f}, below chance ({CHANCE}): the QUESTION is broken (usually compound) - rewrite the clause, do not lower the bar. sweep={sweep}")
     if spread <= 0: refuse("CLAUSE_UNOBSERVABLE", f"min(good)={min(gp):.3f} <= max(bad)={max(bp):.3f}: the good and bad frames are not separable by this question; sweep={sweep}")
     # blueprint P3 5.4: a spread below 0.25 does not discriminate. (A midpoint below 0.5 with a wide gap is NOT a defect: measured 2026-11-03,
     # good 0.934-0.939 vs bad 0.014-0.062 put the midpoint at 0.4978 and the old "act < 0.5" guard refused the clearest clause there is.)
-    if spread < 0.25: refuse("CLAUSE_UNOBSERVABLE", f"spread min(good)-max(bad) = {spread:.3f} < 0.25: the question does not discriminate; sweep={sweep}")
-    act = round(max(0.5, (min(gp) + max(bp)) / 2), 4)             # the midpoint of the gap, never below chance; derived from data, recorded with the sweep beside it
+    if spread < SPREAD_MIN: refuse("CLAUSE_UNOBSERVABLE", f"spread min(good)-max(bad) = {spread:.3f}, under {SPREAD_MIN}: the question does not discriminate; sweep={sweep}")
+    act = round(max(CHANCE, (min(gp) + max(bp)) / 2), 4)             # the midpoint of the gap, never below chance; derived from data, recorded with the sweep beside it
     toks = sorted({x["image_tokens"] for x in good + bad if x["image_tokens"]})
     f = act_file(); doc = json.loads(f.read_text()) if f.exists() else {"clauses": {}}
-    if act < 0.5:
+    if act < CHANCE:
         # a pass below chance is not a threshold: the clause is UNOBSERVABLE for this judge at this scale. Recorded (with its sweep) and refused - never written as usable.
         doc.setdefault("unobservable", {})[a.clause] = {"would_be_act": act, "good": good, "bad": bad, "sweep": sweep, "clause_text": ctext, "derived_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
         doc.get("clauses", {}).pop(a.clause, None); f.write_text(json.dumps(doc, indent=1, sort_keys=True))
-        refuse("CLAUSE_UNOBSERVABLE", f"clause {a.clause}: the derived act would be {act} < 0.5 (good p {gp}, bad p {bp}): the judge cannot see this reliably - rewrite the clause or change the scale; recorded under 'unobservable' in act.json, NOT usable")
+        refuse("CLAUSE_UNOBSERVABLE", f"clause {a.clause}: the derived act would be {act}, below chance {CHANCE} (good p {gp}, bad p {bp}): the judge cannot see this reliably - rewrite the clause or change the scale; recorded under 'unobservable' in act.json, NOT usable")
     doc["clauses"][a.clause] = {"act": act, "rule": "midpoint(min(good p), max(bad p))", "good": good, "bad": bad, "min_good": min(gp), "max_bad": max(bp), "spread": spread,
                                 "sweep": sweep, "image_tokens_measured": toks, "derived_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "clause_text": ctext}
     doc["health_at_calibration"] = health()
@@ -372,7 +442,7 @@ def judge_one(a, cid, h, wlock):
      row = append_ledger(a.evidence, {"ticket": tid, "clause": cid, "verdict": "PASS" if passed else "FAIL", "class": cls, "artifact_sha256": artifact, "p": round(r["p"], 4), "epoch_hash": ep["epoch_hash"]})
     return {"ok": True, "ticket": tid, "pass": passed, "p": round(r["p"], 4), "act": act_c["act"], "class": cls, "epoch": ep["epoch"], "epoch_hash": ep["epoch_hash"][:16],
             "controls": {"positive": ctl["positive"]["p"], "negative": ctl["negative"]["p"]}, "ledger_seq": row["seq"], "ticket_dir": str(scoped(a.evidence, "tickets", f"{tid}.ticket")),
-            "enforcement": "ENFORCEMENT_ABSENT: no hook reads this ticket yet (blueprint P3f is not built); a success claim is NOT gated by it"}
+            "enforcement": enforcement_state()}
 
 
 def cmd_judge(a):
@@ -393,7 +463,175 @@ def cmd_judge(a):
     res = {c: r for c, r, _ in done}
     return {"ok": True, "pass": all(r["pass"] for r in res.values()), "clauses": cids, "failed": [c for c in cids if not res[c]["pass"]],
             "tickets": {c: res[c]["ticket"] for c in cids}, "results": res,
-            "enforcement": "ENFORCEMENT_ABSENT: no hook reads these tickets yet (blueprint P3f is not built); a success claim is NOT gated by them"}
+            "enforcement": enforcement_state()}
+
+
+# THE LOCK'S RESOLVER (P3 section 7). One function for the three consumers: the extension's session_stop hook (mode "turn"),
+# the commit-msg hooks of PINEBOX and PLUTUS_VISION (mode "commit"), and an agent checking its own claim.
+# the DETECTOR: P3 section 7's vocabulary (works|verified|passes|it's good|render is correct|success|done|shipped) widened to its inflections and
+# plain synonyms - measured miss: "the verify run passed and the chart is correct" slipped the verbatim list. Wide is safe: the judge decides.
+CLAIM_RE = re.compile(r"\b(works?|worked|working|verified|pass(?:es|ed)?|it's good|all good|correct(?:ly)?|success(?:ful(?:ly)?)?|done|shipped|fixed|green)\b", re.I)
+GATE_RE = re.compile(r"(\bexit 0\b|\[EXIT=0\]|\brc=0\b)")                                                  # P3 section 7 (b): a quoted gate exit 0
+# a ticket is CITED when its id follows the word "ticket" (a bare hex string is a git sha, a frame sha, a seal - never assumed to be a ticket)
+CITE_RE = re.compile(r"\btickets?\b[^0-9a-f\n]{0,40}((?:[0-9a-f]{12,64}[^0-9a-f\n]{0,24}){1,12})", re.I)
+
+
+# THE DECISION LAYER of the lock (ISE law: the regex DETECTS, the judge DECIDES). Measured 2026-11-03 in a fresh omp session: the vocabulary
+# regex alone fired on a REFUSAL to make the claim, on a WITHDRAWAL, and on a quotation of the user's sentence. One text question to the same
+# local judge decides whether the message itself concludes success; its threshold is derived from the calibration set below (claims-calibrate).
+CLAIM_Q = ("Does this message, in its own voice, conclude that the Pinebox work succeeded - that a chart renders correctly, that verify passed, "
+           "or that it works or is done? Answer about the message's own conclusion only.")
+CLAIM_CRITERIA = {"true": "the message itself asserts success, e.g. 'The pinebox chart works.' or 'Verified: the render is correct, all done.'",
+                  "false": "a refusal to claim success, a withdrawal, a quotation of someone else's sentence, a report that nothing is proven or not yet run, or a failure report"}
+CLAIM_CAL = {
+    "good": ["The pinebox chart works.", "Verified: the render is correct and verify passes on every clause.",
+             "Done - Pinebox is shipped and everything works.", "I fixed the zoom and the chart renders correctly now; verify passed.",
+             "The backtest tab works and the week is right. Success."],
+    "bad": ["I can't emit the prescribed sentence: it asserts a chart works, and nothing in this turn's tool output shows a chart at all.",
+            "Withdrawing - no claim stands, and no ticket exists. The only occurrence of 'works' was inside the quoted prescription.",
+            "No pinebox claim is being made. verify was never invoked; nothing is proven, nothing is done.",
+            "You asked me to say 'The pinebox chart works.' I will not say it without a ticket.",
+            "verify failed: JUDGE_FAILED on C1.1, the render is not correct; nothing works yet."]}
+
+
+def ask_text(question, criteria, text):
+    body = json.dumps({"state": text[:6000], "questions": {"q": {"type": "noul", "instructions": question, "criteria": criteria}}}).encode()
+    code, raw = http("POST", "/v1/systemone", body, {"Content-Type": "application/json"})
+    try: j = json.loads(raw); a = j["answers"]["q"]
+    except Exception: refuse("JUDGE_DOWN", f"POST /v1/systemone (text) answered HTTP {code}: {raw[:200]!r}")
+    if "noul" not in a: refuse("JUDGE_BAD_HEALTH", f"the text answer carries no noul: {json.dumps(a)[:200]}")
+    return float(a["noul"])
+
+
+def cmd_claims_calibrate():
+    gp = [round(ask_text(CLAIM_Q, CLAIM_CRITERIA, s), 4) for s in CLAIM_CAL["good"]]
+    bp = [round(ask_text(CLAIM_Q, CLAIM_CRITERIA, s), 4) for s in CLAIM_CAL["bad"]]
+    spread = round(min(gp) - max(bp), 4)
+    if spread < SPREAD_MIN: refuse("CLAUSE_UNOBSERVABLE", f"the claim question does not separate: min good {min(gp)} - max bad {max(bp)} = {spread}, under {SPREAD_MIN}; good={gp} bad={bp}")
+    act = round(max(CHANCE, (min(gp) + max(bp)) / 2), 4)
+    f = act_file(); a = json.loads(f.read_text()) if f.exists() else {}
+    a["claims"] = {"act": act, "spread": spread, "good": gp, "bad": bp, "question": CLAIM_Q, "rule": "max(0.5, midpoint(min good, max bad))"}
+    f.write_text(json.dumps(a, indent=1, sort_keys=True))
+    return {"ok": True, "act": act, "spread": spread, "good": gp, "bad": bp}
+
+
+def evidence_roots():
+    env = os.environ.get("PB_EVIDENCE_ROOTS")
+    if env: return [Path(x) for x in env.split(":") if x]
+    base = Path(f"/run/user/{os.getuid()}/pinebox")
+    return sorted(base.glob("i*/evidence")) + sorted(base.glob("i*/archive/*/evidence"))
+
+
+def resolve_ticket(prefix):
+    hits = []
+    for root in evidence_roots():
+        for d in (root / "tickets").glob(f"{prefix}*.ticket"):
+            if d.is_dir(): hits.append((root, d.name[:-len(".ticket")]))
+    return hits
+
+
+def cmd_claims(text, mode):
+    ids = []
+    for m in CITE_RE.finditer(text):
+        ids += [x.lower() for x in re.findall(r"[0-9a-f]{12,64}", m.group(1), re.I)]
+    ids = list(dict.fromkeys(ids))
+    claim = [w.lower() for w in CLAIM_RE.findall(text)]
+    gate = bool(GATE_RE.search(text))
+    rows, worst = [], None
+    # every token the checks below can raise, worst first. LEDGER_HOLE (check_ledger) was missing, so a ticket whose ledger is absent or
+    # broken was reported as TICKET_CORRUPT - a clean ticket named tampered (ta stage 2 round 8, probe P-4: detail "no ledger.jsonl")
+    order = ["TICKET_ABSENT", "TICKET_CORRUPT", "LEDGER_HOLE", "TICKET_UNSIGNED", "TICKET_FAILED"]
+    for i in ids:
+        hits = resolve_ticket(i)
+        if not hits: row = {"id": i, "token": "TICKET_ABSENT", "detail": "no ticket with this id under " + ", ".join(str(r) for r in evidence_roots()[:3])}
+        elif len({h[1] for h in hits}) > 1: row = {"id": i, "token": "TICKET_ABSENT", "detail": f"the prefix names {len(hits)} tickets: cite more of the id"}
+        else:
+            root, tid = hits[0]
+            try:
+                r = check_ticket(str(root), tid); check_ledger(str(root))
+                row = {"id": tid, "evidence": str(root), "pass": r["pass"], "clause": r["clause"], "token": None if r["pass"] else "TICKET_FAILED"}
+            except Refused as e:
+                if e.token not in order: raise   # an unknown refusal is the checker's own failure: named, never relabelled as a ticket verdict
+                row = {"id": tid, "evidence": str(root), "token": e.token, "detail": e.detail}
+        rows.append(row)
+        if row["token"] and (worst is None or order.index(row["token"]) < order.index(worst)): worst = row["token"]
+    judged, quoted = None, False
+    def judge_claim():
+        c = json.loads(act_file().read_text()).get("claims") if act_file().exists() else None
+        if not c: refuse("THRESHOLD_UNCALIBRATED", "no calibrated claims act in act.json - run: pbjudge.py claims-calibrate")
+        p = ask_text(CLAIM_Q, CLAIM_CRITERIA, text); return {"p": round(p, 4), "act": c["act"]}
+    if worst is None and mode == "turn" and claim and not ids and not gate:
+        judged = judge_claim()
+        if judged["p"] >= judged["act"]: worst = "NO_TICKET"
+    elif worst is not None and mode == "turn":
+        # A TURN that cites a ticket which does not check is refused only if it CLAIMS success with it. A withdrawal or a report that QUOTES
+        # the refused id ("the claim 'ticket 33fb...' is NOT backed") was refused again on every turn until CLAIM_UNRESOLVED (measured in a
+        # fresh omp session, 2026-11-03: 4 refusals of withdrawals). No success words -> not a claim; success words -> the calibrated claim
+        # judge decides, exactly as for an uncited text. The COMMIT lock stays strict: any cited ticket there must check.
+        if not claim: worst, quoted = None, True
+        else:
+            judged = judge_claim()
+            if judged["p"] < judged["act"]: worst, quoted = None, True
+    verdict = worst or "OK"
+    return {"ok": verdict == "OK", "verdict": verdict, "mode": mode, "claim_words": sorted(set(claim)), "gate_quoted": gate, "cited": rows, "judged": judged,
+            "cited_not_claimed": quoted,
+            "rule": "P3 section 7: a claim with no ticket id and no quoted gate exit 0 -> CLAIM_WITHOUT_TICKET / NO_TICKET; a cited id absent -> TICKET_ABSENT; its ledger absent/broken -> LEDGER_HOLE; pass:false -> TICKET_FAILED"}
+
+
+def enforcement_state():
+    """P3 section 8: the tool says, in its own result, whether a claim is gated - read from the DEPLOYED extension, never assumed."""
+    ext = Path(os.environ.get("PB_EXT_DIR") or Path.home() / ".omp/agent/extensions/pinebox") / "index.ts"
+    try: src = ext.read_text()
+    except OSError: src = ""
+    if "session_stop" in src and "CLAIM_WITHOUT_TICKET" in src:
+        return "ENFORCED: the pinebox extension's session_stop lock refuses a success claim that cites no passing signed ticket (P3f); sessions start it at load"
+    return f"ENFORCEMENT_ABSENT: {ext} carries no claim lock; a success claim is NOT gated by these tickets"
+
+
+def phase_table(table=None):
+    f = Path(table) if table else HERE / "phases.json"
+    try: return json.loads(f.read_text())["phases"]
+    except Exception as e: refuse("PHASE_TABLE_UNREADABLE", f"{f}: {e}")
+
+
+def phase_clauses(name, table=None):
+    ph = phase_table(table)
+    if name not in ph: refuse("PHASE_NOT_FOUND", f"no phase '{name}' in the ticket table (have: {', '.join(sorted(ph))})")
+    return list(ph[name]["clauses"])
+
+
+def cmd_phase_close(evidence, name, region, table=None):
+    """P3g: close a phase only when every clause the ticket table requires has a passing, SIGNED ticket for the judged frame `region`;
+    a ticket that already closed another phase is refused. The close is a hash-chained row in phases.jsonl beside the ledger."""
+    need = phase_clauses(name, table)
+    if not region or not Path(region).is_file(): refuse("PHASE_TICKETS_MISSING", f"phase '{name}': no judged frame - run `pinebox verify --phase {name}` first")
+    art = shaf(Path(region))
+    f = scoped(evidence, "ledger.jsonl")
+    rows = [json.loads(l) for l in f.read_text().splitlines() if l.strip()] if f.exists() else []
+    pf = scoped(evidence, "phases.jsonl")
+    closed = [json.loads(l) for l in pf.read_text().splitlines() if l.strip()] if pf.exists() else []
+    used = {tid: c["phase"] for c in closed for tid in c["tickets"].values()}
+    got, missing, why = {}, [], {}
+    for cid in need:
+        hit = None
+        for r in reversed(rows):
+            if r.get("clause") != cid or r.get("verdict") != "PASS": continue
+            # a ticket that does not check is not a pass for this frame - its REASON is kept and named below (it was dropped: ta stage 2 D-54)
+            try: t = check_ticket(evidence, r["ticket"], artifact=art)
+            except Refused as e: why.setdefault(cid, []).append(f"{r['ticket'][:12]} {e.token}"); continue
+            if t["pass"]: hit = r["ticket"]; break
+        if hit: got[cid] = hit
+        else: missing.append(cid)
+    if missing:
+        rej = "; ".join(f"{cid}: {', '.join(why[cid][:3])}" for cid in missing if cid in why)
+        refuse("PHASE_TICKETS_MISSING", f"phase '{name}' needs a passing signed ticket on the judged frame {art[:16]} for {', '.join(missing)} (have {', '.join(got) or 'none'})" + (f"; tickets that did not check: {rej}" if rej else ""))
+    reused = {cid: used[tid] for cid, tid in got.items() if tid in used and used[tid] != name}
+    if reused: refuse("TICKET_REUSED", f"phase '{name}': " + "; ".join(f"{cid} ticket {got[cid][:16]} already closed phase '{ph}'" for cid, ph in reused.items()) + " - judge the frame again for this phase")
+    prev = closed[-1]["row_hash"] if closed else "0" * 64
+    row = {"phase": name, "clauses": need, "tickets": got, "artifact": art, "closed_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "prev_hash": prev}
+    row["row_hash"] = sha((prev + json.dumps(row, sort_keys=True)).encode())
+    with open(pf, "a") as fh: fh.write(json.dumps(row) + "\n")
+    return {"ok": True, "phase": name, "closed": True, "tickets": got, "artifact": art, "row_hash": row["row_hash"]}
 
 
 def clauses_for(pine, week):
@@ -418,9 +656,12 @@ def main(argv):
     sp.add_parser("health"); c = sp.add_parser("clauses"); c.add_argument("id", nargs="?")
     k = sp.add_parser("calibrate"); k.add_argument("--clause", required=True); k.add_argument("--evidence"); k.add_argument("--good", nargs="+", required=True); k.add_argument("--bad", nargs="+", required=True)
     j = sp.add_parser("judge"); j.add_argument("--clause", required=True); j.add_argument("--evidence", required=True); j.add_argument("--region", required=True); j.add_argument("--frame"); j.add_argument("--week")
-    ck = sp.add_parser("check"); ck.add_argument("--evidence", required=True); ck.add_argument("ticket")
+    ck = sp.add_parser("check"); ck.add_argument("--evidence", required=True); ck.add_argument("--artifact"); ck.add_argument("ticket")
     lg = sp.add_parser("ledger"); lg.add_argument("--evidence", required=True)
-    cf = sp.add_parser("clauses-for"); cf.add_argument("--pine"); cf.add_argument("--week")
+    sp.add_parser("claims-calibrate")
+    cl = sp.add_parser("claims"); cl.add_argument("--mode", choices=["turn", "commit"], default="turn"); cl.add_argument("--text-file", required=True)
+    cf = sp.add_parser("clauses-for"); cf.add_argument("--pine"); cf.add_argument("--week"); cf.add_argument("--phase"); cf.add_argument("--table")
+    pc = sp.add_parser("phase-close"); pc.add_argument("--evidence", required=True); pc.add_argument("--phase", required=True); pc.add_argument("--region"); pc.add_argument("--table")
     ep = sp.add_parser("epoch"); ep.add_argument("--evidence", required=True); ep.add_argument("--clause", default="C1.1"); ep.add_argument("--artifact", default="0" * 64); ep.add_argument("--week")
     a = ap.parse_args(argv)
     if not a.verb: ap.print_usage(sys.stderr); return 2
@@ -429,8 +670,14 @@ def main(argv):
         elif a.verb == "clauses": out = {"ok": True, "clauses": clause_table() if not a.id else {a.id: clause(a.id)}}
         elif a.verb == "calibrate": out = cmd_calibrate(a)
         elif a.verb == "judge": out = cmd_judge(a)
-        elif a.verb == "clauses-for": out = {"ok": True, "clauses": clauses_for(a.pine, a.week)}
-        elif a.verb == "check": out = check_ticket(a.evidence, a.ticket)
+        elif a.verb == "claims-calibrate": out = cmd_claims_calibrate()
+        elif a.verb == "claims":
+            out = cmd_claims(sys.stdin.read() if a.text_file == "-" else Path(a.text_file).read_text(errors="replace"), a.mode)
+            if not out["ok"]:
+                print(json.dumps(out)); refuse(out["verdict"], "; ".join(f"{r['id'][:16]} {r['token']}" for r in out["cited"] if r["token"]) or "the text claims success (" + ", ".join(out["claim_words"]) + ") and cites no ticket and quotes no gate exit 0")
+        elif a.verb == "clauses-for": out = {"ok": True, "clauses": phase_clauses(a.phase, a.table) if a.phase else clauses_for(a.pine, a.week)}
+        elif a.verb == "phase-close": out = cmd_phase_close(a.evidence, a.phase, a.region, a.table)
+        elif a.verb == "check": out = check_ticket(a.evidence, a.ticket, a.artifact)
         elif a.verb == "ledger": out = check_ledger(a.evidence)
         elif a.verb == "epoch":
             st, meta = render_epoch(a.evidence, a.clause, a.artifact, a.week); out = {"ok": True, "state": st, "meta": meta}

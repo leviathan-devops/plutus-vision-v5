@@ -1,0 +1,8 @@
+{
+ "_doc": "P3g - the execution workflow's ticket table: the clauses that must each have a passing, signed judge ticket on the SAME judged frame before a phase may close (`pinebox phase --close NAME`). `pinebox verify --phase NAME` judges exactly these clauses. A ticket closes one phase only (P3 section 0: 'Reuse one ticket across phases' is a forgery).",
+ "phases": {
+  "chart-up":    {"clauses": ["C0.1", "C1.2"], "doc": "a candlestick chart with a readable price axis is on screen"},
+  "ema-ribbon":  {"clauses": ["C0.1", "C1.2", "C1.1", "C1.3"], "doc": "the EMA ribbon script draws both moving averages and its crossover markers"},
+  "week-jul":    {"clauses": ["C2.1"], "doc": "the time axis shows the July fixture week"}
+ }
+}
