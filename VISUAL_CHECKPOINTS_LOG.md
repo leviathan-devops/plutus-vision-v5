@@ -186,3 +186,10 @@ constant. Without the control, a scene read of `0` would be indistinguishable fr
 | reports/goal-2026-11-03/frames/w9-crash-r3-spawn-ide.png | a bare spawn instance on DXY FIXTURE 1h with 508 bars (the instance H27 then refuses NO_SCRIPT_LOADED on) | no delta |
 | reports/goal-2026-11-03/frames/n9-p0..p3-chart.png | four Pinebox charts verified CONCURRENTLY through the host-wide judge lock (clocks 02:58:45 / 55 / 56 / 57 UTC) | no delta |
 | /tmp/t-f223.png (ST-199) | the loaded EMA ribbon after NO_SCRIPT_LOADED was resolved by `load`: 508 bars, 6 drawn, verify WORKS | no delta |
+
+## CHECKPOINT REFRESH cu-v2-pinebox-gap-closure-complete-2026-11-04 refresh (2026-11-04, session ckpt-visual, torn down after capture; operator focus 0x0 before and after)
+
+| frame | sha256 (16) | what it shows | ruling |
+|---|---|---|---|
+| checkpoints/cu-v2-pinebox-gap-closure-complete-2026-11-03/visual/runtime-state.png | 4718179293a70955 | the full Pine IDE 1626x875 on the final deployed code (TRUE 2cab6fad): EMA Ribbon source, run bar 2026-W28 · FIXTURE · DXY · 1H · 508 bars · rail :9854 · station UP, EMA 20/50 and crossover triangles; verify WORKS on 5 clauses | no delta |
+| checkpoints/cu-v2-pinebox-gap-closure-complete-2026-11-03/visual/runtime-chart.png | 3c7f7ddb751b4813 | the chart element (1042x785): price axis 100.400-102.100, time axis Jul 2 / Jul 9 / Jul 16, last 101.263 | no delta |
