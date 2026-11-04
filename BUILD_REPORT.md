@@ -2693,3 +2693,12 @@ is visible in the opened frame, and its geometry was hardcoded to the fixture (F
   - The audit was run by the build's own session (subagents barred); its evidence is ta's hashed captures.
   - The pv-server's synthetic prediction bars draw a vertical stroke in a user's `plot(close)` (upstream design, recorded in the audit report).
   - 6 foreign processes hold displays :5 / :99 on this host (not these tools'; the leftover check diffs against them).
+
+**Correction (2026-11-04), appended:** the W2 line above lists "the TTSR alarm `rules/claim-evidence.md`". That rule was deleted on the operator's order (F-221, RULINGS.md 2026-11-04 00:43): a TTSR rule binds in every session on the host. The claim lock is the session-scoped extension hook plus the two repos' commit locks. G2 asserts the absence.
+
+**Correction (2026-11-04), appended - the final record:** after the W9 entry above, F-221 (the global TTSR alarm deleted on the operator's order), F-222 (the lock's session scope), F-223 (verify NO_SCRIPT_LOADED / true NO_BARS) and F-224 (one judge, one GPU: the host-wide judge lock) changed the deployed code. The record was re-run on it (T-73):
+- sweep run 9, 58/58;
+- crash rounds 70/70 ×3;
+- the nine-session round FAIL=0 with 4 of 4 concurrent verifies WORKS.
+
+The numbers in the W9 entry are superseded by T-73's.

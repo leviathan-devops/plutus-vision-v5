@@ -2632,3 +2632,23 @@ forecast direction (rise to the resistance, fall to the support) matches.
   - `pinebox-view`: the fixed 1626x931 window, not maximized, the whole IDE visible;
   - `pinebox-spawn_ide`: on DXY with 508 bars.
 - **The verdict:** PASS (ST-195). Completion line G16 CLOSED.
+
+## TEST RESULT - 2026-11-04 - T-73 - the final record, re-run after F-222/F-223/F-224 (supersedes T-70..T-72 as the current record)
+- **What ran:** in order, on the deployed code:
+  - `reports/sweep-2026-11-03/sweep.sh` run 9;
+  - `reports/goal-2026-11-03/raw/w9-crash.sh 1..3` (70 scenarios each, H27/H28 added; the clean-host gate and Z3/Z4/Z5 compare against the round's own start);
+  - `raw/n9/round9.sh`.
+  - The host held foreign instances 11 and 12 throughout; they were recorded and never touched.
+- **The failed attempts on the way (all recorded in RESULTS.jsonl, the last row of an id is its current verdict):**
+  - **First re-run, sweep run 8 (58/58):** all three crash rounds failed Z4 (69/70 each), a harness assertion hardcoding "no non-operator sockets" while foreign instance 12's socket predated the round. The nine-session round failed 3 of 4 Pinebox verifies with the judge's HTTP 500 CUBLAS_STATUS_ALLOC_FAILED, which is F-224.
+  - **Fixes:** Z4 compares the exact socket line with the start (instrument checked both ways: PASS on equal, FAIL on a differing list); F-224 fixed in pbjudge.
+- **The raw output:**
+  - `ROWS: 58  PASS: 58  FAIL: 0` (sweep run 9, 06:39-06:47);
+  - `=== ROUND 1 SUMMARY: PASS=70 FAIL=0`, `=== ROUND 2 SUMMARY: PASS=70 FAIL=0`, `=== ROUND 3 SUMMARY: PASS=70 FAIL=0` (06:51 / 06:54 / 06:57);
+  - `=== NINE-SESSION SUMMARY: FAIL=0` (06:59; 4 of 4 concurrent verifies WORKS, RAM 509-511 MB, 9/9 cross-session refused, 0 focus stolen);
+  - the host left exactly as found: registry 11,12,10,0, foreign socket computer-use12 only.
+- **The frames:** all 33 opened.
+  - 12 sweep: notes on each row, no delta.
+  - 12 crash: recoloured chart, typed dialog, spawned dialog via X, spawn IDE on DXY 508 bars, per round.
+  - 9 nine-session: 5 dialogs each with its own session's text, 4 charts each with its own clock.
+- **The verdict:** PASS (ST-191..ST-195 current rows). Firewall G14 and G16 CLOSED (`clean rounds newer than the code=3`; sweep `older-than-code=0`).

@@ -177,3 +177,12 @@ constant. Without the control, a scene read of `0` would be indistinguishable fr
 |---|---|---|---|
 | checkpoints/cu-v2-pinebox-gap-closure-complete-2026-11-03/visual/runtime-state.png | ed5f873e1226f8d0 | the full Pine IDE 1626x875 at the end of the gap closure: tabs PINE IDE / BACKTEST, EMA Ribbon source, run bar 2026-W28 · FIXTURE · DXY · 1H · 508 bars · rail :9854 · station UP, chart with EMA 20/50 and crossover triangles; verify WORKS on 5 clauses | no delta |
 | checkpoints/cu-v2-pinebox-gap-closure-complete-2026-11-03/visual/runtime-chart.png | e599950b565de721 | the chart element only (1042x785): legend EMA Ribbon, price axis 100.400-102.100, time axis Jul 2 / Jul 9 / Jul 16, last price 101.263 | no delta |
+
+## THE FINAL RECORD (2026-11-04, after F-222..F-224) - all 33 frames opened, no delta
+
+| frame | what it shows | ruling |
+|---|---|---|
+| reports/sweep-2026-11-03/frames/pinebox-view.png (run 9) | the Pinebox raised over the private mutter display at its fixed 1626x931, the whole IDE visible | no delta |
+| reports/goal-2026-11-03/frames/w9-crash-r3-spawn-ide.png | a bare spawn instance on DXY FIXTURE 1h with 508 bars (the instance H27 then refuses NO_SCRIPT_LOADED on) | no delta |
+| reports/goal-2026-11-03/frames/n9-p0..p3-chart.png | four Pinebox charts verified CONCURRENTLY through the host-wide judge lock (clocks 02:58:45 / 55 / 56 / 57 UTC) | no delta |
+| /tmp/t-f223.png (ST-199) | the loaded EMA ribbon after NO_SCRIPT_LOADED was resolved by `load`: 508 bars, 6 drawn, verify WORKS | no delta |

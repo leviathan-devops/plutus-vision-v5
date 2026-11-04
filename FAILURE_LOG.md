@@ -3194,3 +3194,59 @@ verdict on 2026-11-01, after a full day: "you spent the whole day accomplishing 
 - **Mechanism:** this host's `/usr/bin/python3.12` carries `cap_linux_immutable=ep`. The server gained CAP_LINUX_IMMUTABLE at exec (CapEff 0x200) and the kernel made it non-dumpable: its `/proc` smaps became root-owned. The server never uses the capability.
 - **Disposition:** FIXED. The server runs under `setpriv --no-new-privs` (the kernel grants no file capability), and the CLI refuses SETPRIV_ABSENT when `setpriv` is missing.
 - **Proof:** CapEff 0, NoNewPrivs 1. `status`: instance **652 MB**, server 16 MB counted, `unreadable:null`, `lower_bound:false`. In ta stage 3: 633 / 638 MB.
+
+### F-221 - the W2 claim alarm was a TTSR rule, i.e. armed in EVERY session on the host, and fired Pinebox context into unrelated work (2026-11-04, OPERATOR-CAUGHT in another session)
+- **What happened:** W2 installed `~/.omp/agent/rules/claim-evidence.md` (P3 section 13, interruptMode never). Its regex matched common engineering words near success words ("chart", "render", "verify", "indicator", "instance" near "works", "verified", "passes"). In session `01a0abb9…`, which has nothing to do with Pinebox, it injected Pinebox claim-lock context into bible-writing work.
+- **The operator, verbatim (2026-11-03T20:43:28Z):** "Whatever is firing any garbage pine box context, just delete it. ... That shouldn't even be in the T T S R rules. Delete it completely." That session deleted the rule at 20:44:02Z.
+- **Root cause, MECHANISM:** TTSR rules are read from one host-global directory and bind at every session's construction. The scope tokens (`text`, `thinking`, `tool:<name>`) select a STREAM, never a session or a project. A project-specific alarm was put in a host-global carrier.
+  - The W2 negative tests ran only inside Pinebox sessions, so the contamination of unrelated sessions was never tested.
+  - The extension half of the same lock was already scoped (`index.ts:300`, `if (!usedBy.has(e.session_id)) return undefined`), which is why the operator's session found the extensions clean.
+- **Disposition:** the deletion stands (ruling recorded in RULINGS.md, 2026-11-04 00:43). Nothing re-installs it: the repo has no copy, and `deploy.sh` writes no rules.
+  - Completion line G2 is rewritten to assert the operator's state: the rule absent, no global rule naming Pinebox, and the lock gated on `usedBy`. Its negative control: a temporary HOME holding the rule makes G2 OPEN.
+  - Proof that the remaining lock stays out of unrelated sessions: ST-198 (a fresh omp session that never calls pinebox, ending on a success claim about a chart: no lock, no Pinebox context).
+  - BUILD_REPORT's W2 line, which names the TTSR alarm, is corrected by an appended note.
+- **Lesson:** an enforcement layer's carrier decides its blast radius. Before arming anything in `~/.omp/agent/rules`, `extensions/` or the config, test it in a session that is NOT the project's, and make it a negative case: it must stay silent there.
+
+### F-222 - a session whose every pinebox call was REFUSED escaped the claim lock (2026-11-04, found by the positive control of ST-198)
+- **What happened:** to show the lock stays out of unrelated sessions (F-221), ST-198 ran a NEGATIVE session (never reaches pinebox) and a POSITIVE control (calls pinebox, then claims "The chart verify works ... it is verified"). The positive's model first sent `list` with `id: 0`, which was correctly refused BAD_ARGS. Its next eight calls failed the host's schema validation. It then made the claim, and **no lock event fired**: the control failed, so the negative's silence proved nothing yet.
+- **Root cause, MECHANISM:** `pinebox-ext/index.ts` marked the session as a Pinebox session (`usedBy.add(sid)`) only after the BAD_ARGS / BAD_VERB early returns (old lines 269-270). A session that reached the tool but never had a call accepted was never watched.
+- **Disposition:** FIXED.
+  - The mark is the first statement of `execute` (`index.ts:256-257`): a session that REACHED the tool is a Pinebox session. A call the host's own schema validation rejects never reaches `execute` and runs nothing.
+  - Deployed: live `~/.omp/agent/extensions/pinebox/index.ts` sha256 9ffa87c89c4d2a49, `deploy.sh status` IDENTICAL.
+- **Proof (fresh omp sessions, rules on, the deployed extension):**
+  - **NEGATIVE:** a session that never reaches pinebox ends on "The chart verify works and the indicator renders correctly; it is verified." Result: 0 lock events, 0 pinebox-lock notices, 0 `claim-evidence` (/tmp/st198b-neg.out).
+  - **POSITIVE:** a session whose `list` was accepted, then the same claim: `PINEBOX LOCK REFUSED CLAIM_WITHOUT_TICKET / NO_TICKET`, then the withdrawal accepted (/tmp/st198b-pos.out).
+  - **REFUSED FIRST:** a session whose first call was refused BAD_ARGS (`list` with `id: 99`), with a later accepted `list` before its claim: the lock fired (/tmp/st198d.out).
+  - **Not observed live:** a session whose EVERY call is refused and that then claims. In two attempts the model always retried until a call was accepted. That case rests on the mark being the first statement of `execute`.
+
+### F-223 - verify refused NO_BARS "nothing to draw" over a chart drawing 508 candles, and an emptied chart as "page unreadable" (2026-11-04, found in the ST-198 agent session)
+- **What happened:** the ST-198 positive-control agent ran `pinebox up` (no script), then `verify`. It got `REFUSED NO_BARS - no bars are loaded (bars=0) - the chart has nothing to draw` on every call, while the page drew 508 candles (status `FIXTURE · DXY · 1H · 508 bars`; frame opened, /tmp/t-nobars.png). The agent then looped through up/down/week/look for 10 minutes until the 600 s kill, and left two instances behind (torn down by their own sessions).
+- **Root cause, MECHANISM:** `verify.sh` step 5 took `bars` from `.load.result.bars`, the record of the last `pinebox load`. After a bare `up` the record is null, so "no bars" described the record, not the chart.
+  - A labelled fault injection then exposed a second mislabel: with the renderer's bars emptied, step 4b's `r.bars[0].time` threw, and verify called the page CDP_UNREADABLE.
+- **Disposition:** FIXED (`verify.sh:99-119`).
+  - 4b counts the page renderer's bars first: zero is `NO_BARS` (true and named).
+  - Step 5 reuses that count. With nothing loaded through pinebox it refuses `NO_SCRIPT_LOADED`, naming the page's bar count and the remedy (`pinebox load --pine FILE`). verify judges the script you loaded; it never mints a WORKS ticket for the IDE's own buffer script.
+- **Proof (deployed, headed, fresh bare instance):**
+  - `verify` → `REFUSED NO_SCRIPT_LOADED - nothing was loaded into instance 1 (the page holds 508 bars and shows the IDE's own buffer) - load your indicator first ...` rc 1;
+  - FAULT INJECTION (bars emptied) → `REFUSED NO_BARS - the page's chart holds no bars (renderer bars=0)` rc 1;
+  - after `load` → WORKS, p C0.1 0.9125 / C1.2 0.9589 / C1.1 0.9207 / C1.3 0.9252 / C2.1 0.9273, check "508 bars on the page, 6 drawn by the loaded script"; frame opened (/tmp/t-f223.png).
+  - Crash scenarios H27/H28 and sweep row `verify_unloaded` carry it into every later round.
+
+### F-224 - concurrent Pinebox verifies exhausted the shared judge's GPU: 3 of 4 got HTTP 500 (2026-11-04, found by the nine-session re-run)
+- **What happened:** in the nine-session round after F-223, four Pineboxes verifying at once received `JUDGE_BAD_HEALTH - POST /v1/systemone answered HTTP 500: {"error":"RuntimeError","detail":"cuDNN error: CUDNN_STATUS_INTERNAL_ERROR"}` and `... CUBLAS_STATUS_ALLOC_FAILED` on three of them (p0, p2, p3; p1 WORKS). The tools refused by name; nothing passed falsely.
+- **Measured state:** GPU RTX 4080 Laptop, 12282 MiB total, **19 MiB free**.
+  - The judge (`imajev production_server.py`, restarted 2026-11-04 00:19:46 by another actor, after W9's passing nine-session round) holds 11018 MiB; an embedding `llama-server` holds 764 MiB.
+  - Every single verify that day WORKS. Only concurrent ones failed.
+- **Root cause, MECHANISM:** Pinebox sends judge calls from N instances at once with no bound on a resource of which there is exactly one. The judge runs concurrent requests' forward passes side by side, and the activation memory of several image requests did not fit in the headroom.
+  - The judge server is a shared host service, not this build's code, and was not touched.
+- **Disposition:** FIXED at Pinebox's single chokepoint (`pbjudge.py:73-102`, `http()`). Every inference POST to `/v1/systemone` holds a host-wide `flock` on `$XDG_RUNTIME_DIR/pinebox/judge.lock`:
+  - concurrent verifies QUEUE;
+  - the kernel releases the lock if a holder dies;
+  - the wait is bounded by the judge TIMEOUT and refuses `JUDGE_BUSY` by name;
+  - a wait over 1 s is printed (`[pbjudge] judge lock: waited N s for the shared judge`);
+  - `GET /health` is not locked.
+- **Proof (deployed judge):**
+  - lock held by another process with a 3 s bound → `REFUSED JUDGE_BUSY - another judge call held .../judge.lock for over 3s` rc 1 after 3.06 s;
+  - lock free → the judge decides (`NO_TICKET` for an uncited claim, the correct verdict);
+  - lock held 4 s → `waited 3.7s for the shared judge`, then the judge decides.
+- **Proof under concurrency:** the nine-session re-run (after the fix, same GPU state) → 4 of 4 concurrent Pinebox verifies WORKS (before: 1 of 4), `=== NINE-SESSION SUMMARY: FAIL=0` (ST-194, ST-200).

@@ -3814,3 +3814,22 @@ DXY points because DXY is its worked example; the indicator is 4-pair.)
   - stage 2 PASS: 7 re-runs PASS / METHOD_OK, 130 candidates adjudicated with captures, 21 probes held by code;
   - stage 3 PASS: 10 rulings observed through product captures, 1 by its code-graph node, 13 process rulings, the recurrence closed on the ledger, a host baseline of 2854 files unchanged.
 - Completion line G13 CLOSED.
+
+# EN-200 - G2 follows the operator's ruling: the claim alarm is the session-scoped lock, never a global TTSR rule (2026-11-04)
+- **THE CHANGE:** `tools/gap-firewall.sh` G2. It used to require the file `~/.omp/agent/rules/claim-evidence.md`; it now requires all three of:
+  - (a) that file absent;
+  - (b) no file in `~/.omp/agent/rules` naming Pinebox;
+  - (c) the extension's `session_stop` lock gated on `usedBy`.
+- **THE VERIFICATION:**
+  - the real host: G2 CLOSED;
+  - a temporary HOME carrying the rule: G2 OPEN;
+  - a temporary HOME carrying a different rule that names Pinebox: G2 OPEN;
+  - the extension with the `usedBy` gate removed (scratch copy): G2 OPEN;
+  - live: ST-198.
+
+# EN-201 - the final record re-run after F-222/F-223 (2026-11-04)
+- **WHY:** F-222 (pinebox-ext/index.ts) and F-223 (stages/verify.sh) changed deployed code after W9's record. The sweep, the three crash rounds and the nine-session round therefore predated the code; G14 and G16 read OPEN, as designed.
+- **THE HARNESS CHANGES (before the re-run):**
+  - **The clean-host gate** (w9-crash.sh, n9/round9.sh) hardcoded `registry: 11,10,0`. A FOREIGN instance 12 (session 01a1a275…, up since 2026-11-03 21:29) is never touched, so the gate would have refused DIRTY_HOST forever. It now refuses only when a row belongs to this build's own test sessions, and after the round it requires the registry line and compositor count to EQUAL the start (Z3/Z5 and the n9 checks).
+  - **New scenarios:** H27 (NO_SCRIPT_LOADED on the bare spawn instance) and H28 (labelled fault injection: an emptied chart is NO_BARS, never CDP_UNREADABLE); sweep row `verify_unloaded`.
+- **THE RE-RUN:** sweep run 8, crash rounds 1–3 (69 scenarios each), nine-session round; results in T-73.
