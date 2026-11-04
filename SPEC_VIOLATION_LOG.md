@@ -412,3 +412,19 @@ no crash.
 | V-72 | v3 expansion sections B/D/E refusal tables: PINE_COMPILE_FAILED, CANVAS_ABSENT, ASSET_SET_FAILED | 0 files contain them; `run` reports compile failure under other names (PINE_LOAD_FAILED) | VIOLATED LOW | EN-190 |
 | V-73 | PINEBOX blueprint section 7A STATION known gap + B-A8: polylines/linefills/tables geometry discarded | `PLUTUS_VISION/pine-ide/pine-station/lib/run.mjs:161,360` counts `__polylines__`; needs a change under `pine-ide/` (V-64 / F-166 ruling) | OPEN (blocked on ruling) | EN-190 |
 | P-26 | the operator's objective: the tools finished to their blueprints | the goal was closed at 3.5 h with V-66..V-73 open | VIOLATED | F-192, AP-41 |
+
+## RE-VERIFIED 2026-11-04 - the gap map V-66..V-73 and P-26 (the gap closure, goal pin goal/MASTER_PROMPT_GAP_CLOSURE.md)
+
+Each row below appends the remedy to the original row above. The rows above stay as written, because they record what was true on 2026-11-02. "Measured by" names the `tools/gap-firewall.sh` line that checks it now; every line except G12 read CLOSED on the final run.
+
+| id | remedy | measured by | evidence (RESULTS.jsonl / logs) | status |
+|---|---|---|---|---|
+| V-66 | the session_stop claim lock in the pinebox extension, gated on sessions that reached the tool (F-222); the commit locks in both repos (tools/git-hooks/ticket-check). The TTSR alarm part is SUPERSEDED by the operator's ruling of 2026-11-04 00:43 (RULINGS.md, F-221): no Pinebox TTSR rule | G1, G2, G3 | ST-123..126, ST-177, ST-198 | REMEDIED (TTSR part superseded by ruling) |
+| V-67 | judge/phases.json consumed by `verify --phase` / `phase --close`: PHASE_TICKETS_MISSING, TICKET_REUSED; the rejected tickets are named | G4 | ST-127, ST-128; ta probes P-5, P-6 | REMEDIED |
+| V-68 | TICKET_UNSIGNED, ARTIFACT_MISMATCH, CLAIM_WITHOUT_TICKET, NO_TICKET, TICKET_FAILED, plus LEDGER_HOLE (F-217), in code and refused live | G5 | ST-120..122, ST-177; ta probes P-1..P-4, P-15, P-16 | REMEDIED |
+| V-69 | A1 WEEK_NOT_IN_VIEW and the week coverage (bars must move; WEEK_MISMATCH); A3 PRICE_BAND_MISMATCH | G8 | ST-140..145 | REMEDIED |
+| V-70 | the judge on verify's DEFAULT path; five calibrated clauses (C0.1, C1.1, C1.2, C1.3, C2.1) with separated controls; signed tickets per clause; one judge serialised host-wide (F-224) | G6, G7 | ST-122, ST-200; crash G1/G2 x3; nine-session 4/4 WORKS | REMEDIED |
+| V-71 | `computer look` (and `pinebox look`) in both actions tables, the frame in the tool result | G9 | ST-150..156; sweep rows look | REMEDIED |
+| V-72 | PINE_COMPILE_FAILED, CANVAS_ABSENT, ASSET_SET_FAILED / TF_SET_FAILED read-back (plus NO_SCRIPT_LOADED, F-223) | G10 | ST-140..145, ST-172, ST-178, ST-199; crash H7, H8, H10, H27 | REMEDIED |
+| V-73 | polyline geometry emitted by the station and drawn by the renderer, in Pinebox's own fork (ruling R1): index and time anchors | G11 | ST-160; ta probes P-11, P-12 (frames opened) | REMEDIED |
+| P-26 | the tools finished to their blueprints before any completion claim: the gap map above read to zero by its own firewall; the record (sweep run 9 58/58, crash 70/70 x3, nine sessions FAIL=0) all after the last code change; the independent audit (ta round 11 PASS); ship packages v2 PASS / IDENTICAL; the checkpoint refreshed | G12..G17 | T-73, ST-181, ST-191..ST-197 | REMEDIED with F-192's closing entry |

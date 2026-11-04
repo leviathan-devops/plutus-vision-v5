@@ -3250,3 +3250,18 @@ verdict on 2026-11-01, after a full day: "you spent the whole day accomplishing 
   - lock free → the judge decides (`NO_TICKET` for an uncited claim, the correct verdict);
   - lock held 4 s → `waited 3.7s for the shared judge`, then the judge decides.
 - **Proof under concurrency:** the nine-session re-run (after the fix, same GPU state) → 4 of 4 concurrent Pinebox verifies WORKS (before: 1 of 4), `=== NINE-SESSION SUMMARY: FAIL=0` (ST-194, ST-200).
+
+- **CLOSES:** F-192 - closed last, as the goal pin orders. F-192's own condition was "OPEN until the gap map (SPEC_VIOLATION_LOG V-66..V-73) reads zero by its own firewall". It is met: SPEC_VIOLATION_LOG "RE-VERIFIED 2026-11-04" maps each of V-66..V-73 and P-26 to the firewall line that measures it, and before this entry `tools/gap-firewall.sh` read every line CLOSED except G12 (this entry) - `GAP_FIREWALL: 1 open of 17`.
+  - **The record behind it, all after the last code change (F-224, pbjudge.py sha 6f54eb7a…):**
+    - sweep run 9 `ROWS: 58  PASS: 58  FAIL: 0`;
+    - crash rounds `PASS=70 FAIL=0` x3;
+    - `NINE-SESSION SUMMARY: FAIL=0` (4 of 4 concurrent verifies WORKS);
+    - all 33 frames opened.
+  - **The audit:** ta round 11, stages 1/2/3 PASS (reports/audit/AUDIT_W8_2026-11-03.md).
+  - **Ship packages v2:** PACKAGE_AUDIT PASS and DEPLOY_VERIFY IDENTICAL, computer-use-v2 64 artifacts, pinebox 171.
+  - **The checkpoint:** refreshed at TRUE 2cab6fadf2673b40, seal == live; `deploy.sh status` IDENTICAL (217 files).
+  - **Remaining limits, stated and not hidden:**
+    - `view --confirm` was not run on the operator's display;
+    - the audit is a self-audit (subagents barred);
+    - F-222's every-call-refused case rests on code order;
+    - the shared judge can still be exhausted by other clients (Pinebox refuses by name).
