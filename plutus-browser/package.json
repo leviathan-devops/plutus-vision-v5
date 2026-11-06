@@ -1,0 +1,9 @@
+{
+  "name": "plutus-browser",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The PLUTUS dashboard's web-research surface as a self-contained ephemeral headed browser runtime",
+  "main": "src/main.js",
+  "scripts": { "start": "electron . --port=9470" },
+  "devDependencies": { "electron": "28.3.3" }
+}

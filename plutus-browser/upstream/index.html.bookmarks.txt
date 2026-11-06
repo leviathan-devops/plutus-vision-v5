@@ -1,0 +1,4 @@
+                    <button class="browser-quick" data-url="https://www.tradingview.com/chart/" class="ctl-chip">TRADINGVIEW</button>
+                    <button class="browser-quick" data-url="https://www.forexfactory.com/calendar" class="ctl-chip">FX CALENDAR</button>
+                    <button class="browser-quick" data-url="https://investinglive.com/Orders/" class="ctl-chip">INVESTING ORDERS</button>
+                    <button class="browser-quick" data-url="https://www.tradingview.com/markets/currencies/" class="ctl-chip">TV MARKETS</button>
