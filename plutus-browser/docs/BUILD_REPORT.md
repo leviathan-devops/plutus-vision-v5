@@ -133,3 +133,16 @@ upstream/PROVENANCE.md:1 — the source SHAs.
 SHIP_MANIFEST.md:1 — the artifact table.
 DEPLOY.sh:1 — the deploy script.
 Each line above was verified with grep -n during this cycle.
+
+## 2026-11-07 — THE HOST TOOL: CLI + verb table + OMP extension + deploy (supersedes the hand-start in "Deployment notes")
+
+WHAT: plutus-browser is now installed and run as a host tool the way pinebox is, and stays a separate tool (operator, 2026-11-07).
+- `cli/plutus-browser` (sha256-16 `fbe74ce43b5564da`): bash CLI on the computer-use v2 core. An instance IS a core `computer` instance (ids 10..99, allocated and owned by the core's registry); the control port is 30000 + id. Verbs: up down list ports health status bookmarks viewport navigate back forward reload eval text images shot input. Exit 0 = one JSON object; 1 = `REFUSED <TOKEN> — detail`; 2 = usage.
+- `cli/actions.json` (`776ad6644a512067`): the verb table the extension reads (same contract as pinebox's).
+- `extension/index.ts` (`0cdb88466d577f6f`): thin OMP forwarder registering tool `plutus_browser`; attaches the `shot` PNG as an image; the host's session id becomes CU_SESSION_ID.
+- `src/main.js` (`69880afaf36f585e`): one Chromium profile per control port (two instances never share one), and a serial navigation queue (see docs/DEBUG_LOG.md, EN-5).
+- `deploy.sh` (shipped as DEPLOY.sh): installs CLI, table, app (npm ci), link, extension; creates the token only if absent; refuses INSTANCE_LIVE; prints one JSON receipt with the installed SHAs.
+
+WHY THE ID MODEL: see docs/DEBUG_LOG.md EN-7 — the first CLI copied pinebox's 0..9 ids and collided with the core's registry.
+HOW TO RUN: `bash DEPLOY.sh`, then `plutus-browser --session NAME up --url <u>` (README.md). The `plutus_browser` tool appears in the next omp session.
+EVIDENCE: docs/TESTING_LOG.md (2026-11-07 results). NOT VERIFIED: the tool through the omp tool surface (docs/THEATRICALITY_LOG.md).

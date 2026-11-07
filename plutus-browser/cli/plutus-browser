@@ -1,0 +1,224 @@
+#!/usr/bin/env bash
+# plutus-browser - the headed web-research browser as a self-contained, multi-instance agent tool.
+#
+# A separate tool from PINEBOX (operator, 2026-11-07: "we can keep these as 2 separate tools"). It runs on the
+# computer-use v2 core: an instance IS a core `computer` instance (ids 10..99, allocated and owned by the core's
+# registry, never invented here). This tool adds one plane: the Electron app in app/, its control port derived from
+# the instance id, and the page verbs over that port.
+#
+#   plutus-browser up       [--id N] [--url U] [--adapter A] [--size WxH]   no --id: the core allocates one
+#   plutus-browser down     --id N                    the core tears down the display and everything spawned into it
+#   plutus-browser list                               this session's instances + whether a browser answers on each
+#   plutus-browser ports    --id N                    the derived control port
+#   plutus-browser health   --id N                    liveness (no token)
+#   plutus-browser status   --id N                    url, title, loading, display
+#   plutus-browser bookmarks --id N                   the 4 research quick links
+#   plutus-browser navigate --id N --url U            http(s) only
+#   plutus-browser back|forward|reload|viewport --id N
+#   plutus-browser eval     --id N --js EXPR          one expression in the page, <= 20000 chars
+#   plutus-browser text     --id N [--match REGEX]    the page's visible text lines, optionally only those matching REGEX
+#   plutus-browser images   --id N                    every <img>: src, w, h, alt
+#   plutus-browser shot     --id N [--out F]          the window as a PNG file (never raises it)
+#   plutus-browser input    --id N --kind click|key|text [--x X --y Y | --key K | --text S]
+#
+# Session: every verb except ports/health needs one - the host passes CU_SESSION_ID, a human at a shell passes
+# --session NAME. An instance owned by another session is refused by name (the core's SESSION_FOREIGN / NOT_OWNED).
+#
+# Exit: 0 ok (one JSON object on stdout) | 1 REFUSED (a named token on stderr) | 2 usage
+
+set -uo pipefail
+PBR_HOME="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+PBR_APP="$PBR_HOME/app"                      # the installed Electron app sits beside the CLI; DEPLOY.sh puts it there
+TOKEN_FILE="$HOME/.plutus-browser/token"
+[ -n "${XDG_RUNTIME_DIR-}" ] || { printf 'REFUSED  RUNTIME_DIR_UNAVAILABLE  —  XDG_RUNTIME_DIR is not set - run inside a login session (systemd sets it), the shots directory lives there\n' >&2; exit 1; }
+RUN_ROOT="$XDG_RUNTIME_DIR/plutus-browser"
+HTTP_TIMEOUT=90
+READY_SECS=30
+# THE PORT BLOCK: 30000 + the core instance id (30010..30099). Nothing on this host listens there; PINEBOX's
+# families live in 9222..10831 and the dashboard in 9430..9448.
+PORT_BASE=30000
+
+refuse() { printf 'REFUSED  %s  —  %s\n' "$1" "$2" >&2; exit 1; }
+usage() { sed -n '4,25p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2; exit 2; }
+
+command -v jq >/dev/null 2>&1   || refuse DEP_ABSENT "jq is not on PATH"
+command -v curl >/dev/null 2>&1 || refuse DEP_ABSENT "curl is not on PATH"
+
+VERB="${1-}"; [ -n "$VERB" ] || usage; shift
+ID="" URL="" JS="" OUT="" KIND="" X="" Y="" KEY="" TEXT="" MATCH="" ADAPTER="" SIZE=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --id) ID="${2-}"; shift 2 ;;        --url) URL="${2-}"; shift 2 ;;
+    --js) JS="${2-}"; shift 2 ;;        --out) OUT="${2-}"; shift 2 ;;
+    --kind) KIND="${2-}"; shift 2 ;;    --x) X="${2-}"; shift 2 ;;
+    --y) Y="${2-}"; shift 2 ;;          --key) KEY="${2-}"; shift 2 ;;
+    --text) TEXT="${2-}"; shift 2 ;;    --match) MATCH="${2-}"; shift 2 ;;
+    --adapter) ADAPTER="${2-}"; shift 2 ;; --size) SIZE="${2-}"; shift 2 ;;
+    --session) [ -n "${2-}" ] || refuse BAD_ARGS "--session needs a name"; export CU_SESSION_ID="$2"; shift 2 ;;
+    -h|--help) usage ;;
+    *) refuse BAD_ARGS "unknown argument '$1' (see: plutus-browser --help)" ;;
+  esac
+done
+
+# the core's `computer` range is 10..99 (registry-cli.ts range()); ids 0..9 are PINEBOX's and are refused here by name
+need_id() {
+  [[ "$ID" =~ ^[1-9][0-9]$ ]] || refuse BAD_ID "instance id must be a core computer id 10..99 (0..9 belong to pinebox), got '${ID}'"
+  PORT=$((PORT_BASE + ID))
+}
+need_session() { [ -n "${CU_SESSION_ID-}" ] || refuse NO_SESSION "no session id: the host passes CU_SESSION_ID; a human at a shell passes --session NAME"; }
+need_core() { command -v computer >/dev/null 2>&1 || refuse CORE_ABSENT "the computer-use v2 CLI \`computer\` is not on PATH (install computer-use v2 first)"; }
+
+# this session must own instance $ID (the core's registry is the only owner record)
+need_owned() {
+  need_session; need_core
+  local lj; lj="$(computer shell list)" || exit 1
+  jq -e --argjson i "$ID" 'any(.instances[]; .id == $i)' <<<"$lj" >/dev/null \
+    || refuse NOT_OWNED "instance $ID is not one of this session's instances (this session owns: $(jq -c '[.instances[].id]' <<<"$lj")) - bring one up: plutus-browser up"
+}
+
+# the core's teardown of instance $ID, its OUTCOME reported (its JSON, or its refusal) - never discarded
+teardown() { local r; r="$(computer shell down --id "$ID" 2>&1)" && printf 'ok %s' "${r:0:200}" || printf 'FAILED %s' "${r:0:200}"; }
+
+read_token() {
+  [ -r "$TOKEN_FILE" ] || refuse TOKEN_UNAVAILABLE "$TOKEN_FILE is unreadable - create it: mkdir -p ~/.plutus-browser && openssl rand -hex 32 > $TOKEN_FILE && chmod 600 $TOKEN_FILE"
+  local mode; mode="$(stat -c %a "$TOKEN_FILE")"
+  [ "$mode" = "600" ] || refuse TOKEN_UNAVAILABLE "$TOKEN_FILE is mode $mode - chmod 600 $TOKEN_FILE"
+  TOKEN="$(tr -d '[:space:]' < "$TOKEN_FILE")"
+  [[ "$TOKEN" =~ ^[0-9a-f]{64}$ ]] || refuse TOKEN_UNAVAILABLE "$TOKEN_FILE does not hold 64 hex chars - regenerate it with openssl rand -hex 32"
+}
+
+# a liveness MEASUREMENT: true iff the browser's /health answers success on the port
+health_up() { curl -s -m 2 "http://127.0.0.1:$1/health" 2>/dev/null | jq -e '.success == true' >/dev/null 2>&1; }
+
+# api METHOD ROUTE [curl args...] -> the runtime's .data; the runtime's own code as the refusal token otherwise.
+# The token goes in a header via process substitution, never in argv (argv is world-readable in /proc).
+api() {
+  local method="$1" route="$2"; shift 2
+  read_token
+  local resp code body rc
+  resp="$(curl -sS -m "$HTTP_TIMEOUT" -X "$method" -H @<(printf 'Authorization: Bearer %s\n' "$TOKEN") \
+          -w $'\n%{http_code}' "$@" "http://127.0.0.1:$PORT/$route" 2>&1)"
+  rc=$?
+  code="${resp##*$'\n'}"; body="${resp%$'\n'*}"
+  [ $rc -eq 0 ] || refuse NOT_UP "instance $ID's browser is not answering on 127.0.0.1:$PORT (${body:0:200}) - bring it up: plutus-browser up --id $ID"
+  if jq -e '.success == true' >/dev/null 2>&1 <<<"$body"; then jq -c '.data' <<<"$body"; return 0; fi
+  local c e
+  c="$(jq -r '.code // empty' <<<"$body" 2>&1)"; e="$(jq -r '.error // empty' <<<"$body" 2>&1)"
+  [ -n "$c" ] || refuse RUNTIME_BAD_ANSWER "HTTP $code from 127.0.0.1:$PORT/$route without a refusal code: ${body:0:300}"
+  refuse "$c" "$e"
+}
+
+answer() { jq -nc --argjson id "$ID" --argjson port "$PORT" --arg verb "$VERB" --argjson data "$1" '{ok:true, verb:$verb, id:$id, port:$port, data:$data}'; }
+
+# a page verb: api's refusal exits HERE (exit 1, its token already on stderr) - `answer "$(api ...)"` ran answer on an
+# empty capture after the subshell refused, and exited 2 with a jq error behind the refusal (B1, 2026-11-07)
+call() { local d; d="$(api "$@")" || exit 1; answer "$d"; }
+
+cmd_up() {
+  need_session; need_core; read_token
+  [ -x "$PBR_APP/node_modules/.bin/electron" ] || refuse APP_ABSENT "no Electron runtime at $PBR_APP/node_modules/.bin/electron - run the package's DEPLOY.sh"
+  [ -f "$PBR_APP/src/main.js" ] || refuse APP_ABSENT "no $PBR_APP/src/main.js - run the package's DEPLOY.sh"
+  if [ -n "$URL" ]; then [[ "$URL" =~ ^https?:// ]] || refuse BAD_ARGS "--url must be an http(s) URL, got '$URL'"; fi
+  local up_args=(shell up) upj spj
+  if [ -n "$ID" ]; then need_id; up_args+=(--id "$ID"); fi
+  [ -n "$ADAPTER" ] && up_args+=(--adapter "$ADAPTER")
+  [ -n "$SIZE" ] && up_args+=(--size "$SIZE")
+  upj="$(computer "${up_args[@]}")" || exit 1            # the core printed its own named refusal (SESSION_FOREIGN, INSTANCE_LIVE ...)
+  ID="$(jq -r '.id' <<<"$upj")"
+  [[ "$ID" =~ ^[1-9][0-9]$ ]] || refuse CORE_BAD_ANSWER "the core allocated id '$ID', outside the computer range 10..99 | teardown: $(teardown)"
+  PORT=$((PORT_BASE + ID))
+  local held
+  held="$(ss -ltnH "sport = :$PORT" 2>&1)" || refuse PORT_PROBE_FAILED "ss could not probe 127.0.0.1:$PORT: ${held:0:200} | teardown: $(teardown)"
+  [ -z "$held" ] || refuse "PORT_TAKEN:$PORT" "127.0.0.1:$PORT is held by another process | teardown: $(teardown)"
+  local serr; serr="$(mktemp)"
+  spj="$(computer shell spawn --id "$ID" -- "$PBR_APP/node_modules/.bin/electron" "$PBR_APP" "--port=$PORT" 2>"$serr")" \
+    || { local why; why="$(cat "$serr")"; rm -f "$serr"; refuse SPAWN_FAILED "the core could not start the browser on instance $ID: ${why:0:400} | teardown: $(teardown)"; }
+  rm -f "$serr"
+  local i
+  for ((i = 0; i < READY_SECS * 4; i++)); do health_up "$PORT" && break; sleep 0.25; done
+  health_up "$PORT" || refuse NOT_READY "the browser did not answer /health on 127.0.0.1:$PORT within ${READY_SECS}s | teardown: $(teardown)"
+  local nav='null'
+  # up is ALL OR NOTHING (B5, 2026-11-07): a failed first navigate left a running instance whose id the caller never saw.
+  # The navigate's own refusal is printed first (its token is the cause); the teardown outcome follows it.
+  if [ -n "$URL" ]; then nav="$(api GET navigate -G --data-urlencode "url=$URL")" || refuse UP_ABORTED "instance $ID came up but its first navigate failed (the refusal above) | teardown: $(teardown)"; fi
+  local hp; hp="$(curl -s -m 2 "http://127.0.0.1:$PORT/health" | jq -c '.data.pid')"
+  answer "$(jq -nc --argjson up "$upj" --argjson sp "$spj" --argjson pid "$hp" --argjson nav "$nav" --arg s "$CU_SESSION_ID" \
+    '{session:$s, display:$up.display, adapter:$up.adapter, window:$sp.window, browser_pid:$pid, navigated:$nav}')"
+}
+
+cmd_down() {
+  need_id; need_owned
+  local dj; dj="$(computer shell down --id "$ID")" || exit 1
+  health_up "$PORT" && refuse STILL_LIVE "the core tore down instance $ID but 127.0.0.1:$PORT still answers - a browser NOT started by this tool holds the port"
+  answer "$dj"
+}
+
+cmd_list() {
+  need_session; need_core
+  local lj; lj="$(computer shell list)" || exit 1
+  local rows='[]' id port state
+  for id in $(jq -r '.instances[].id' <<<"$lj"); do
+    port=$((PORT_BASE + id))
+    if health_up "$port"; then state=up; else state=down; fi
+    rows="$(jq -c --argjson i "$id" --argjson p "$port" --arg b "$state" '. + [{id:$i, port:$p, browser:$b}]' <<<"$rows")"
+  done
+  jq -nc --arg s "$CU_SESSION_ID" --argjson r "$rows" '{ok:true, verb:"list", session:$s, instances:$r}'
+}
+
+cmd_shot() {
+  local d; d="$(api GET capture)" || exit 1
+  local path="$OUT"
+  if [ -z "$path" ]; then
+    mkdir -p "$RUN_ROOT/shots" && chmod 700 "$RUN_ROOT" || refuse OUT_UNWRITABLE "cannot create $RUN_ROOT/shots"
+    path="$RUN_ROOT/shots/$ID-$(date +%s%N).png"
+  fi
+  mkdir -p "$(dirname "$path")" || refuse OUT_UNWRITABLE "cannot create $(dirname "$path")"
+  local derr
+  derr="$(jq -r '.png_base64' <<<"$d" | base64 -d 2>&1 > "$path")" || refuse OUT_UNWRITABLE "cannot decode the frame into $path: ${derr:0:200}"
+  local bytes sha; bytes="$(stat -c %s "$path")"; sha="$(sha256sum "$path" | cut -d' ' -f1)"
+  [ "$bytes" -gt 8 ] || refuse SURFACE_FRAME_EMPTY "the capture decoded to $bytes bytes"
+  answer "$(jq -c --arg p "$path" --argjson b "$bytes" --arg s "$sha" '{path:$p, bytes:$b, sha256:$s, width, height, url, title}' <<<"$d")"
+}
+
+cmd_text() {
+  if [ -n "$MATCH" ]; then
+    printf '' | grep -E -- "$MATCH" >/dev/null 2>&1; [ $? -le 1 ] || refuse BAD_ARGS "--match is not a valid extended regex: $MATCH"
+  fi
+  need_owned
+  local d; d="$(api GET eval -G --data-urlencode 'js=document.body ? document.body.innerText : ""')" || exit 1
+  if [ -n "$MATCH" ]; then
+    d="$(jq -r '.' <<<"$d" | grep -E -- "$MATCH" | jq -Rsc 'split("\n") | map(select(length > 0))')"
+  else
+    d="$(jq -c 'split("\n") | map(select(length > 0))' <<<"$d")"
+  fi
+  answer "$(jq -c '{lines: ., count: length}' <<<"$d")"
+}
+
+cmd_input() {
+  local body
+  case "$KIND" in
+    click) [[ "$X" =~ ^[0-9]+$ && "$Y" =~ ^[0-9]+$ ]] || refuse BAD_ARGS "click needs --x and --y as non-negative integers"
+           body="$(jq -nc --argjson x "$X" --argjson y "$Y" '{type:"click", x:$x, y:$y}')" ;;
+    key)   [ -n "$KEY" ] || refuse BAD_ARGS "key needs --key NAME"; body="$(jq -nc --arg k "$KEY" '{type:"key", key:$k}')" ;;
+    text)  body="$(jq -nc --arg t "$TEXT" '{type:"text", text:$t}')" ;;
+    *)     refuse BAD_ARGS "--kind must be click | key | text, got '${KIND}'" ;;
+  esac
+  need_owned
+  call POST input -H 'Content-Type: application/json' --data-binary "$body"
+}
+
+# order for every page verb: a valid id -> the verb's own args valid -> THIS session owns the instance -> the call
+case "$VERB" in
+  up)       cmd_up ;;
+  down)     cmd_down ;;
+  list)     cmd_list ;;
+  ports)    need_id; answer "{\"control\":$PORT}" ;;
+  health)   need_id; health_up "$PORT" || refuse NOT_UP "nothing answers /health on 127.0.0.1:$PORT"; answer "$(curl -s -m 2 "http://127.0.0.1:$PORT/health" | jq -c '.data')" ;;
+  status|bookmarks|back|forward|reload|images|viewport) need_id; need_owned; call GET "$VERB" ;;
+  navigate) need_id; [ -n "$URL" ] || refuse BAD_ARGS "navigate needs --url"; need_owned; call GET navigate -G --data-urlencode "url=$URL" ;;
+  eval)     need_id; [ -n "$JS" ] || refuse BAD_ARGS "eval needs --js"; need_owned; call GET eval -G --data-urlencode "js=$JS" ;;
+  text)     need_id; cmd_text ;;
+  shot)     need_id; need_owned; cmd_shot ;;
+  input)    need_id; cmd_input ;;
+  *)        refuse BAD_VERB "unknown verb '$VERB' (see: plutus-browser --help)" ;;
+esac

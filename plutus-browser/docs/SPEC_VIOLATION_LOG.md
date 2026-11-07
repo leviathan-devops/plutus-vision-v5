@@ -104,3 +104,5 @@ The runtime interface (from DEPLOY.sh and docs/FULL_BUILD_CONTEXT.md):
 The auth token lives in `~/.plutus-browser/token` (mode 600, 64 hex chars).
 The runtime requires a headed X display (DISPLAY must be set).
 These commands are the contract between the Cloudflare workflow and the local browser.
+
+| V-6 | operator 2026-11-07: "we can keep these as 2 separate tools" | plutus-browser has its own CLI, verb table, extension and install dir; it shares only the computer-use v2 core, as pinebox does | PASSED | cli/plutus-browser, extension/index.ts, deploy.sh |

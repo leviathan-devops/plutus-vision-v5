@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "comment": "THE PLUTUS-BROWSER VERB TABLE. The CLI cli/plutus-browser is the only implementation; the OMP extension reads this table to turn a tool call into CLI argv and adds nothing. A new verb is one row here plus its case in the CLI.",
+  "params": {
+    "id": { "type": "string", "description": "a core computer instance id 10..99 (0..9 are pinebox's); the control port is 30000 + id. OPTIONAL for `up`: omit it and the core allocates this session's instance. Another session's id is refused by name." },
+    "url": { "type": "string", "description": "an http(s) URL: navigate's target, or the page `up` opens once the browser answers" },
+    "js": { "type": "string", "description": "eval: ONE JavaScript expression run in the page, <= 20000 chars; its value is returned" },
+    "match": { "type": "string", "description": "text: an extended regex; only the visible-text lines matching it are returned (e.g. '\\d\\.\\d{3,4}|mn\\)|bn\\)' for the expiry levels)" },
+    "out": { "type": "string", "description": "shot: a file path for the PNG (default: the runtime dir; only a frame under the runtime dir is attached as an image)" },
+    "kind": { "type": "string", "description": "input: click | key | text" },
+    "x": { "type": "number", "description": "input click: x in page CSS pixels" },
+    "y": { "type": "number", "description": "input click: y in page CSS pixels" },
+    "key": { "type": "string", "description": "input key: a key name, e.g. Enter, Tab, PageDown" },
+    "text": { "type": "string", "description": "input text: the text to insert at the focused element" },
+    "adapter": { "type": "string", "description": "up: force a computer-use display adapter (weston-x11 | weston-vnc | xvfb | existing)" },
+    "size": { "type": "string", "description": "up: the display size WxH, e.g. 1626x931" }
+  },
+  "actions": {
+    "ports":     { "argv": ["ports"],     "flags": ["id"] },
+    "up":        { "argv": ["up"],        "flags": ["id", "url", "adapter", "size"] },
+    "down":      { "argv": ["down"],      "flags": ["id"] },
+    "list":      { "argv": ["list"],      "flags": [] },
+    "health":    { "argv": ["health"],    "flags": ["id"] },
+    "status":    { "argv": ["status"],    "flags": ["id"] },
+    "bookmarks": { "argv": ["bookmarks"], "flags": ["id"] },
+    "viewport":  { "argv": ["viewport"],  "flags": ["id"] },
+    "navigate":  { "argv": ["navigate"],  "flags": ["id", "url"] },
+    "back":      { "argv": ["back"],      "flags": ["id"] },
+    "forward":   { "argv": ["forward"],   "flags": ["id"] },
+    "reload":    { "argv": ["reload"],    "flags": ["id"] },
+    "eval":      { "argv": ["eval"],      "flags": ["id", "js"] },
+    "text":      { "argv": ["text"],      "flags": ["id", "match"] },
+    "images":    { "argv": ["images"],    "flags": ["id"] },
+    "shot":      { "argv": ["shot"],      "flags": ["id", "out"] },
+    "input":     { "argv": ["input"],     "flags": ["id", "kind", "x", "y", "key", "text"] }
+  }
+}

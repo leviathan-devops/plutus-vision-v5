@@ -105,3 +105,12 @@ The runtime interface (from DEPLOY.sh and docs/FULL_BUILD_CONTEXT.md):
 The auth token lives in `~/.plutus-browser/token` (mode 600, 64 hex chars).
 The runtime requires a headed X display (DISPLAY must be set).
 These commands are the contract between the Cloudflare workflow and the local browser.
+
+### F-6 — `eval` OF A THROWING EXPRESSION RETURNS THE GENERIC SURFACE_ERROR (2026-11-07)
+- **What happened:** `eval --js 'nope.nope'` → exit 1, `SURFACE_ERROR — Script failed to execute…` (the page's exception text is lost).
+- **Root cause:** `executeJavaScript` rejects with a generic message; main.js passes it through.
+- **Disposition:** OPEN, minor. A fix was written and reverted untested because it was not requested; the shipped main.js is the tested one.
+
+### F-7 — gi-lsp `unwired` WARNINGS KEEP ARRIVING ON EVERY JS/TS EDIT (2026-11-07)
+- **Root cause:** this omp process started Nov 4 15:03:54; gi-lsp was removed from `~/.omp/agent/lsp.json` at Nov 4 17:31:01 (0 hits now). The running omp holds the old config in memory and spawns `Graph_Intelligence/scripts/gi-lsp.ts` on the first edit of a .ts/.js file; killing it holds only until the next such edit.
+- **Disposition:** OPEN until that omp session restarts (config is already clean; a new session will not load it). See managed skill omp-disable-live-extension-or-lsp.

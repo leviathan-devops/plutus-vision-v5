@@ -105,3 +105,19 @@ The runtime interface (from DEPLOY.sh and docs/FULL_BUILD_CONTEXT.md):
 The auth token lives in `~/.plutus-browser/token` (mode 600, 64 hex chars).
 The runtime requires a headed X display (DISPLAY must be set).
 These commands are the contract between the Cloudflare workflow and the local browser.
+
+## EN-5 — A NAVIGATE STARTED DURING ANOTHER LOAD FAILS WITH ERR_ABORTED (2026-11-07)
+- **FINDING:** two concurrent `navigate` calls both exited 1 (`ERR_ABORTED (-3)` / `SURFACE_ERROR (-3)`), and `up --url` failed the same way against the boot page, leaving instance 13 running with no id returned to the caller.
+- **ROOT CAUSE:** Electron's `loadURL` promise listens to the window-wide `did-fail-load`; a load started while another is in flight receives the aborted load's failure and rejects although its own page landed.
+- **FIX:** `src/main.js` `makeNavigator`: every load and history step runs through one queue; each step first stops anything still loading and awaits `did-stop-loading`; the boot page is queue step 1. The CLI's `up` is all-or-nothing: a failed first navigate refuses `UP_ABORTED` and tears the instance down.
+- **VERIFICATION:** the same race re-run: both navigates exit 0; back + navigate both exit 0; `up --id 13` then two navigates all exit 0.
+- **LESSON:** one webContents, one load at a time; the failure event is window-scoped, not request-scoped.
+
+## EN-6 — A REFUSAL INSIDE `answer "$(api ...)"` EXITED 2 WITH A JQ ERROR BEHIND IT (2026-11-07)
+- **ROOT CAUSE:** `api`'s `refuse` ran in a command-substitution subshell; the outer `answer` then ran on an empty capture.
+- **FIX:** `call()` runs `api` and exits 1 itself. **VERIFIED:** battery case "page verb, not up" went from exit 2 to exit 1 with the token only.
+
+## EN-7 — THE FIRST CLI COLLIDED WITH THE CORE'S ID REGISTRY (2026-11-07)
+- **FINDING:** `up --id 0` and `--id 1` → `SESSION_FOREIGN` (those ids are pinebox instances of other sessions).
+- **ROOT CAUSE:** ids come from per-kind ranges in the core's registry (registry-cli.ts range(): pinebox 0-9, computer 10-99); the CLI had copied pinebox's 0..9 scheme.
+- **FIX:** ids 10..99, port 30000 + id, the core allocates when `--id` is omitted, and every page verb first checks this session owns the instance (`NOT_OWNED`). **VERIFIED:** battery cases 11-13, live step 15.

@@ -40,7 +40,8 @@ class Refusal extends Error {
 }
 
 const TOKEN_FILE = path.join(os.homedir(), '.plutus-browser', 'token');
-const USER_DATA = path.join(os.homedir(), '.plutus-browser', 'profile');
+// one profile per control port: two instances never write one Chromium profile at once (the CLI derives the port from --id)
+const profileDir = (port) => path.join(os.homedir(), '.plutus-browser', `profile-${port}`);
 const PARTITION = 'persist:plutus-browser';
 const BOOKMARKS = [
   { label: 'TRADINGVIEW', url: 'https://www.tradingview.com/chart/' },
@@ -95,18 +96,44 @@ function webUrl(raw) {
   return u.toString();
 }
 
-function buildHandlers(win, display) {
+/**
+ * ONE NAVIGATION AT A TIME (B4, 2026-11-07). Electron's loadURL promise listens to the window-wide did-fail-load
+ * event, so a navigation started while another load is in flight received THAT load's abort (-3) and rejected even
+ * though its own page landed. Every load therefore runs through one queue, and each queued step first SETTLES the
+ * window: anything still loading (the boot page, a back/forward, a link the page followed) is stopped and its
+ * did-stop-loading awaited, so the aborted load's did-fail-load is delivered before our listener exists.
+ */
+function makeNavigator(wc) {
+  let queue = Promise.resolve();
+  const settle = async () => {
+    if (!wc.isLoading()) return;
+    const stopped = new Promise((resolve) => wc.once('did-stop-loading', resolve));
+    wc.stop();
+    let timer;
+    const limit = new Promise((_, reject) => { timer = setTimeout(() => reject(coded('NAVIGATE_BUSY', 'the page in flight did not stop loading within 10s')), 10000); });
+    try { await Promise.race([stopped, limit]); } finally { clearTimeout(timer); }
+  };
+  // the caller gets `step`'s own outcome; `queue` only orders steps, so it continues past a failed one
+  const enqueue = (fn) => { const step = queue.then(async () => { await settle(); return fn(); }); queue = step.then(() => undefined, () => undefined); return step; };
+  return {
+    go: (url) => enqueue(() => wc.loadURL(url)),
+    // history steps start a load and return at once; the NEXT queued step settles it
+    history: (fn) => enqueue(async () => fn()),
+  };
+}
+
+function buildHandlers(win, display, nav) {
   const wc = win.webContents;
   const exec = (js) => wc.executeJavaScript(js, true);
   return {
     status: async () => ({ url: wc.getURL(), title: wc.getTitle(), loading: wc.isLoading(), display, partition: PARTITION }),
     bookmarks: async () => BOOKMARKS,
     viewport: async () => ({ bounds: win.getContentBounds(), inner: await exec('({ w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio })'), url: wc.getURL() }),
-    navigate: async (q) => { await wc.loadURL(webUrl(q.get('url'))); return { url: wc.getURL(), title: wc.getTitle() }; },
+    navigate: async (q) => { await nav.go(webUrl(q.get('url'))); return { url: wc.getURL(), title: wc.getTitle() }; },
     // Electron 28 API (view-surfaces.js:139-140). surface.js's navigationHistory is Electron 31+ and threw (BUILD_REPORT.md:611-614).
-    back: async () => { if (wc.canGoBack()) wc.goBack(); return { url: wc.getURL(), canGoBack: wc.canGoBack() }; },
-    forward: async () => { if (wc.canGoForward()) wc.goForward(); return { url: wc.getURL(), canGoForward: wc.canGoForward() }; },
-    reload: async () => { wc.reload(); return true; },
+    back: async () => nav.history(() => { if (wc.canGoBack()) wc.goBack(); return { url: wc.getURL(), canGoBack: wc.canGoBack() }; }),
+    forward: async () => nav.history(() => { if (wc.canGoForward()) wc.goForward(); return { url: wc.getURL(), canGoForward: wc.canGoForward() }; }),
+    reload: async () => nav.history(() => { wc.reload(); return true; }),
     input: async (q, body) => {
       const b = body || {};
       if (b.type === 'click') {
@@ -177,6 +204,7 @@ let inputs;
 try { inputs = requireInputs(); }
 catch (e) { console.error(e.message); process.exit(2); }
 
+const USER_DATA = profileDir(inputs.port);
 fs.mkdirSync(USER_DATA, { recursive: true, mode: 0o700 });
 fs.chmodSync(USER_DATA, 0o700);
 app.setPath('userData', USER_DATA);
@@ -189,10 +217,12 @@ app.whenReady().then(async () => {
   });
   win.setMenuBarVisibility(false);
   win.once('ready-to-show', () => win.show());
-  const server = startControlServer(inputs.port, inputs.token, buildHandlers(win, inputs.display));
+  const nav = makeNavigator(win.webContents);
+  const server = startControlServer(inputs.port, inputs.token, buildHandlers(win, inputs.display, nav));
   win.on('closed', () => { server.close(); });
-  await win.loadURL(HOME);
-  log(`ready on DISPLAY=${inputs.display} url=${win.webContents.getURL()} session=${session.fromPartition(PARTITION).storagePath}`);
+  // the boot page is queue step 1: a navigate that arrives during it waits for it, instead of cross-talking with it
+  try { await nav.go(HOME); log(`ready on DISPLAY=${inputs.display} url=${win.webContents.getURL()} session=${session.fromPartition(PARTITION).storagePath}`); }
+  catch (e) { log(`BOOT_PAGE_FAILED: ${HOME} - ${e.message} (the control server is up; navigate to recover)`); }
 });
 
 app.on('window-all-closed', () => app.quit());

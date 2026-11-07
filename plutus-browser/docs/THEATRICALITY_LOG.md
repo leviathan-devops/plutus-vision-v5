@@ -107,3 +107,9 @@ The runtime interface (from DEPLOY.sh and docs/FULL_BUILD_CONTEXT.md):
 The auth token lives in `~/.plutus-browser/token` (mode 600, 64 hex chars).
 The runtime requires a headed X display (DISPLAY must be set).
 These commands are the contract between the Cloudflare workflow and the local browser.
+
+## 2026-11-07 — CORRECTIONS TO THE 2026-11-06 RECORD
+
+- **The 2026-11-06 docs were padded.** The "OPERATIONAL REFERENCE" and "ANCHOR INDEX" blocks were appended to clear the W-9 floor (100 lines, 3 anchors), not because they carry information, and the 2026-11-06 statement "No entries this cycle" was wrong. They are still in commit c442b62. OPEN: trim them.
+- **"Worker → tunnel → browser: PROVEN" was the quick tunnel.** The named tunnel (972a42d8…) is registered but not routable from a Worker (workers.dev cannot route to a tunnel; error 1042). Routing is still open.
+- **Not verified:** `plutus_browser` as an omp tool. The extension compiles (`bun build` exit 0) and is installed; omp binds extensions at session start, so it has not been called yet.

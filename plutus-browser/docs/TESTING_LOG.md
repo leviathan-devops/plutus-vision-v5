@@ -109,3 +109,21 @@ Stop: kill the process
 
 These commands are the operator's interface to the runtime from outside the package.
 The DEPLOY.sh script in the package root automates the first four steps.
+
+## TEST PLAN ENTRY — 2026-11-07 — the installed CLI, refusals first, then a real instance
+
+### HOST
+- **What:** the installed `plutus-browser` refuses every malformed, foreign or unavailable call by name, and drives a real headed instance end to end.
+- **PASS:** a malformed call prints `REFUSED <TOKEN>` and exits 1 with nothing left running; a live call returns the page's own data.
+- **FAIL:** exit 0 on a bad call, an unnamed error, an instance left running after a refusal, another session reaching an instance.
+- **Instrument:** /tmp/pbr-battery.sh (23 cases), /tmp/pbr-live.sh (18 steps), /tmp/pbr-race.sh, /tmp/pbr-ship.sh section 4.
+
+## TEST RESULT — 2026-11-07 — the installed CLI
+
+### HOST
+- **Refusal battery (23 cases):** BAD_VERB; BAD_ID for 5, 100, 07 and missing; BAD_ARGS for unknown flag, no url, no js, bad kind, non-integer click, bad regex, non-http url; NO_SESSION for up/list/status; NOT_OWNED for status/down on the operator's id 10; SESSION_FOREIGN for `up --id 10`; NOT_UP; RUNTIME_DIR_UNAVAILABLE; TOKEN_UNAVAILABLE at mode 644; `PORT_TAKEN:30050` with `teardown: ok` (no instance left). The operator's pinebox id 0 and computer id 10 stayed claimed and running afterwards.
+- **Live path:** `up` (core allocated id 13, display :3, investinglive title returned); `up` again and `up --id 13` → INSTANCE_LIVE; `text --match` returned 15 expiry rows plus the explanatory line (count 16: EUR/USD 1.1250 EUR 624.89 mn … NZD/USD 0.5640 NZD 913.65 mn); file:// → URL_SCHEME_REFUSED; `not a url` → URL_INVALID; `shot` → 136440 B PNG 1400x900, opened and read (investinglive header, article title, cookie banner visible); second instance id 60 on display :5 with its own profile; another session's `status --id 60` → NOT_OWNED; `down --id 60` killed it while 13 stayed up.
+- **Race (EN-5):** before the fix two concurrent navigates both exited 1 (ERR_ABORTED / SURFACE_ERROR -3); after it both exit 0, and back + navigate 0.1 s apart both exit 0.
+- **Package smoke:** the package's own DEPLOY.sh installed files whose SHAs equal the packaged ones; then up → text → shot (231780 B PNG) → down, session left with zero instances.
+- **Verdict: PASS for the CLI.** **UNTESTED:** `plutus_browser` through the omp tool surface (binds at the next session start); `eval` of a throwing expression returns the generic SURFACE_ERROR (FAILURE_LOG F-6).
+- **Artifacts:** /run/user/1000/plutus-browser/shots/13-1794041787160336137.png and 13-1794042034774344675.png.
