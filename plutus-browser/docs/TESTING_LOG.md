@@ -127,3 +127,13 @@ The DEPLOY.sh script in the package root automates the first four steps.
 - **Package smoke:** the package's own DEPLOY.sh installed files whose SHAs equal the packaged ones; then up → text → shot (231780 B PNG) → down, session left with zero instances.
 - **Verdict: PASS for the CLI.** **UNTESTED:** `plutus_browser` through the omp tool surface (binds at the next session start); `eval` of a throwing expression returns the generic SURFACE_ERROR (FAILURE_LOG F-6).
 - **Artifacts:** /run/user/1000/plutus-browser/shots/13-1794041787160336137.png and 13-1794042034774344675.png.
+
+## TEST RESULT — 2026-11-07 (later) — Worker -> Workers VPC binding -> named tunnel -> local browser
+
+### HOST
+- **Setup (no operator steps):** `wrangler vpc service create plutus-browser --type http --tunnel-id 972a42d8-fad2-44c9-8abb-cb39b9d823c3 --hostname localhost --http-port 30020` → VPC service `01a1b53f-a0b8-7de2-a193-78f0b6d5f835`. The service has one fixed port, so the Worker-facing browser is instance id 20: `plutus-browser up --id 20`.
+- **The run:** instance 20 up (pid 1315211); a throwaway Worker `plutus-vpc-probe` with binding `vpc_services:[{binding:"BROWSER", service_id}]` called `env.BROWSER.fetch(new Request("http://localhost:30020/health"))` and `/status`.
+- **Raw output:** `/health` → 200 `{"success":true,"data":{"up":true,"pid":1315211}}` (the pid equals the instance's); `/status` without a token → 401 `AUTH_REQUIRED`.
+- **Cleanup:** the Worker deleted (`Successfully deleted plutus-vpc-probe`), instance 20 down, `list` empty.
+- **Verdict: PASS.** Supersedes the "named tunnel not routable" notes of 2026-11-07 (earlier) and the quick-tunnel-only proof of 2026-11-06.
+- **Open:** cloudflared runs under setsid, not as a service, so a host reboot stops it; a production Worker still needs the bearer token as a Worker secret for every route except /health.

@@ -113,3 +113,7 @@ These commands are the contract between the Cloudflare workflow and the local br
 - **The 2026-11-06 docs were padded.** The "OPERATIONAL REFERENCE" and "ANCHOR INDEX" blocks were appended to clear the W-9 floor (100 lines, 3 anchors), not because they carry information, and the 2026-11-06 statement "No entries this cycle" was wrong. They are still in commit c442b62. OPEN: trim them.
 - **"Worker → tunnel → browser: PROVEN" was the quick tunnel.** The named tunnel (972a42d8…) is registered but not routable from a Worker (workers.dev cannot route to a tunnel; error 1042). Routing is still open.
 - **Not verified:** `plutus_browser` as an omp tool. The extension compiles (`bun build` exit 0) and is installed; omp binds extensions at session start, so it has not been called yet.
+
+## 2026-11-07 (later) — RESOLVED: NAMED-TUNNEL ROUTING
+
+The earlier note that the named tunnel was "registered but not routable from a Worker" is resolved: Workers VPC service `01a1b53f-a0b8-7de2-a193-78f0b6d5f835` routes a Worker to the browser through tunnel `972a42d8…` (docs/TESTING_LOG.md, the 2026-11-07 (later) result). Still not verified: `plutus_browser` through the omp tool surface.
