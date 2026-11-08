@@ -366,8 +366,8 @@ def call_external_grader(policy: dict, source: str, rev: str, kind: str, checkpo
     p = subprocess.run(
         ["curl", "-sS", "-m", str(policy["model"]["timeout_seconds"]),
          "-H", f"Authorization: Bearer {key}", "-H", "Content-Type: application/json",
-         policy["model"]["endpoint"], "-d", serialized],
-        capture_output=True, text=True,
+         policy["model"]["endpoint"], "--data-binary", "@-"],
+        input=serialized, capture_output=True, text=True,
     )
     try:
         data = json.loads(p.stdout)
