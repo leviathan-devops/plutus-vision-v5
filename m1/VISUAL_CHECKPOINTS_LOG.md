@@ -71,7 +71,9 @@ decision (a reset is a ref change the M1 gate grades) — ask, then do it throug
 ![CP-001 runtime](checkpoints/CP-001/visual/runtime-state.png)
 ![CP-001 operator view 21:37](checkpoints/CP-001/visual/operator-orca-2026-11-08-2137.png)
 
-- **Commit:** tag `vc/CP-001` (hash back-filled by the next commit) — `git log -1 --format=%H --grep='^PV-Checkpoint: m1/checkpoints/CP-001/checkpoint.json'`
+- **Commit:** `8ae7388d421703d97d98187e9d260d903d1b3573` · tag `vc/CP-001` (gate: PASS checkpoint, external grader PASS 8)
+- **Restore proven:** `git archive vc/CP-001` into /tmp/restore-CP-001, generated outputs deleted, regenerated from the
+  archived source -> composition sha256 c9261fb3f5a0fb9b480aa08b3f870d0dddf54746b30b342bd75788545a1c3684 (identical)
 - **Composition:** `m1/out/plutus-vision-v5-e1-DXY-2026-07-06.pine` sha256 `c9261fb3f5a0fb9b480aa08b3f870d0dddf54746b30b342bd75788545a1c3684`
   (regenerated twice from the committed tree: identical)
 - **Card:** `m1/out/e1-card-DXY-2026-07-06.json` sha256 `07bce57fe2a937ffb19bb81256bff0ffe542a5bb5eb27c3dc0d6f1fad3a23af1`

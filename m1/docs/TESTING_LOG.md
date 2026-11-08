@@ -30,7 +30,7 @@ it is an instrument, not a verdict. The checkpoint gate (gates/commit_gate.py:19
 - **How:** `git archive vc/<id> | tar -x -C /tmp/restore-<id>`; `bun m1/src/run.ts DXY 2026-07-06 && bun m1/src/compose.ts DXY 2026-07-06`; sha256sum.
 - **PASS criteria:** composition sha256 == the checkpoint's `composition_sha256`.
 - **FAIL criteria:** any difference, or a missing module in the archived tree.
-- **Status:** PENDING (runs after the CP-001 commit)
+- **Status:** PASSED (CP-001, 2026-11-08)
 
 ## TEST PLAN ENTRY — 2026-11-08 — no hardcoded week values
 
@@ -106,3 +106,17 @@ m1/src/run.ts:89:  const [asset = 'DXY', monday = '2026-07-06'] = process.argv.s
 ```
 - **The verdict:** PASS — every hit is a usage comment or a CLI default argument; no oracle price appears.
 - **The artifacts:** this entry.
+
+## TEST RESULT — 2026-11-08 — restorability of CP-001
+
+### SCRIPT
+- **The run:** /tmp/pv-restore-test.sh — `git archive vc/CP-001 | tar -x -C /tmp/restore-CP-001`; `rm m1/out/*.pine m1/out/*.json`;
+  `bun m1/src/run.ts DXY 2026-07-06 && bun m1/src/compose.ts DXY 2026-07-06`; sha256sum.
+- **The raw output:**
+```
+vc/CP-001 -> 8ae7388d421703d97d98187e9d260d903d1b3573
+c9261fb3f5a0fb9b480aa08b3f870d0dddf54746b30b342bd75788545a1c3684  m1/out/plutus-vision-v5-e1-DXY-2026-07-06.pine
+c9261fb3f5a0fb9b480aa08b3f870d0dddf54746b30b342bd75788545a1c3684  -   (the committed composition)
+```
+- **The verdict:** PASS — the regenerated composition is byte-identical to the one in the checkpoint and the one Pinebox loaded.
+- **The artifacts:** tag vc/CP-001; m1/VISUAL_CHECKPOINTS_LOG.md VC-001 restore block.
