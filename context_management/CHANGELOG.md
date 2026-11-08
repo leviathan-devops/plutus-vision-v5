@@ -377,3 +377,10 @@ No E1 implementation exists yet. The clean build has substrate, contract, enforc
 ### Honest disclosure
 - M1 target not met. P4 and P7 supplementary evidence missing (recorded on the card).
 - Anchors: m1/src/compose.ts:31, m1/src/run.ts:72, gates/commit_gate.py:366.
+
+## 2026-11-08 — CP-002 and the active-week law
+
+- Accomplished: CP-002 (faebc8c, vc/CP-002) — canon S/D origin (4H BoM supply exact), canon reaction counter,
+  time-dependent ZFP; outcome 83.3%. Anchors: m1/src/p5.ts:29, m1/src/assemble.ts:175, m1/src/evaluate.ts:1.
+- Operator ruling: the active-week law (DECISION_CHAIN). Failure F-08 (operator-caught): week split.
+- Honest: M1 target not met; E1 week still hardcoded at this entry.

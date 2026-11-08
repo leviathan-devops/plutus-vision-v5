@@ -378,3 +378,12 @@ Operator asked whether knowledge graphs and canon docs were current for a clean 
   bypass control after them (branch unmoved).
 - Display band = spot +/- max(prior-week range, mean 4-week range): measured per asset/week, no constant (m1/src/run.ts:72).
 - P4 recorded MISSING after a bounded search; no invented analyst levels.
+
+## 2026-11-08 — THE ACTIVE-WEEK LAW (operator ruling, verbatim)
+
+"In case you haven't noticed, both of the zones are rendered in two completely different places. Why is that? We have the V1 baseline from the checkpoint. It's rendered on the most recent candles, and then we have the other side of the coin, which is the prompt version of the E1 zones, and that's rendered on the Golden Week ... They all need to be rendered together, not in two completely different fucking places."
+"you need to on the Pine IDE rewind the candles to the golden week so that anything past the golden week doesn't yet exist on the chart because it's not rendered ... the indicator needs to not be hard-coded to a specific week ... The indicator needs to Detect based on the most recent candle what is the trading week and render the zones for that trading week's relevance. The V1 baseline is already doing this correctly. And right now your other E1 zones for the prompt based Canon, you have it hard coded to the golden week ... Write this into the Canon docs so you don't forget."
+
+- Consequence: the E1 layer detects the active week from the last candle (no week constant in the composition); the
+  golden week is rendered by rewinding the candles in Pinebox, never by panning; v1 and E1 render together on that week.
+- Recorded in: context_management/CURRENT_STATE.md:1 (THE ACTIVE-WEEK LAW), m1/docs/FAILURE_LOG.md:1 (F-08).

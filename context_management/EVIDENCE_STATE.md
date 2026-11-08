@@ -377,3 +377,11 @@ branch before == branch after
 | E-M1-06 | gate still refuses a --no-verify claiming commit after repairs | REJECT(PV-TRAILER), branch unmoved | PROVEN |
 | E-M1-07 | grader reads real screenshots | positive control: symbol/tf/dates/prices named correctly | PROVEN |
 | E-M1-08 | no hardcoded week values | grep, only CLI defaults (m1/docs/TESTING_LOG.md:1) | PROVEN |
+
+## 2026-11-08 — CP-002 evidence rows
+
+| Row | Claim | Evidence | Verdict |
+|---|---|---|---|
+| E-M1-09 | 4H BoM supply equals the oracle box | scan `4H supply BoM 101.316 101.43 2026-07-01T23:00`; oracle axis read | PROVEN |
+| E-M1-10 | outcome after canon ZFP rules | 5/6 = 83.3% (m1/checkpoints/CP-002/outcome.txt) | BELOW TARGET |
+| E-M1-11 | v1 and E1 on one active week | operator: rendered in two different places | FAILED (F-08) |

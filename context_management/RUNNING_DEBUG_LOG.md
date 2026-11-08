@@ -203,3 +203,17 @@
 - ROOT CAUSE: base64 images counted against the text budget; greedy JSON parse and 3 hook invocations per transaction.
 - FIX: gates/commit_gate.py:289, :366, :396, :557; .githooks/reference-transaction:11.
 - LESSON: budgets are per unit; a control that shares the index with real work must run in a clone (state.json slip).
+
+## [2026-11-08T19:21:01+00:00] — v1 and E1 on different weeks; E1 week hardcoded (F-08, operator-caught)
+- SYMPTOM: CP-002 picture: v1 baseline drawings on the newest candles (Nov), E1 on 2026-07-06.
+- ROOT CAUSE: the chart was SCROLLED to the week while its data ran to Nov 6; v1 keys off the last candle; the E1 layer
+  bakes the card's week timestamps (compose.ts e1TsR/e1WkO/e1WkE constants).
+- FIX: in progress — E1 detects the active week from the last bar; candles rewound via the Pinebox replay.
+- LESSON: scrolling moves the view, not the data. The indicator's week IS the last candle's week. Never hardcode a week.
+- EVIDENCE: m1/checkpoints/CP-002/comparison.json (WRONG row), operator's words in DECISION_CHAIN.
+
+## [2026-11-08T19:21:01+00:00] — S/D origin, reaction counter, ZFP time rules (EN-014..016)
+- SYMPTOM: oracle 4H BoM supply missing; Z13/Z14 "Depleted 7R" predicted BREAK but held; Spring Release a 0 placeholder.
+- ROOT CAUSE: fractal-swing origin; passes counted as reactions from a 14-day default; invented modifier; no time dimension.
+- FIX: m1/src/p5.ts:29, m1/src/assemble.ts:124, m1/src/assemble.ts:175, m1/src/evaluate.ts:1.
+- LESSON: every ZFP signal is a B.2 row or a canon sentence at the canon's band midpoint.

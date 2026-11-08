@@ -174,3 +174,12 @@
 - EVIDENCE: composition c9261fb3...; restore from vc/CP-001 identical; outcome 3/7 (42.9%); families 2/13 MATCHED;
   operator: "This is already an improvement ... not fully approved yet".
 - NEXT: CP-002 — ZFP strength, BoM/MoM at 100.61-100.68, LSZ for the Jul 10 sweep (NEXT_STEPS §1).
+
+## [2026-11-08T19:21:01+00:00] — CP-002: canon S/D origin, reaction counter, time-dependent ZFP
+- WHAT: p5.ts origin = the candle immediately before the move (displacement after a swing extreme); assemble.ts strong
+  reactions from the zone origin, canon :1159 rule, zfpRules (Spring Release, Cascade); evaluate.ts applies them at the
+  first touch; compose labels carry ZFP rule + reaction state. Commit faebc8c, tag vc/CP-002.
+- WHY: CP-001 defects 1-2 and 7; the 4H BoM supply in the oracle.
+- HOW: read Appendix B and :1145-1161 first-hand; removed the invented "+20 Depleted"; no zone-specific values.
+- EVIDENCE: 4H supply BoM 101.316-101.430 (Jul 1 23:00) == oracle box; outcome 83.3% (5/6); composition 5f1c4641a4777780.
+- NEXT: the active-week law (operator ruling, F-08): E1 detects the week from the last candle; rewind candles via replay.

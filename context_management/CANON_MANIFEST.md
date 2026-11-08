@@ -3,7 +3,7 @@
 **PROJECT FINGERPRINT:** `1b26afc522a26531421b5398e020671ddd8cc6697b09e9457582fd8c234f9a4e`
 **Fingerprint subject:** `gates/policy.json` — the mechanically enforced M1 gate policy.
 **Git HEAD when generated:** `a76e450325212875353fdb04b5577b7f14e2cef8`
-**Generated:** `2026-11-08T13:36:43.905831+00:00` · **Updated:** `2026-11-08T19:00:28+00:00` (M1 engine + CP-001)
+**Generated:** `2026-11-08T13:36:43.905831+00:00` · **Updated:** `2026-11-08T19:21:01+00:00` (M1 engine + CP-001)
 
 
 ## Contract
