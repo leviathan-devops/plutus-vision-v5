@@ -21,6 +21,9 @@ export interface Zone {
   intra: { price: number; type: string; source: string }[]; core?: { lo: number; hi: number }; spike?: { lo: number; hi: number };
   optionDriver: string | null; highDensity: boolean; tight: boolean; postConsolidation: boolean;
   origin: number;                // the candle that established the zone: earliest structural member (S/D origin, swing, OB), else earliest member
+  // time-dependent B.2 rules applied at the moment of a test (canon midpoints): Spring Release once the driving option
+  // has expired; Cascade once the nearer same-side zone has broken.
+  zfpRules: { springReleaseAt: number | null; springRelease: number; cascade: number; cascadeAfter: string | null };
 }
 export interface Regime { state: 'consolidation' | 'momentum' | 'breakout'; direction: 'up' | 'down' | 'flat'; basis: string; ema200Cross: boolean }
 
@@ -67,7 +70,8 @@ function scoreLevel(l: Level, all: Level[], regime: Regime, spot: number): Score
   return { ...l, dims, bonus, base, total: Math.min(14, base + bonus + legacy), why: legacy ? [...why, 'legacy +0.5'] : why };
 }
 
-export interface AssembleIn { levels: Level[]; sd: SdZone[]; spot: number; cutoff: number; regime: Regime; preBars: Bar[]; priorDayCloses: { key: string; close: number }[]; optionExpiryTimes: Record<string, number> }
+export interface AssembleIn { levels: Level[]; sd: SdZone[]; spot: number; cutoff: number; regime: Regime; preBars: Bar[]; priorDayCloses: { key: string; close: number }[]; optionExpiryTimes: Record<string, number>;
+  arena: { lo: number; hi: number } }   // the week's expected range (run.ts render_policy band): a BoM outside it is not this week's target
 
 export function assemble(inp: AssembleIn): { zones: Zone[]; scored: ScoredLevel[]; gapFills: { price: number; signals: string[] }[]; reverify: string; audit: string[] } {
   const { spot, regime } = inp; const audit: string[] = [];
@@ -112,15 +116,22 @@ export function assemble(inp: AssembleIn): { zones: Zone[]; scored: ScoredLevel[
     // 9.8 option driver re-verification: only >= $850M R1-qualified strikes may drive the options dimension
     const optM = g.filter(x => x.kind === 'option');
     const driver = optM.filter(o => o.meta?.r1 && (o.meta.tier as number) <= 2).sort((a, b) => (a.meta!.tier as number) - (b.meta!.tier as number))[0];
-    // reactions before the cutoff: separate returns into the zone band after leaving it (from the zone's first member formation)
+    // The zone starts at its ORIGIN: the earliest structural member's formation (S/D origin, swing, OB, LSZ, magnet,
+    // close), else the earliest member formation. The same instant starts the box on the chart and the reaction count.
     const born = Math.min(...g.map(x => x.formedAt ?? inp.cutoff - 14 * 86_400_000));
-    // reaction counter (:1154-1159): a STRONG reaction = a touch of the zone followed by a move of >= 0.15 away from it
-    // (the canonical cluster band) before the next touch.
-    let reactions = 0, touched = false, away = 0;
-    for (const b of inp.preBars) { if (b.time < born) continue;
-      if (b.low <= hi && b.high >= lo) { if (touched && away >= 0.15) reactions++; touched = true; away = 0; }
-      else if (touched) away = Math.max(away, b.low > hi ? b.high - hi : lo - b.low); }
-    if (touched && away >= 0.15) reactions++;
+    const structT = g.filter(x => ['sd-4h', 'sd-1h', 'swing-low', 'swing-high', 'order-block', 'lsz', 'magnet', 'minor-swing', 'prior-close'].includes(x.kind) && x.formedAt !== undefined).map(x => x.formedAt!);
+    const origin = structT.length ? Math.min(...structT) : born;
+    // reaction counter (:1154-1159): a STRONG reaction = price enters the zone from one side and leaves it back to the
+    // SAME side by >= 0.15 (the canonical cluster band). Passing through the zone is not a reaction.
+    let reactions = 0, side: 'above' | 'below' | null = null, entered: 'above' | 'below' | null = null;
+    for (const b of inp.preBars) { if (b.time < origin) continue;
+      const touches = b.low <= hi && b.high >= lo;
+      if (touches) { if (side && !entered) entered = side; continue; }
+      const now = b.low > hi ? 'above' : 'below';
+      if (entered && now === entered && (now === 'above' ? b.high - hi : lo - b.low) >= 0.15) { reactions++; entered = null; }
+      else if (entered && now !== entered) entered = null;          // passed through
+      side = now;
+    }
     // P9 zone type (Appendix B.1) and strength-based ZFP
     const pillars = new Set(g.map(x => x.pillar)).size;
     const tier1 = optM.some(o => o.meta?.r1 && o.meta.tier === 1), tier2 = optM.some(o => o.meta?.r1 && o.meta.tier === 2);
@@ -130,21 +141,45 @@ export function assemble(inp: AssembleIn): { zones: Zone[]; scored: ScoredLevel[
       : tier1 && pillars >= 3 && confluentFC ? ['Hard Wall', 10] as const
       : (tier1 || tier2) && pillars >= 2 ? ['Standard Wall', 22.5] as const
       : pillars >= 2 ? ['Soft Wall', 40] as const : ['One-Touch', 60] as const;
+    // B.2 modifiers at the range midpoints of the canon table (:4069-4074). Static ones apply at the cutoff; the
+    // time-dependent ones (Spring Release after the driver's expiry; Cascade after the nearer same-side zone breaks)
+    // are carried as rules and applied at the moment of the test (m1/src/evaluate.ts, the chart label).
     const zfpMods: { signal: string; value: number }[] = [];
     const towards = regime.direction === 'up' ? lo > spot : regime.direction === 'down' ? hi < spot : false;
-    if (regime.state !== 'consolidation' && towards) zfpMods.push({ signal: 'Increasing momentum toward zone (B.2)', value: 15 });
-    if (regime.ema200Cross) zfpMods.push({ signal: 'Regime change: EMA 200 cross (B.2)', value: 20 });
-    if (driver && inp.optionExpiryTimes[driver.id] !== undefined) zfpMods.push({ signal: `Spring Release after ${driver.meta!.date} 10am NY expiry (B.2) - applies once expired`, value: 0 });
-    if (reactions >= 3) zfpMods.push({ signal: 'Depleted: 3+ reactions (:1159)', value: 20 });
-    const zfp = Math.max(1, Math.min(99, zfpBase + zfpMods.reduce((s, m) => s + m.value, 0)));
+    if (regime.state !== 'consolidation' && towards) zfpMods.push({ signal: 'Increasing momentum toward zone (B.2 +10-20)', value: 15 });
+    if (regime.ema200Cross) zfpMods.push({ signal: 'Regime change: EMA 200 cross (B.2 +15-25)', value: 20 });
+    let zfp = Math.max(1, Math.min(99, zfpBase + zfpMods.reduce((s, m) => s + m.value, 0)));
+    // BoM (:1150) "100% guaranteed reaction if unmitigated": an unmitigated, untested BoM origin inside the zone takes the
+    // Hard Wall floor of B.1 (5%).
+    const virginBom = sdIn.some(z => z.type === 'BoM' && z.mitigations === 0) && reactions === 0;
+    if (virginBom) { zfpMods.push({ signal: 'Unmitigated BoM, virgin: guaranteed reaction (:1150) -> B.1 floor 5%', value: 5 - zfp }); zfp = 5; }
+    const springAt = driver && inp.optionExpiryTimes[driver.id] !== undefined ? inp.optionExpiryTimes[driver.id] : null;
     const dims = top.dims;
-    const structT = g.filter(x => ['sd-4h', 'sd-1h', 'swing-low', 'swing-high', 'order-block', 'lsz', 'magnet', 'minor-swing', 'prior-close'].includes(x.kind) && x.formedAt !== undefined).map(x => x.formedAt!);
-    const origin = structT.length ? Math.min(...structT) : born;
     return { id: `Z${k + 1}`, origin, lo, hi, role, name: '', members: g, score, degree: degreeOf(score), dims, bonus: top.bonus, modifiers, poiTier, zoneType, zfpBase, zfpMods, zfp,
       breakoutRisk: zfp > 50, measuredMove: null, reactionsPreCutoff: reactions, reactionState: reactions === 0 ? 'Virgin' : reactions <= 2 ? 'Active' : 'Depleted',
       intra: [], optionDriver: driver ? driver.label : null, highDensity: g.some(x => dens(x, 0.15) >= 2), tight: g.some(x => dens(x, 0.10) >= 1), postConsolidation,
-      bom: bestSd ? { tf: bestSd.tf, type: bestSd.type, side: bestSd.side, lo: bestSd.lo, hi: bestSd.hi, date: bestSd.date, mitigations: bestSd.mitigations } : undefined } as Zone;
+      bom: bestSd ? { tf: bestSd.tf, type: bestSd.type, side: bestSd.side, lo: bestSd.lo, hi: bestSd.hi, date: bestSd.date, mitigations: bestSd.mitigations } : undefined,
+      zfpRules: { springReleaseAt: springAt, springRelease: 25, cascade: 25, cascadeAfter: null } } as Zone;
   });
+  // Canon :1159 — a Depleted zone (3+ reactions) lying between price and a deeper same-side BoM zone "will likely pierce":
+  // "likely to fail" maps to the One-Touch band of B.1 (50-70%), midpoint 60. Cascade (B.2): each IP zone's "prior zone"
+  // is the next IP zone between it and price on the same side.
+  const ip = zones.filter(z => z.score >= 6);
+  for (const z of ip) {
+    if (z.role === 'equilibrium') continue;
+    // the deeper BoM must be a target THIS week: inside the week's expected arena
+    const beyond = (z.role === 'support' ? ip.filter(y => y.role === 'support' && y.hi < z.lo) : ip.filter(y => y.role === 'resistance' && y.lo > z.hi))
+      .filter(y => y.hi >= inp.arena.lo && y.lo <= inp.arena.hi);
+    const nearer = z.role === 'support' ? ip.filter(y => y.lo > z.hi && y.hi < spot).sort((a, b) => a.lo - b.lo)[0] : ip.filter(y => y.hi < z.lo && y.lo > spot).sort((a, b) => b.hi - a.hi)[0];
+    z.zfpRules.cascadeAfter = nearer ? nearer.id : null;
+    // "price will likely pierce through it to reach the BoM zone" (:1159): the BoM must lie in the direction price is
+    // travelling at the cutoff (P9 regime direction), otherwise the zone is not on the way to it.
+    const travelling = z.role === 'support' ? regime.direction === 'down' : regime.direction === 'up';
+    if (z.reactionsPreCutoff >= 3 && travelling && beyond.some(y => y.bom?.type === 'BoM') && z.zfp < 60) {
+      z.zfpMods.push({ signal: 'Depleted between price and a deeper BoM zone: likely pierce (:1159) -> B.1 One-Touch midpoint 60%', value: 60 - z.zfp });
+      z.zfp = 60; z.breakoutRisk = true;
+    }
+  }
   // R6 measured move for ZFP > 45%: the zone-to-opposing-zone distance projected beyond the zone
   const ranked = zones.filter(z => z.degree !== 'MINIMAL');
   for (const z of zones) if (z.zfp > 45) {

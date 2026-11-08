@@ -57,7 +57,11 @@ export async function runE1(asset: string, monday: string) {
   const levels = [...p1.levels.map(l => ({ ...l, kind: 'pivot' as const, label: l.name, formedAt: priorWeek.to, source: [l.source] })), ...p2.levels, ...opt.levels, ...p5.levels, ...p6, ...p7.levels];
   const expiryTimes: Record<string, number> = {};
   for (const c of opt.levels) expiryTimes[c.id] = Date.parse(`${c.meta!.date}T14:00:00Z`);
-  const asm = assemble({ levels, sd: p5.sd, spot, cutoff: w.cutoffUtc, regime, preBars: preH1.filter(b => b.time >= w.cutoffUtc - 21 * 86_400_000), priorDayCloses: priorDays.map(d => ({ key: d.key, close: d.close })), optionExpiryTimes: expiryTimes });
+  // The week's expected arena = spot +/- the larger of the prior week's range and the mean range of the last 4 completed
+  // weeks (measured per asset per week; no fixed price constant). It bounds this week's BoM targets and the chart band.
+  const rs = weeks.slice(-4).map(x => x.high - x.low); const meanR = rs.reduce((s, r) => s + r, 0) / rs.length;
+  const half = Math.max(priorWeek.high - priorWeek.low, meanR); const arena = { lo: spot - half, hi: spot + half };
+  const asm = assemble({ levels, sd: p5.sd, spot, cutoff: w.cutoffUtc, regime, preBars: preH1.filter(b => b.time >= w.cutoffUtc - 21 * 86_400_000), priorDayCloses: priorDays.map(d => ({ key: d.key, close: d.close })), optionExpiryTimes: expiryTimes, arena });
   const card = {
     schema_version: SCHEMA, asset, week_monday: monday,
     window: { open: new Date(w.openUtc).toISOString(), cutoff: new Date(w.cutoffUtc).toISOString(), end: new Date(w.endUtc).toISOString(), render_from: new Date(w.renderFromUtc).toISOString(), render_to: new Date(w.renderToUtc).toISOString() },
@@ -69,13 +73,8 @@ export async function runE1(asset: string, monday: string) {
       P6: p6.length, P7: p7.arena, P9: regime },
     zones: asm.zones.map(z => ({ ...z, members: z.members.map(m => ({ id: m.id, pillar: m.pillar, kind: m.kind, price: m.price, label: m.label, total: m.total, why: m.why })) })),
     gap_fills: asm.gapFills, reverify: asm.reverify, missing_data: missing, audit: asm.audit,
-    render_policy: (() => {
-      // Legibility: the chart synthesis shows MODERATE+ zones inside the week's expected arena = spot +/- the larger of the prior
-      // week's range and the mean range of the last 4 completed weeks (measured per asset per week; no fixed price constant).
-      const rs = weeks.slice(-4).map(x => x.high - x.low); const half = Math.max(priorWeek.high - priorWeek.low, rs.reduce((s, r) => s + r, 0) / rs.length);
-      return { synthesis: 'MODERATE and above', full_output: 'all zones (card)', band: { lo: spot - half, hi: spot + half },
-        basis: `spot ${spot} +/- max(prior-week range ${(priorWeek.high - priorWeek.low).toFixed(3)}, mean 4-week range ${(rs.reduce((s, r) => s + r, 0) / rs.length).toFixed(3)}) = +/-${half.toFixed(3)}` };
-    })(),
+    render_policy: { synthesis: 'MODERATE and above', full_output: 'all zones (card)', band: arena,
+      basis: `spot ${spot} +/- max(prior-week range ${(priorWeek.high - priorWeek.low).toFixed(3)}, mean 4-week range ${meanR.toFixed(3)}) = +/-${half.toFixed(3)}` },
   };
   const body = JSON.stringify(card, null, 1);
   const sha = createHash('sha256').update(body).digest('hex');

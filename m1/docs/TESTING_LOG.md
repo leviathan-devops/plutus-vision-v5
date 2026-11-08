@@ -120,3 +120,22 @@ c9261fb3f5a0fb9b480aa08b3f870d0dddf54746b30b342bd75788545a1c3684  -   (the commi
 ```
 - **The verdict:** PASS — the regenerated composition is byte-identical to the one in the checkpoint and the one Pinebox loaded.
 - **The artifacts:** tag vc/CP-001; m1/VISUAL_CHECKPOINTS_LOG.md VC-001 restore block.
+
+## TEST RESULT — 2026-11-08 — CP-002 golden-week visual acceptance
+
+### HOST
+- **The run:** regenerate; `pinebox load` -> boxes 25, labels 50, lines 86, tables 1; zoom x7 + pan to 06-22..07-16; shot -> 159,315 bytes; opened.
+- **The raw output:** "zones in range 9 | tested 6 | correct 5 (83.3%)" (m1/checkpoints/CP-002/outcome.txt).
+- **The verdict:** FAIL against M1 (95% not met; week split caught by the operator).
+- **The artifacts:** m1/checkpoints/CP-002/.
+
+## TEST PLAN ENTRY — 2026-11-08 — one active week for v1 and E1
+
+### HOST
+- **What:** with the candles rewound so the last bar is in 2026-07-06..10, both the v1 baseline and the E1 layer draw on
+  that week; with the candles on any other week, E1 detects that week from the last candle (and refuses by name on the
+  chart when no card exists for it).
+- **How:** Pinebox replay to the week's end; load; shot; then a second week; shot.
+- **PASS criteria:** both layers' drawings sit on the last candle's week in both pictures.
+- **FAIL criteria:** any E1 drawing on a week other than the last candle's.
+- **Status:** PENDING

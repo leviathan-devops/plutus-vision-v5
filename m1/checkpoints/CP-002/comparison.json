@@ -1,0 +1,95 @@
+{
+ "schema": 1,
+ "checkpoint": "CP-002",
+ "asset": "DXY",
+ "week": "2026-07-06",
+ "rows": [
+  {
+   "family": "IP resistance zones",
+   "status": "MATCHED",
+   "evidence": "m1/checkpoints/CP-002/outcome.txt: Z14 101.160-101.287 (oracle rejection band 101.19-101.275) predicted HOLD -> HELD on Jul 7-10; Z12 101.316-101.461 carries the oracle 4H BoM supply, untested (week high 101.275)"
+  },
+  {
+   "family": "resistance bands above the week high",
+   "status": "EXTRA",
+   "evidence": "runtime-state.png: 4 more resistance bands drawn 101.46-101.86, above the week high 101.275 and the 4H BoM"
+  },
+  {
+   "family": "IP equilibrium zone",
+   "status": "MATCHED",
+   "evidence": "m1/checkpoints/CP-002/outcome.txt: Z15 100.997-101.129 predicted HOLD -> HELD; amber band in runtime-state.png"
+  },
+  {
+   "family": "IP support zones",
+   "status": "WRONG",
+   "evidence": "m1/checkpoints/CP-002/outcome.txt: Z16 100.911-100.985 predicted HOLD (ZFP 40) but BROKE on Jul 6 16:00; Z17 BREAK->BROKE, Z18 HOLD->HELD, Z19 HOLD->HELD correct"
+  },
+  {
+   "family": "Liquidity Sweep Zones",
+   "status": "WRONG",
+   "evidence": "runtime-state.png: one ACTIVE LSZ (demand 2026-06-26) at ~100.88; no LSZ under the 100.60 shelf for the Jul 10 sweep to 100.598"
+  },
+  {
+   "family": "canonical 4H/D1 supply/demand zones beyond the v1 baseline",
+   "status": "WRONG",
+   "evidence": "runtime-state.png: the 4H BoM supply box 101.316-101.430 from the Jul 1 23:00 4H candle now matches the oracle box exactly; the oracle 1H BoM demand 100.654-100.748 (Jul 3 07:00) is not drawn"
+  },
+  {
+   "family": "option-strike targets",
+   "status": "WRONG",
+   "evidence": "runtime-state.png: EUR/USD strike lines drawn (101.385, 101.129, 100.874, 100.622) but labels are cut at the right edge and the 1.14 label overlaps the equilibrium label"
+  },
+  {
+   "family": "POI tier and pressure-degree data",
+   "status": "MATCHED",
+   "evidence": "runtime-state.png: every zone label carries degree, score, T1/T2"
+  },
+  {
+   "family": "strength-based ZFP data",
+   "status": "WRONG",
+   "evidence": "m1/checkpoints/CP-002/outcome.txt: 5 of 6 tested zones correct (83.3%), target 95%+; labels show ZFP and the Spring Release rule"
+  },
+  {
+   "family": "BoM/MoM classification",
+   "status": "WRONG",
+   "evidence": "runtime-state.png: 4H BoM supply correct (0X); the oracle 1H BoM demand is absent and the 100.40-100.60 zones read 1H MoM"
+  },
+  {
+   "family": "mitigation and reaction counts",
+   "status": "MATCHED",
+   "evidence": "runtime-state.png: labels carry reaction state and count (e.g. Depleted 3R, Active 1R) and mitigation (0X, 2X)"
+  },
+  {
+   "family": "intra-zone precision levels",
+   "status": "MISSING",
+   "evidence": "m1/src/compose.ts e1ShowIntra defaults to false; none visible"
+  },
+  {
+   "family": "core/spike boundaries where applicable",
+   "status": "MISSING",
+   "evidence": "not visible in runtime-state.png"
+  },
+  {
+   "family": "card/run identity and missing-data status",
+   "status": "UNOBSERVABLE",
+   "evidence": "the E1 table is not visible in the chart capture"
+  },
+  {
+   "family": "v1 baseline and E1 rendered on the same active trading week",
+   "status": "WRONG",
+   "evidence": "operator 2026-11-08 on this render: \"both of the zones are rendered in two completely different places\" - the v1 baseline draws on the newest candles (Nov) because the chart ends there; the E1 layer draws on 2026-07-06 because the composition hardcodes the card week instead of detecting the active week from the last candle"
+  }
+ ],
+ "summary": {
+  "matched": 4,
+  "wrong": 7,
+  "missing": 2,
+  "extra": 1,
+  "unobservable": 1
+ },
+ "visual_sha256": {
+  "m1/checkpoints/CP-002/visual/runtime-state.png": "11cdb8ed7e4d5ebecbb89e8dcfd9b1bd5c37bdedf4db22fda25445af0859ec85"
+ },
+ "outcome_table": "m1/checkpoints/CP-002/outcome.txt",
+ "oracle": "/home/leviathan/Pictures/Jul_6-10_DXY_Gold_Standard (4H BoM supply 101.33-101.40, resistance 101.19-101.275 with the Jul 8 rejection, 1H BoM demand 100.61-100.68 with the Jul 10 reversal from 100.598, 1H MoM 100.84)"
+}

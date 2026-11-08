@@ -133,3 +133,47 @@ Scope: the clean M1 build that restarted from handover 3b69f65 on 2026-11-08.
   reverted the staged CP-001 state. Caught by the staged-file count (36 -> 35) and the state read-back; state rewritten
   and re-staged before the checkpoint commit.
 - **THE LESSON:** a control that shares the index with real work must run in a throwaway clone, not around a stash.
+
+## EN-014 — S/D origin was a fractal swing, not "the candle immediately before the move" (2026-11-08)
+
+- **THE FINDING:** the oracle 4H BoM supply (101.316-101.430, measured from the oracle image's own axis) was not produced.
+- **THE ROOT CAUSE:** scanSd took the origin as the 5-bar swing extreme; canon :1353 takes the SINGLE candle immediately
+  before the move began. The Jul 1 23:00 4H candle precedes the first displacement candle (Jul 2 03:00) after the high.
+- **THE FIX:** the move begins at the first candle after a swing extreme that closes in the move direction with a
+  median-or-larger body (the median measured on the same timeframe's pre-cutoff bars); the origin is the candle before
+  it (m1/src/p5.ts:29).
+- **THE VERIFICATION:** scan output `4H supply BoM 101.316 101.43 2026-07-01T23:00 move 0.758 days 4 mit 0` — the
+  oracle box to the tick; drawn in CP-002 runtime-state.png.
+- **THE LESSON:** the origin is defined by the move, not by the extreme.
+
+## EN-015 — reactions counted on passes; Depleted modifier invented (2026-11-08)
+
+- **THE FINDING:** Z13/Z14 read Depleted 7R and were predicted BREAK; both held.
+- **THE ROOT CAUSE:** (1) every touch-and-leave counted, including passes through the zone; (2) a "+20 Depleted" ZFP
+  modifier that is not in Appendix B.2; (3) reactions counted from a 14-day default instead of the zone's own origin.
+- **THE FIX:** a reaction = enter from one side, leave to the SAME side by >= 0.15 (m1/src/assemble.ts:124); the count
+  starts at the zone origin (the same instant as the box); the invented modifier removed; canon :1159 applied as written:
+  a Depleted zone between price and a deeper BoM inside the week arena, with price travelling toward it, takes the B.1
+  One-Touch midpoint 60% (m1/src/assemble.ts:175).
+- **THE VERIFICATION:** outcome 42.9% -> 83.3% (5/6) with no zone-specific value (m1/checkpoints/CP-002/outcome.txt).
+- **THE LESSON:** every ZFP signal must be a row of Appendix B or a canon sentence; magnitudes are the canon's band midpoints.
+
+## EN-016 — ZFP had no time dimension (2026-11-08)
+
+- **THE FINDING:** Spring Release was a 0-valued placeholder and Cascade was absent.
+- **THE ROOT CAUSE:** both B.2 signals depend on WHEN the zone is tested (after the option expiry; after the nearer zone breaks).
+- **THE FIX:** zones carry `zfpRules` (Spring Release +25 after the driver's expiry instant; Cascade +25 after the nearer
+  same-side IP zone breaks); evaluate.ts applies them at the first-touch time; the chart label prints the rule.
+- **THE VERIFICATION:** Z17 `card 22.5 +25 Spring Release +25 Cascade (Z16 broke)` -> BREAK -> BROKE.
+- **THE LESSON:** a probability that changes during the week is a rule on the card, not a constant.
+
+## EN-017 — v1 baseline and E1 on different weeks; E1 week hardcoded (2026-11-08) — OPERATOR-CAUGHT
+
+- **THE FINDING:** CP-002 shows the v1 baseline's drawings on the newest candles (Nov) and E1 on 2026-07-06.
+- **THE ROOT CAUSE:** the chart was framed by scrolling, but its LAST candle is Nov 6, so v1 (which keys off the last
+  candle) renders there; the E1 layer embeds the card's week timestamps as constants instead of detecting the active
+  week from the last candle.
+- **THE FIX (ordered, in progress):** (1) rewind the CANDLES so the golden week is the last data on the chart (Pinebox
+  replay; nothing after the week exists); (2) the E1 layer detects the active trading week from the last candle and
+  draws the card for THAT week (cards keyed by week Monday; a week with no card is a named on-chart refusal).
+- **THE LESSON:** scrolling moves the view, not the data; the indicator's week is the last candle's week.

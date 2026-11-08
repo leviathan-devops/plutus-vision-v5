@@ -22,13 +22,28 @@ export interface P5Out { swings: Swing[]; minorSwings: Swing[]; orderBlocks: Ord
 
 function wickOf(d: Ohlc, side: 'low' | 'high') { return side === 'low' ? Math.min(d.open, d.close) - d.low : d.high - Math.max(d.open, d.close); }
 
-/** Step 0f / 0g: singular origin candle before a strong directional move (>= minMove, lasting >= minDays sessions). */
+/** Step 0f / 0g: the SINGULAR candle immediately preceding a strong directional move (>= minMove, lasting >= minDays sessions).
+ *  The move begins at the first candle after a swing extreme that closes in the move's direction with a body at least the
+ *  series' median body (a displacement candle, measured on the same timeframe's pre-cutoff bars); the origin candle is the
+ *  one immediately before it (:1353), which may be the swing-extreme candle itself. */
 export function scanSd(bars: Bar[], tf: '4H' | '1H', cutoff: number, minMove = 0.5, minDays = 3): SdZone[] {
   const pre = bars.filter(b => b.time < cutoff); const out: SdZone[] = [];
   const sess = pre.map(b => sessionDate(b.time));
-  for (let i = 2; i + 2 < pre.length; i++) {
+  const bodies = pre.map(b => Math.abs(b.close - b.open)).sort((a, b) => a - b); const medBody = bodies[Math.floor(bodies.length / 2)] ?? 0;
+  const seen = new Set<string>();
+  for (let s = 2; s + 2 < pre.length; s++) {
     for (const side of ['demand', 'supply'] as const) {
-      if (side === 'demand' ? !isSwingLow(pre, i) : !isSwingHigh(pre, i)) continue;
+      if (side === 'demand' ? !isSwingLow(pre, s) : !isSwingHigh(pre, s)) continue;
+      // the displacement candle: first close in the move direction with a median-or-larger body, before price trades
+      // beyond the swing extreme
+      let k = s + 1;
+      for (; k < pre.length; k++) {
+        const b = pre[k];
+        if (side === 'demand' ? b.low < pre[s].low : b.high > pre[s].high) { k = pre.length; break; }
+        if ((side === 'demand' ? b.close > b.open : b.close < b.open) && Math.abs(b.close - b.open) >= medBody) break;
+      }
+      if (k >= pre.length) continue;
+      const i = k - 1; const key = `${side}|${i}`; if (seen.has(key)) continue; seen.add(key);
       // The move (:1352) is measured from the origin candle to the extreme reached before price returns into the
       // origin candle; it "lasts" for the sessions from the origin until that return (or the cutoff if never).
       const o = pre[i]; let ext = side === 'demand' ? o.high : o.low; let left = false; let j = i + 1;
@@ -41,9 +56,7 @@ export function scanSd(bars: Bar[], tf: '4H' | '1H', cutoff: number, minMove = 0
       }
       const move = side === 'demand' ? ext - o.high : o.low - ext;
       const days = new Set(sess.slice(i + 1, j)).size;
-      const next = pre[i + 1];
-      const directional = side === 'demand' ? next.close > next.open && next.close > o.high - (o.high - o.low) / 2 : next.close < next.open && next.close < o.low + (o.high - o.low) / 2;
-      if (move < minMove || days < minDays || !directional) continue;
+      if (move < minMove || days < minDays) continue;
       // BoM (:1148): the origin of a new directional leg. MoM (:1149): "formed during an ongoing move ... price paused
       // here then continued". Mechanically: a prior unbroken same-side zone starts a running leg, and the pullback into
       // this candle retraced less than half of that leg (a pause). A >= 0.5 retracement is a new leg -> BoM.

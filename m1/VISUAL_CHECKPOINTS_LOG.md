@@ -115,3 +115,19 @@ decision (a reset is a ref change the M1 gate grades) — ask, then do it throug
    capture next to the oracle images. The table is the numbers; the opened picture is the verdict.
 5. **Commit every picture with its code** (this log). A change that is not committed cannot be restored, and
    VC-000 is the proof of what that costs.
+
+---
+
+## VC-002 — CP-002 — canon S/D origin, reaction counter, time-dependent ZFP (2026-11-08 23:13 local)
+
+![CP-002 runtime](checkpoints/CP-002/visual/runtime-state.png)
+
+- **Commit:** tag `vc/CP-002` (hash back-filled by the next commit)
+- **Composition:** sha256 `5f1c4641a4777780243c02d4fe0bcbca17896fa7990a6ab5e1cc7253015d54e6` · **Card:** `7f143c2a25e3b58bf65aa59c07df93f85f7c4ed34164651aeaefa890c992ea26`
+- **Frame:** 2026-06-22T04:00Z .. 2026-07-16T14:00Z — framed by panning; the chart DATA ran to 2026-11-06 (see below).
+- **Picture sha256:** `11cdb8ed7e4d5ebecbb89e8dcfd9b1bd5c37bdedf4db22fda25445af0859ec85`
+- **What changed from VC-001:** the 4H BoM supply box 101.316-101.430 from the Jul 1 23:00 candle now equals the oracle
+  box; labels show ZFP, the Spring Release rule and the reaction state; outcome 3/7 -> 5/6 (83.3%).
+- **Operator verdict (verbatim):** "both of the zones are rendered in two completely different places ... They all need
+  to be rendered together" — the v1 baseline draws on the newest candle's week (Nov), E1 on the hardcoded golden week.
+- **Families:** MATCHED 4 · WRONG 7 (incl. the week split) · MISSING 2 · EXTRA 1 · UNOBSERVABLE 1.

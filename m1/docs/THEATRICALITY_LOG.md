@@ -105,3 +105,10 @@ picture, commit the picture with its code.
 | `pinebox load` counts | boxes/labels/lines/tables the script emitted | whether they are on screen or legible |
 | opened capture + oracle | what the chart shows against the operator's expectation | nothing hidden off-frame |
 | the operator | acceptance | — |
+
+## T-06 — a frame scrolled to the golden week standing in for the golden week (2026-11-08) — OPERATOR-CAUGHT
+
+- **The act:** CP-001/CP-002 pictures were framed on 2026-06-22..07-16 by panning, while the chart data ran to Nov 6.
+- **The form:** a picture of the right dates.
+- **The missing substance:** the indicator's state at the golden week; v1 computed to Nov and drew there.
+- **Disposition:** OPERATOR-CAUGHT (F-08). Counter: rewind the candles, never only the view.

@@ -1,5 +1,5 @@
 {
- "sha256": "07bce57fe2a937ffb19bb81256bff0ffe542a5bb5eb27c3dc0d6f1fad3a23af1",
+ "sha256": "7f143c2a25e3b58bf65aa59c07df93f85f7c4ed34164651aeaefa890c992ea26",
  "card": {
   "schema_version": "pv-e1-card/1",
   "asset": "DXY",
@@ -161,18 +161,18 @@
     "audit": [
      "P5 Step 0: D1 sessions 131 (180d) | qualified swings 9 (legacy 0, 180d extension OFF) | minor swings 12",
      "P5 Step 0d: order blocks 5 (high-conviction 4)",
-     "P5 Step 0f/0g: 4H zones 88 (live 2) | 1H zones 154 (live 7)"
+     "P5 Step 0f/0g: 4H zones 92 (live 3) | 1H zones 161 (live 6)"
     ],
     "sd": [
      {
       "tf": "4H",
       "side": "demand",
-      "lo": 99.461,
-      "hi": 99.613,
-      "t": 1781622000000,
-      "date": "2026-06-16T15:00",
-      "move": 2.1869999999999976,
-      "moveDays": 18,
+      "lo": 99.492,
+      "hi": 99.582,
+      "t": 1781665200000,
+      "date": "2026-06-17T03:00",
+      "move": 2.2180000000000035,
+      "moveDays": 17,
       "type": "BoM",
       "mitigations": 0,
       "mitigationTimes": [],
@@ -195,19 +195,19 @@
       "postConsolidation": false
      },
      {
-      "tf": "1H",
-      "side": "demand",
-      "lo": 99.491,
-      "hi": 99.536,
-      "t": 1781658000000,
-      "date": "2026-06-17T01:00",
-      "move": 2.263999999999996,
-      "moveDays": 14,
+      "tf": "4H",
+      "side": "supply",
+      "lo": 101.316,
+      "hi": 101.43,
+      "t": 1782946800000,
+      "date": "2026-07-01T23:00",
+      "move": 0.7579999999999956,
+      "moveDays": 4,
       "type": "BoM",
       "mitigations": 0,
       "mitigationTimes": [],
       "brokenAt": null,
-      "postConsolidation": true
+      "postConsolidation": false
      },
      {
       "tf": "1H",
@@ -524,7 +524,13 @@
     "optionDriver": null,
     "highDensity": false,
     "tight": false,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z2",
@@ -573,7 +579,13 @@
     "optionDriver": null,
     "highDensity": false,
     "tight": false,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z3",
@@ -622,7 +634,13 @@
     "optionDriver": null,
     "highDensity": false,
     "tight": false,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z4",
@@ -671,7 +689,13 @@
     "optionDriver": null,
     "highDensity": false,
     "tight": false,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z5",
@@ -745,7 +769,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z6",
@@ -805,7 +835,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z7",
@@ -867,7 +903,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z8",
@@ -1024,6 +1066,12 @@
      "hi": 101.8,
      "date": "2026-06-24T11:00",
      "mitigations": 0
+    },
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z9"
     }
    },
    {
@@ -1161,12 +1209,17 @@
     "poiTier": null,
     "zoneType": "Soft Wall",
     "zfpBase": 40,
-    "zfpMods": [],
-    "zfp": 40,
+    "zfpMods": [
+     {
+      "signal": "Unmitigated BoM, virgin: guaranteed reaction (:1150) -> B.1 floor 5%",
+      "value": -35
+     }
+    ],
+    "zfp": 5,
     "breakoutRisk": false,
     "measuredMove": null,
-    "reactionsPreCutoff": 1,
-    "reactionState": "Active",
+    "reactionsPreCutoff": 0,
+    "reactionState": "Virgin",
     "intra": [
      {
       "price": 101.702,
@@ -1196,6 +1249,12 @@
      "hi": 101.8,
      "date": "2026-06-24T11:00",
      "mitigations": 0
+    },
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z10"
     }
    },
    {
@@ -1277,17 +1336,12 @@
     "poiTier": null,
     "zoneType": "Soft Wall",
     "zfpBase": 40,
-    "zfpMods": [
-     {
-      "signal": "Depleted: 3+ reactions (:1159)",
-      "value": 20
-     }
-    ],
-    "zfp": 60,
-    "breakoutRisk": true,
-    "measuredMove": 101.67676333333333,
-    "reactionsPreCutoff": 3,
-    "reactionState": "Depleted",
+    "zfpMods": [],
+    "zfp": 40,
+    "breakoutRisk": false,
+    "measuredMove": null,
+    "reactionsPreCutoff": 2,
+    "reactionState": "Active",
     "intra": [
      {
       "price": 101.61159026,
@@ -1312,6 +1366,12 @@
      "hi": 101.8,
      "date": "2026-06-24T11:00",
      "mitigations": 0
+    },
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z11"
     }
    },
    {
@@ -1482,16 +1542,11 @@
     "poiTier": 1,
     "zoneType": "Soft Wall",
     "zfpBase": 40,
-    "zfpMods": [
-     {
-      "signal": "Depleted: 3+ reactions (:1159)",
-      "value": 20
-     }
-    ],
-    "zfp": 60,
-    "breakoutRisk": true,
-    "measuredMove": 101.558,
-    "reactionsPreCutoff": 5,
+    "zfpMods": [],
+    "zfp": 40,
+    "breakoutRisk": false,
+    "measuredMove": null,
+    "reactionsPreCutoff": 3,
     "reactionState": "Depleted",
     "intra": [
      {
@@ -1522,12 +1577,18 @@
      "hi": 101.8,
      "date": "2026-06-24T11:00",
      "mitigations": 0
+    },
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z12"
     }
    },
    {
     "id": "Z12",
     "origin": 1782939600000,
-    "lo": 101.32643333333334,
+    "lo": 101.316,
     "hi": 101.46133333333333,
     "role": "resistance",
     "name": "RESISTANCE CEILING",
@@ -1584,6 +1645,20 @@
       "total": 8,
       "why": [
        "technical 2 (8 technical within 0.03)",
+       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "structural 2",
+       "regime 2 (consolidation)"
+      ]
+     },
+     {
+      "id": "P5|sd|4H|supply|2026-07-01T23:00|hi",
+      "pillar": "P5",
+      "kind": "sd-4h",
+      "price": 101.43,
+      "label": "4H BoM supply 0X 2026-07-01T23:00",
+      "total": 8,
+      "why": [
+       "technical 2 (5 technical within 0.03)",
        "options 2 (EURUSD 1.135 €1.5bn 07-07)",
        "structural 2",
        "regime 2 (consolidation)"
@@ -1799,9 +1874,23 @@
        "structural 1",
        "regime 2 (consolidation)"
       ]
+     },
+     {
+      "id": "P5|sd|4H|supply|2026-07-01T23:00|lo",
+      "pillar": "P5",
+      "kind": "sd-4h",
+      "price": 101.316,
+      "label": "4H BoM supply 0X 2026-07-01T23:00",
+      "total": 7,
+      "why": [
+       "technical 2 (6 technical within 0.03)",
+       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "structural 1",
+       "regime 2 (consolidation)"
+      ]
      }
     ],
-    "score": 10.5,
+    "score": 11.5,
     "degree": "HEAVY",
     "dims": {
      "technical": 2,
@@ -1814,26 +1903,22 @@
     "bonus": 0,
     "modifiers": [
      "POST-CONSOLIDATION ZONE +1",
-     "POI Tier 2 IP-only +1"
+     "POI Tier 1 Confluent +2"
     ],
-    "poiTier": 2,
+    "poiTier": 1,
     "zoneType": "Standard Wall",
     "zfpBase": 22.5,
     "zfpMods": [
      {
-      "signal": "Spring Release after 2026-07-07 10am NY expiry (B.2) - applies once expired",
-      "value": 0
-     },
-     {
-      "signal": "Depleted: 3+ reactions (:1159)",
-      "value": 20
+      "signal": "Unmitigated BoM, virgin: guaranteed reaction (:1150) -> B.1 floor 5%",
+      "value": -17.5
      }
     ],
-    "zfp": 42.5,
+    "zfp": 5,
     "breakoutRisk": false,
     "measuredMove": null,
-    "reactionsPreCutoff": 7,
-    "reactionState": "Depleted",
+    "reactionsPreCutoff": 0,
+    "reactionState": "Virgin",
     "intra": [
      {
       "price": 101.39750000000001,
@@ -1841,19 +1926,19 @@
       "type": "Intra-Zone Mid-Anchor"
      },
      {
-      "price": 101.37796513333333,
+      "price": 101.37151733333333,
       "source": "zone fib 0.382",
       "type": "Intra-Zone Precision Floor"
      },
      {
-      "price": 101.40980153333334,
+      "price": 101.405816,
       "source": "zone fib 0.618",
       "type": "Intra-Zone Precision Ceiling"
      },
      {
       "price": 101.406,
       "source": "prior close 2026-07-01",
-      "type": "Intra-Zone Mid-Anchor"
+      "type": "Intra-Zone Precision Ceiling"
      }
     ],
     "optionDriver": "EURUSD 1.135 €1.5bn 07-07",
@@ -1861,19 +1946,25 @@
     "tight": true,
     "postConsolidation": true,
     "bom": {
-     "tf": "1H",
+     "tf": "4H",
      "type": "BoM",
      "side": "supply",
-     "lo": 101.365,
+     "lo": 101.316,
      "hi": 101.43,
-     "date": "2026-07-02T00:00",
+     "date": "2026-07-01T23:00",
      "mitigations": 0
+    },
+    "zfpRules": {
+     "springReleaseAt": 1783432800000,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z13"
     }
    },
    {
     "id": "Z13",
-    "origin": 1782115200000,
-    "lo": 101.23611111111113,
+    "origin": 1783108800000,
+    "lo": 101.30866666666667,
     "hi": 101.30866666666667,
     "role": "resistance",
     "name": "UPPER RESISTANCE",
@@ -1892,7 +1983,76 @@
        "regime 2 (consolidation)",
        "legacy +0.5"
       ]
+     }
+    ],
+    "score": 9.5,
+    "degree": "MODERATE-HEAVY",
+    "dims": {
+     "technical": 2,
+     "options": 0,
+     "analyst": 0,
+     "structural": 1,
+     "psychological": 0,
+     "regime": 2
+    },
+    "bonus": 0,
+    "modifiers": [
+     "POI Tier 1 Confluent +2"
+    ],
+    "poiTier": 1,
+    "zoneType": "One-Touch",
+    "zfpBase": 60,
+    "zfpMods": [
+     {
+      "signal": "Unmitigated BoM, virgin: guaranteed reaction (:1150) -> B.1 floor 5%",
+      "value": -55
+     }
+    ],
+    "zfp": 5,
+    "breakoutRisk": false,
+    "measuredMove": null,
+    "reactionsPreCutoff": 0,
+    "reactionState": "Virgin",
+    "intra": [
+     {
+      "price": 101.30866666704867,
+      "source": "zone fib 0.382",
+      "type": "Intra-Zone Precision Floor"
      },
+     {
+      "price": 101.30866666728467,
+      "source": "zone fib 0.618",
+      "type": "Intra-Zone Precision Ceiling"
+     }
+    ],
+    "optionDriver": null,
+    "highDensity": true,
+    "tight": true,
+    "postConsolidation": false,
+    "bom": {
+     "tf": "4H",
+     "type": "BoM",
+     "side": "supply",
+     "lo": 101.316,
+     "hi": 101.43,
+     "date": "2026-07-01T23:00",
+     "mitigations": 0
+    },
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z14"
+    }
+   },
+   {
+    "id": "Z14",
+    "origin": 1782853200000,
+    "lo": 101.16,
+    "hi": 101.28665000000001,
+    "role": "resistance",
+    "name": "RESISTANCE CEILING",
+    "members": [
      {
       "id": "P1|D:2026-07-01|camarilla|S3",
       "pillar": "P1",
@@ -1941,9 +2101,10 @@
       "kind": "round",
       "price": 101.25,
       "label": "quarter 101.25",
-      "total": 5,
+      "total": 6,
       "why": [
        "technical 2 (5 technical within 0.03)",
+       "structural 1",
        "psychological 1 (101.25)",
        "regime 2 (consolidation)"
       ]
@@ -1954,9 +2115,10 @@
       "kind": "pivot",
       "price": 101.23932500000001,
       "label": "H:2026-06-15 camarilla R3",
-      "total": 5.5,
+      "total": 6.5,
       "why": [
        "technical 2 (6 technical within 0.03)",
+       "structural 1",
        "psychological 1 (101.25)",
        "regime 2 (consolidation)",
        "legacy +0.5"
@@ -1968,82 +2130,25 @@
       "kind": "ma",
       "price": 101.23611111111113,
       "label": "SMA9 (D1)",
-      "total": 5,
+      "total": 6,
       "why": [
        "technical 2 (6 technical within 0.03)",
+       "structural 1",
        "psychological 1 (101.25)",
        "regime 2 (consolidation)"
       ]
-     }
-    ],
-    "score": 8.5,
-    "degree": "MODERATE-HEAVY",
-    "dims": {
-     "technical": 2,
-     "options": 0,
-     "analyst": 0,
-     "structural": 1,
-     "psychological": 0,
-     "regime": 2
-    },
-    "bonus": 0,
-    "modifiers": [
-     "POI Tier 2 IP-only +1"
-    ],
-    "poiTier": 2,
-    "zoneType": "Soft Wall",
-    "zfpBase": 40,
-    "zfpMods": [
-     {
-      "signal": "Depleted: 3+ reactions (:1159)",
-      "value": 20
-     }
-    ],
-    "zfp": 60,
-    "breakoutRisk": true,
-    "measuredMove": 101.3215977777778,
-    "reactionsPreCutoff": 7,
-    "reactionState": "Depleted",
-    "intra": [
-     {
-      "price": 101.26382733333334,
-      "source": "zone fib 0.382",
-      "type": "Intra-Zone Precision Floor"
      },
-     {
-      "price": 101.28095044444446,
-      "source": "zone fib 0.618",
-      "type": "Intra-Zone Precision Ceiling"
-     },
-     {
-      "price": 101.25,
-      "source": "round number",
-      "type": "Intra-Zone Precision Floor"
-     }
-    ],
-    "optionDriver": null,
-    "highDensity": true,
-    "tight": true,
-    "postConsolidation": false
-   },
-   {
-    "id": "Z14",
-    "origin": 1782853200000,
-    "lo": 101.16,
-    "hi": 101.22318,
-    "role": "resistance",
-    "name": "UPPER RESISTANCE",
-    "members": [
      {
       "id": "P6|fib|swing:2026-06-26-2026-06-24|0.236",
       "pillar": "P6",
       "kind": "fib",
       "price": 101.22318,
       "label": "fib swing 2026-06-24->2026-06-26 0.236",
-      "total": 7,
+      "total": 8,
       "why": [
        "technical 2 (6 technical within 0.03)",
        "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "structural 1",
        "psychological 1 (101.25)",
        "regime 2 (consolidation)"
       ]
@@ -2054,10 +2159,11 @@
       "kind": "pivot",
       "price": 101.22154533333335,
       "label": "D:2026-07-01 fibonacci S1",
-      "total": 7,
+      "total": 8,
       "why": [
        "technical 2 (7 technical within 0.03)",
        "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "structural 1",
        "psychological 1 (101.25)",
        "regime 2 (consolidation)"
       ]
@@ -2173,42 +2279,37 @@
       ]
      }
     ],
-    "score": 8.5,
-    "degree": "MODERATE-HEAVY",
+    "score": 10,
+    "degree": "HEAVY",
     "dims": {
      "technical": 2,
      "options": 0,
      "analyst": 0,
      "structural": 1,
-     "psychological": 0,
+     "psychological": 1,
      "regime": 2
     },
     "bonus": 0,
     "modifiers": [
-     "POI Tier 2 IP-only +1"
+     "POI Tier 1 Confluent +2"
     ],
-    "poiTier": 2,
+    "poiTier": 1,
     "zoneType": "Soft Wall",
     "zfpBase": 40,
-    "zfpMods": [
-     {
-      "signal": "Depleted: 3+ reactions (:1159)",
-      "value": 20
-     }
-    ],
-    "zfp": 60,
-    "breakoutRisk": true,
-    "measuredMove": 101.25411858444403,
-    "reactionsPreCutoff": 7,
+    "zfpMods": [],
+    "zfp": 40,
+    "breakoutRisk": false,
+    "measuredMove": null,
+    "reactionsPreCutoff": 3,
     "reactionState": "Depleted",
     "intra": [
      {
-      "price": 101.18413475999999,
+      "price": 101.2083803,
       "source": "zone fib 0.382",
       "type": "Intra-Zone Precision Floor"
      },
      {
-      "price": 101.19904524,
+      "price": 101.2382697,
       "source": "zone fib 0.618",
       "type": "Intra-Zone Precision Ceiling"
      },
@@ -2216,12 +2317,32 @@
       "price": 101.16,
       "source": "prior close 2026-06-30",
       "type": "Intra-Zone Precision Floor"
+     },
+     {
+      "price": 101.25,
+      "source": "round number",
+      "type": "Intra-Zone Precision Ceiling"
      }
     ],
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "bom": {
+     "tf": "4H",
+     "type": "BoM",
+     "side": "supply",
+     "lo": 101.316,
+     "hi": 101.43,
+     "date": "2026-07-01T23:00",
+     "mitigations": 0
+    },
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z15",
@@ -2520,20 +2641,11 @@
     "poiTier": 2,
     "zoneType": "Standard Wall",
     "zfpBase": 22.5,
-    "zfpMods": [
-     {
-      "signal": "Spring Release after 2026-07-06 10am NY expiry (B.2) - applies once expired",
-      "value": 0
-     },
-     {
-      "signal": "Depleted: 3+ reactions (:1159)",
-      "value": 20
-     }
-    ],
-    "zfp": 42.5,
+    "zfpMods": [],
+    "zfp": 22.5,
     "breakoutRisk": false,
     "measuredMove": null,
-    "reactionsPreCutoff": 6,
+    "reactionsPreCutoff": 3,
     "reactionState": "Depleted",
     "intra": [
      {
@@ -2560,7 +2672,13 @@
     "optionDriver": "EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07",
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": 1783346400000,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z16",
@@ -2799,16 +2917,11 @@
     "poiTier": 2,
     "zoneType": "Soft Wall",
     "zfpBase": 40,
-    "zfpMods": [
-     {
-      "signal": "Depleted: 3+ reactions (:1159)",
-      "value": 20
-     }
-    ],
-    "zfp": 60,
-    "breakoutRisk": true,
-    "measuredMove": 100.89906883827308,
-    "reactionsPreCutoff": 4,
+    "zfpMods": [],
+    "zfp": 40,
+    "breakoutRisk": false,
+    "measuredMove": null,
+    "reactionsPreCutoff": 3,
     "reactionState": "Depleted",
     "intra": [
      {
@@ -2826,6 +2939,12 @@
     "highDensity": true,
     "tight": true,
     "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    },
     "core": {
      "lo": 100.91138666666667,
      "hi": 100.984975
@@ -2946,17 +3065,12 @@
     "poiTier": 2,
     "zoneType": "Standard Wall",
     "zfpBase": 22.5,
-    "zfpMods": [
-     {
-      "signal": "Spring Release after 2026-07-06 10am NY expiry (B.2) - applies once expired",
-      "value": 0
-     }
-    ],
+    "zfpMods": [],
     "zfp": 22.5,
     "breakoutRisk": false,
     "measuredMove": null,
-    "reactionsPreCutoff": 2,
-    "reactionState": "Active",
+    "reactionsPreCutoff": 0,
+    "reactionState": "Virgin",
     "intra": [
      {
       "price": 100.86641446814812,
@@ -2982,7 +3096,13 @@
     "optionDriver": "EURUSD 1.145 €1.4bn 07-06",
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": 1783346400000,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z16"
+    }
    },
    {
     "id": "Z18",
@@ -3193,15 +3313,10 @@
     "poiTier": 2,
     "zoneType": "Soft Wall",
     "zfpBase": 40,
-    "zfpMods": [
-     {
-      "signal": "Depleted: 3+ reactions (:1159)",
-      "value": 20
-     }
-    ],
-    "zfp": 60,
-    "breakoutRisk": true,
-    "measuredMove": 100.73789395132863,
+    "zfpMods": [],
+    "zfp": 40,
+    "breakoutRisk": false,
+    "measuredMove": null,
     "reactionsPreCutoff": 3,
     "reactionState": "Depleted",
     "intra": [
@@ -3225,6 +3340,12 @@
     "highDensity": true,
     "tight": true,
     "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z17"
+    },
     "core": {
      "lo": 100.7456666666667,
      "hi": 100.84234166666667
@@ -3472,21 +3593,12 @@
     "poiTier": 2,
     "zoneType": "Standard Wall",
     "zfpBase": 22.5,
-    "zfpMods": [
-     {
-      "signal": "Spring Release after 2026-07-06 10am NY expiry (B.2) - applies once expired",
-      "value": 0
-     },
-     {
-      "signal": "Depleted: 3+ reactions (:1159)",
-      "value": 20
-     }
-    ],
-    "zfp": 42.5,
+    "zfpMods": [],
+    "zfp": 22.5,
     "breakoutRisk": false,
     "measuredMove": null,
-    "reactionsPreCutoff": 3,
-    "reactionState": "Depleted",
+    "reactionsPreCutoff": 2,
+    "reactionState": "Active",
     "intra": [
      {
       "price": 100.63190678333333,
@@ -3511,6 +3623,12 @@
      "hi": 100.693,
      "date": "2026-06-18T14:00",
      "mitigations": 2
+    },
+    "zfpRules": {
+     "springReleaseAt": 1783346400000,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z18"
     },
     "core": {
      "lo": 100.592825,
@@ -3623,7 +3741,7 @@
     "zfp": 40,
     "breakoutRisk": false,
     "measuredMove": null,
-    "reactionsPreCutoff": 2,
+    "reactionsPreCutoff": 1,
     "reactionState": "Active",
     "intra": [
      {
@@ -3654,6 +3772,12 @@
      "hi": 100.693,
      "date": "2026-06-18T14:00",
      "mitigations": 2
+    },
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z19"
     },
     "core": {
      "lo": 100.5,
@@ -3778,7 +3902,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z22",
@@ -3863,8 +3993,8 @@
     "zfp": 40,
     "breakoutRisk": false,
     "measuredMove": null,
-    "reactionsPreCutoff": 1,
-    "reactionState": "Active",
+    "reactionsPreCutoff": 0,
+    "reactionState": "Virgin",
     "intra": [
      {
       "price": 100.36379839466667,
@@ -3889,6 +4019,12 @@
      "hi": 100.336,
      "date": "2026-06-18T06:00",
      "mitigations": 0
+    },
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z20"
     },
     "core": {
      "lo": 100.336,
@@ -4082,7 +4218,7 @@
     "zfp": 40,
     "breakoutRisk": false,
     "measuredMove": null,
-    "reactionsPreCutoff": 2,
+    "reactionsPreCutoff": 1,
     "reactionState": "Active",
     "intra": [
      {
@@ -4113,6 +4249,12 @@
      "hi": 100.336,
      "date": "2026-06-18T06:00",
      "mitigations": 0
+    },
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z22"
     },
     "core": {
      "lo": 100.206,
@@ -4235,17 +4377,12 @@
     "poiTier": 2,
     "zoneType": "Standard Wall",
     "zfpBase": 22.5,
-    "zfpMods": [
-     {
-      "signal": "Spring Release after 2026-07-06 10am NY expiry (B.2) - applies once expired",
-      "value": 0
-     }
-    ],
+    "zfpMods": [],
     "zfp": 22.5,
     "breakoutRisk": false,
     "measuredMove": null,
-    "reactionsPreCutoff": 1,
-    "reactionState": "Active",
+    "reactionsPreCutoff": 0,
+    "reactionState": "Virgin",
     "intra": [
      {
       "price": 100.04623877370328,
@@ -4266,7 +4403,13 @@
     "optionDriver": "EURUSD 1.16 €1.0bn 07-06",
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": 1783346400000,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z23"
+    }
    },
    {
     "id": "Z25",
@@ -4340,7 +4483,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z26",
@@ -4472,8 +4621,8 @@
     "zfp": 40,
     "breakoutRisk": false,
     "measuredMove": null,
-    "reactionsPreCutoff": 1,
-    "reactionState": "Active",
+    "reactionsPreCutoff": 0,
+    "reactionState": "Virgin",
     "intra": [
      {
       "price": 99.74644975,
@@ -4504,6 +4653,12 @@
      "date": "2026-06-17T17:00",
      "mitigations": 0
     },
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z24"
+    },
     "core": {
      "lo": 99.704,
      "hi": 99.81512500000001
@@ -4515,8 +4670,8 @@
    },
    {
     "id": "Z27",
-    "origin": 1781622000000,
-    "lo": 99.613,
+    "origin": 1781715600000,
+    "lo": 99.634,
     "hi": 99.634,
     "role": "support",
     "name": "MID-RANGE SUPPORT",
@@ -4530,19 +4685,6 @@
       "total": 4,
       "why": [
        "technical 1 (0 technical within 0.03)",
-       "structural 1",
-       "regime 2 (consolidation, in path)"
-      ]
-     },
-     {
-      "id": "P5|sd|4H|demand|2026-06-16T15:00|hi",
-      "pillar": "P5",
-      "kind": "sd-4h",
-      "price": 99.613,
-      "label": "4H BoM demand 0X 2026-06-16T15:00",
-      "total": 4,
-      "why": [
-       "technical 1 (1 technical within 0.03)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -4560,8 +4702,7 @@
     },
     "bonus": 0,
     "modifiers": [
-     "POST-CONSOLIDATION ZONE +1",
-     "POI Tier 3: 4H-only level (informational)"
+     "POST-CONSOLIDATION ZONE +1"
     ],
     "poiTier": null,
     "zoneType": "One-Touch",
@@ -4569,28 +4710,34 @@
     "zfpMods": [],
     "zfp": 60,
     "breakoutRisk": true,
-    "measuredMove": 99.543,
-    "reactionsPreCutoff": 2,
-    "reactionState": "Active",
+    "measuredMove": 99.56400000000001,
+    "reactionsPreCutoff": 0,
+    "reactionState": "Virgin",
     "intra": [],
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
     "postConsolidation": true,
     "bom": {
-     "tf": "4H",
-     "type": "BoM",
+     "tf": "1H",
+     "type": "MoM",
      "side": "demand",
-     "lo": 99.461,
-     "hi": 99.613,
-     "date": "2026-06-16T15:00",
+     "lo": 99.634,
+     "hi": 99.704,
+     "date": "2026-06-17T17:00",
      "mitigations": 0
+    },
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
     }
    },
    {
     "id": "Z28",
     "origin": 1779314400000,
-    "lo": 99.461,
+    "lo": 99.492,
     "hi": 99.59333333333335,
     "role": "support",
     "name": "KEY SUPPORT BAND",
@@ -4601,6 +4748,19 @@
       "kind": "pivot",
       "price": 99.59333333333335,
       "label": "D:2026-07-02 classic S3",
+      "total": 4,
+      "why": [
+       "technical 1 (1 technical within 0.03)",
+       "structural 1",
+       "regime 2 (consolidation, in path)"
+      ]
+     },
+     {
+      "id": "P5|sd|4H|demand|2026-06-17T03:00|hi",
+      "pillar": "P5",
+      "kind": "sd-4h",
+      "price": 99.582,
+      "label": "4H BoM demand 0X 2026-06-17T03:00",
       "total": 4,
       "why": [
        "technical 1 (1 technical within 0.03)",
@@ -4640,19 +4800,6 @@
       "kind": "lsz",
       "price": 99.544,
       "label": "LSZ supply 2026-05-28",
-      "total": 7,
-      "why": [
-       "technical 2 (2 technical within 0.03)",
-       "structural 1",
-       "regime 2 (consolidation, in path)"
-      ]
-     },
-     {
-      "id": "P5|sd|1H|demand|2026-06-17T01:00|hi",
-      "pillar": "P5",
-      "kind": "sd-1h",
-      "price": 99.536,
-      "label": "1H BoM demand 0X 2026-06-17T01:00",
       "total": 7,
       "why": [
        "technical 2 (2 technical within 0.03)",
@@ -4746,6 +4893,20 @@
       ]
      },
      {
+      "id": "P5|sd|4H|demand|2026-06-17T03:00|lo",
+      "pillar": "P5",
+      "kind": "sd-4h",
+      "price": 99.492,
+      "label": "4H BoM demand 0X 2026-06-17T03:00",
+      "total": 7,
+      "why": [
+       "technical 1 (0 technical within 0.03)",
+       "structural 1",
+       "psychological 2 (99.50)",
+       "regime 2 (consolidation, in path)"
+      ]
+     },
+     {
       "id": "P5|sd|1H|demand|2026-06-17T05:00|lo",
       "pillar": "P5",
       "kind": "sd-1h",
@@ -4756,33 +4917,6 @@
        "technical 1 (0 technical within 0.03)",
        "structural 1",
        "psychological 2 (99.50)",
-       "regime 2 (consolidation, in path)"
-      ]
-     },
-     {
-      "id": "P5|sd|1H|demand|2026-06-17T01:00|lo",
-      "pillar": "P5",
-      "kind": "sd-1h",
-      "price": 99.491,
-      "label": "1H BoM demand 0X 2026-06-17T01:00",
-      "total": 7,
-      "why": [
-       "technical 1 (0 technical within 0.03)",
-       "structural 1",
-       "psychological 2 (99.50)",
-       "regime 2 (consolidation, in path)"
-      ]
-     },
-     {
-      "id": "P5|sd|4H|demand|2026-06-16T15:00|lo",
-      "pillar": "P5",
-      "kind": "sd-4h",
-      "price": 99.461,
-      "label": "4H BoM demand 0X 2026-06-16T15:00",
-      "total": 5,
-      "why": [
-       "technical 2 (2 technical within 0.03)",
-       "structural 1",
        "regime 2 (consolidation, in path)"
       ]
      }
@@ -4809,26 +4943,21 @@
     "zfp": 40,
     "breakoutRisk": false,
     "measuredMove": null,
-    "reactionsPreCutoff": 2,
+    "reactionsPreCutoff": 1,
     "reactionState": "Active",
     "intra": [
-     {
-      "price": 99.5135,
-      "source": "1H zone 2026-06-17T01:00",
-      "type": "Intra-Zone Precision Floor"
-     },
      {
       "price": 99.51,
       "source": "1H zone 2026-06-17T05:00",
       "type": "Intra-Zone Precision Floor"
      },
      {
-      "price": 99.51155133333334,
+      "price": 99.53070933333335,
       "source": "zone fib 0.382",
       "type": "Intra-Zone Precision Floor"
      },
      {
-      "price": 99.542782,
+      "price": 99.554624,
       "source": "zone fib 0.618",
       "type": "Intra-Zone Precision Ceiling"
      },
@@ -4846,18 +4975,24 @@
      "tf": "4H",
      "type": "BoM",
      "side": "demand",
-     "lo": 99.461,
-     "hi": 99.613,
-     "date": "2026-06-16T15:00",
+     "lo": 99.492,
+     "hi": 99.582,
+     "date": "2026-06-17T03:00",
      "mitigations": 0
     },
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z26"
+    },
     "core": {
-     "lo": 99.462,
+     "lo": 99.492,
      "hi": 99.59333333333335
     },
     "spike": {
      "lo": 99.44,
-     "hi": 99.462
+     "hi": 99.492
     }
    },
    {
@@ -5033,10 +5168,16 @@
      "tf": "4H",
      "type": "BoM",
      "side": "demand",
-     "lo": 99.461,
-     "hi": 99.613,
-     "date": "2026-06-16T15:00",
+     "lo": 99.492,
+     "hi": 99.582,
+     "date": "2026-06-17T03:00",
      "mitigations": 0
+    },
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z28"
     },
     "core": {
      "lo": 99.462,
@@ -5094,7 +5235,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z31",
@@ -5242,7 +5389,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z29"
+    }
    },
    {
     "id": "Z32",
@@ -5291,7 +5444,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z33",
@@ -5372,7 +5531,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z31"
+    }
    },
    {
     "id": "Z34",
@@ -5447,7 +5612,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z35",
@@ -5535,7 +5706,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z36",
@@ -5620,7 +5797,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z37",
@@ -5668,7 +5851,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z38",
@@ -5741,7 +5930,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z39",
@@ -5790,7 +5985,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z40",
@@ -5886,7 +6087,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": "Z33"
+    }
    },
    {
     "id": "Z41",
@@ -5946,7 +6153,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z42",
@@ -6019,7 +6232,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    },
    {
     "id": "Z43",
@@ -6091,7 +6310,13 @@
     "optionDriver": null,
     "highDensity": true,
     "tight": true,
-    "postConsolidation": false
+    "postConsolidation": false,
+    "zfpRules": {
+     "springReleaseAt": null,
+     "springRelease": 25,
+     "cascade": 25,
+     "cascadeAfter": null
+    }
    }
   ],
   "gap_fills": [
@@ -6159,7 +6384,7 @@
   ],
   "audit": [
    "Zone Synthesis Re-verification: 43 zones verified | 6 zones corrected | 37 zones unchanged",
-   "zones 43: EXTREME 1, HEAVY 3, MODERATE-HEAVY 11, MODERATE 7, LIGHT 14, MINIMAL 7"
+   "zones 43: EXTREME 1, HEAVY 4, MODERATE-HEAVY 10, MODERATE 7, LIGHT 14, MINIMAL 7"
   ],
   "render_policy": {
    "synthesis": "MODERATE and above",

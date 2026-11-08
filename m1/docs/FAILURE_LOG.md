@@ -100,3 +100,13 @@ is committed with its code in one checkpoint commit (gates/commit_gate.py:199 ch
 | F-07 | accuracy below target | OPEN |
 
 Operator-caught count this build: 3 (F-02, F-03, F-06). The number to drive to zero.
+
+### F-08 — v1 and E1 rendered on two different weeks; E1 week hardcoded (2026-11-08) — OPERATOR-CAUGHT
+
+- **What happened (operator, verbatim):** "In case you haven't noticed, both of the zones are rendered in two completely different places. Why is that? We have the V1 baseline from the checkpoint. It's rendered on the most recent candles, and then we have the other side of the coin, which is the prompt version of the E1 zones, and that's rendered on the Golden Week ... They all need to be rendered together, not in two completely different fucking places."
+"you need to on the Pine IDE rewind the candles to the golden week so that anything past the golden week doesn't yet exist on the chart because it's not rendered ... the indicator needs to not be hard-coded to a specific week ... The indicator needs to Detect based on the most recent candle what is the trading week and render the zones for that trading week's relevance. The V1 baseline is already doing this correctly. And right now your other E1 zones for the prompt based Canon, you have it hard coded to the golden week ... Write this into the Canon docs so you don't forget."
+- **Found:** operator, on the CP-002 render.
+- **Root cause:** DEBUG_LOG EN-017 — scrolling instead of rewinding the candles; E1 timestamps baked from the card.
+- **Impact:** the v1 + E1 composition could not be judged as one map; the R-15 "auto-detect any trading week" rule was
+  violated by the E1 layer.
+- **Disposition:** OPEN — fix in progress (rewind via Pinebox replay; E1 week detection from the last candle).

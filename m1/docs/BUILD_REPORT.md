@@ -104,3 +104,11 @@ pick out this specific screenshot, restore it".
 - one checkpoint commit = source + card + composition + PNGs + checkpoint.json + comparison.json + state.json;
 - tag `vc/<id>` on every checkpoint commit; the next commit back-fills the hash in the rolodex;
 - every operator screenshot of the runtime is stored with the runtime capture of the same composition.
+
+## 2026-11-08 — CP-002 canon S/D origin, canon reaction counter, time-dependent ZFP (visual checkpoint)
+
+**The built:** p5.ts origin rule (EN-014); assemble.ts reaction counter, Depleted-before-BoM rule, zfpRules (EN-015/016);
+evaluate.ts applies time-dependent rules at the first touch; compose.ts labels carry ZFP rule + reaction state.
+**The evidence:** composition sha256 5f1c4641a4777780243c02d4fe0bcbca17896fa7990a6ab5e1cc7253015d54e6; card sha256 7f143c2a25e3b58bf65aa59c07df93f85f7c4ed34164651aeaefa890c992ea26; outcome 5/6 (83.3%);
+the 4H BoM supply box equals the oracle box (101.316-101.430, Jul 1 23:00 4H candle).
+**The honest notes:** the operator caught the week split (F-08): v1 on Nov, E1 on Jul 6. CP-002 records it as a WRONG row.
