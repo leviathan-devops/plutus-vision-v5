@@ -1,0 +1,3071 @@
+{
+ "schema": "trident-e1/1",
+ "pair": "DXY",
+ "target_week": "2026-07-13",
+ "chart_week": "2026-07-13",
+ "anchor": {
+  "from": "chart_last_bar",
+  "mon": 1783900800000,
+  "fri": 1784246400000,
+  "tsL": 1782691200000,
+  "tsR": 1786060800000,
+  "tsMid": 1784376000000
+ },
+ "spot": 101.062,
+ "data_as_of": "2026-10-09",
+ "sources": {
+  "EXTRACT_ohlc": {
+   "status": "OK",
+   "source": "local_fixture",
+   "detail": "fixtures/bars/2026-07-06.json \u00b7 DXY 1H \u00b7 382 bars \u00b7 validated against the documented prints in the golden cascade"
+  },
+  "P1_pivots": {
+   "status": "OK",
+   "detail": "12/12 pivot sets PASS the mandatory formula+symmetry+sanity+range verification (4 timeframes x 3 variants)",
+   "sets": 12,
+   "legacy_bonus_levels": 0,
+   "trail": [
+    "Pivot Verification: W CLASSIC \u2014 H=101.27500 L=100.59800 C=100.96500 | PP=100.94600 R1=101.29400 S1=100.61700 | FORMULA: PASS | R1>PP>S1: PASS | RANGE CHECK: PASS",
+    "Pivot Verification: W FIB \u2014 H=101.27500 L=100.59800 C=100.96500 | PP=100.94600 R1=101.20461 S1=100.68739 | FORMULA: PASS | R1>PP>S1: PASS | RANGE CHECK: PASS",
+    "Pivot Verification: W CAMARILLA \u2014 H=101.27500 L=100.59800 C=100.96500 R1=101.02706 S1=100.90294 | FORMULA: PASS | R4>R3>R2>R1>C>S1>S2>S3>S4: PASS | RANGE CHECK: PASS",
+    "Pivot Verification: D1 CLASSIC \u2014 H=101.27500 L=100.94600 C=101.02700 | PP=101.08267 R1=101.21933 S1=100.89033 | FORMULA: PASS | R1>PP>S1: PASS | RANGE CHECK: PASS",
+    "Pivot Verification: D1 FIB \u2014 H=101.27500 L=100.94600 C=101.02700 | PP=101.08267 R1=101.20834 S1=100.95699 | FORMULA: PASS | R1>PP>S1: PASS | RANGE CHECK: PASS",
+    "Pivot Verification: D1 CAMARILLA \u2014 H=101.27500 L=100.94600 C=101.02700 R1=101.05716 S1=100.99684 | FORMULA: PASS | R4>R3>R2>R1>C>S1>S2>S3>S4: PASS | RANGE CHECK: PASS",
+    "Pivot Verification: D2 CLASSIC \u2014 H=101.03900 L=100.78600 C=100.91300 | PP=100.91267 R1=101.03933 S1=100.78633 | FORMULA: PASS | R1>PP>S1: PASS | RANGE CHECK: PASS",
+    "Pivot Verification: D2 FIB \u2014 H=101.03900 L=100.78600 C=100.91300 | PP=100.91267 R1=101.00931 S1=100.81602 | FORMULA: PASS | R1>PP>S1: PASS | RANGE CHECK: PASS",
+    "Pivot Verification: D2 CAMARILLA \u2014 H=101.03900 L=100.78600 C=100.91300 R1=100.93619 S1=100.88981 | FORMULA: PASS | R4>R3>R2>R1>C>S1>S2>S3>S4: PASS | RANGE CHECK: PASS",
+    "Pivot Verification: D3 CLASSIC \u2014 H=100.99700 L=100.59800 C=100.96500 | PP=100.85333 R1=101.10867 S1=100.70967 | FORMULA: PASS | R1>PP>S1: PASS | RANGE CHECK: PASS",
+    "Pivot Verification: D3 FIB \u2014 H=100.99700 L=100.59800 C=100.96500 | PP=100.85333 R1=101.00575 S1=100.70092 | FORMULA: PASS | R1>PP>S1: PASS | RANGE CHECK: PASS",
+    "Pivot Verification: D3 CAMARILLA \u2014 H=100.99700 L=100.59800 C=100.96500 R1=101.00158 S1=100.92843 | FORMULA: PASS | R4>R3>R2>R1>C>S1>S2>S3>S4: PASS | RANGE CHECK: PASS"
+   ]
+  },
+  "P2_ma_grid": {
+   "status": "OK",
+   "mas": 12,
+   "cluster_tol_pips": 15.0,
+   "recapture": [
+    "P2_EMA200",
+    "P2_SMA200"
+   ]
+  },
+  "local_ohlc": {
+   "status": "OK"
+  },
+  "local_weekly_open": {
+   "status": "OK"
+  },
+  "web_harvest": {
+   "status": "DOWN",
+   "label": "[NO DATA]"
+  }
+ },
+ "levels": [
+  {
+   "price": 101.294,
+   "label": "P1_CLASSIC_W_R1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.617,
+   "label": "P1_CLASSIC_W_S1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.623,
+   "label": "P1_CLASSIC_W_R2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.269,
+   "label": "P1_CLASSIC_W_S2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.971,
+   "label": "P1_CLASSIC_W_R3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 99.94,
+   "label": "P1_CLASSIC_W_S3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.946,
+   "label": "P1_CLASSIC_W_PP",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.20461,
+   "label": "P1_FIB_W_R1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.5,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.36439,
+   "label": "P1_FIB_W_R2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.623,
+   "label": "P1_FIB_W_R3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.68739,
+   "label": "P1_FIB_W_S1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.52761,
+   "label": "P1_FIB_W_S2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.269,
+   "label": "P1_FIB_W_S3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.33735,
+   "label": "P1_CAMARILLA_W_R4",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.59265,
+   "label": "P1_CAMARILLA_W_S4",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.15118,
+   "label": "P1_CAMARILLA_W_R3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.77882,
+   "label": "P1_CAMARILLA_W_S3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.08912,
+   "label": "P1_CAMARILLA_W_R2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.84088,
+   "label": "P1_CAMARILLA_W_S2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.02706,
+   "label": "P1_CAMARILLA_W_R1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.90294,
+   "label": "P1_CAMARILLA_W_S1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 1.0,
+   "psychological": 0.5,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.21933,
+   "label": "P1_CLASSIC_D1_R1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.89033,
+   "label": "P1_CLASSIC_D1_S1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.41167,
+   "label": "P1_CLASSIC_D1_R2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.75367,
+   "label": "P1_CLASSIC_D1_S2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 1.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.54833,
+   "label": "P1_CLASSIC_D1_R3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.56133,
+   "label": "P1_CLASSIC_D1_S3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.08267,
+   "label": "P1_CLASSIC_D1_PP",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.20834,
+   "label": "P1_FIB_D1_R1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.28599,
+   "label": "P1_FIB_D1_R2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.41167,
+   "label": "P1_FIB_D1_R3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.95699,
+   "label": "P1_FIB_D1_S1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.87934,
+   "label": "P1_FIB_D1_S2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.75367,
+   "label": "P1_FIB_D1_S3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 1.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.20795,
+   "label": "P1_CAMARILLA_D1_R4",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.84605,
+   "label": "P1_CAMARILLA_D1_S4",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.11747,
+   "label": "P1_CAMARILLA_D1_R3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.93653,
+   "label": "P1_CAMARILLA_D1_S3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.08732,
+   "label": "P1_CAMARILLA_D1_R2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.96668,
+   "label": "P1_CAMARILLA_D1_S2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.05716,
+   "label": "P1_CAMARILLA_D1_R1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.99684,
+   "label": "P1_CAMARILLA_D1_S1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.03933,
+   "label": "P1_CLASSIC_D2_R1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.78633,
+   "label": "P1_CLASSIC_D2_S1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.16567,
+   "label": "P1_CLASSIC_D2_R2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.65967,
+   "label": "P1_CLASSIC_D2_S2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.29233,
+   "label": "P1_CLASSIC_D2_R3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.53333,
+   "label": "P1_CLASSIC_D2_S3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.91267,
+   "label": "P1_CLASSIC_D2_PP",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.00931,
+   "label": "P1_FIB_D2_R1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.06902,
+   "label": "P1_FIB_D2_R2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.16567,
+   "label": "P1_FIB_D2_R3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.81602,
+   "label": "P1_FIB_D2_S1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.75631,
+   "label": "P1_FIB_D2_S2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.65967,
+   "label": "P1_FIB_D2_S3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.05215,
+   "label": "P1_CAMARILLA_D2_R4",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.77385,
+   "label": "P1_CAMARILLA_D2_S4",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.98257,
+   "label": "P1_CAMARILLA_D2_R3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.84342,
+   "label": "P1_CAMARILLA_D2_S3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.95938,
+   "label": "P1_CAMARILLA_D2_R2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.86662,
+   "label": "P1_CAMARILLA_D2_S2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.93619,
+   "label": "P1_CAMARILLA_D2_R1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.88981,
+   "label": "P1_CAMARILLA_D2_S1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.10867,
+   "label": "P1_CLASSIC_D3_R1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.70967,
+   "label": "P1_CLASSIC_D3_S1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.25233,
+   "label": "P1_CLASSIC_D3_R2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 1.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.45433,
+   "label": "P1_CLASSIC_D3_S2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.50767,
+   "label": "P1_CLASSIC_D3_R3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.31067,
+   "label": "P1_CLASSIC_D3_S3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.85333,
+   "label": "P1_CLASSIC_D3_PP",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.00575,
+   "label": "P1_FIB_D3_R1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.09992,
+   "label": "P1_FIB_D3_R2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.5,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.25233,
+   "label": "P1_FIB_D3_R3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 1.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.70092,
+   "label": "P1_FIB_D3_S1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.5,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.60675,
+   "label": "P1_FIB_D3_S2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.45433,
+   "label": "P1_FIB_D3_S3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.18445,
+   "label": "P1_CAMARILLA_D3_R4",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.74555,
+   "label": "P1_CAMARILLA_D3_S4",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 1.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.07473,
+   "label": "P1_CAMARILLA_D3_R3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.85528,
+   "label": "P1_CAMARILLA_D3_S3",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.03815,
+   "label": "P1_CAMARILLA_D3_R2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.89185,
+   "label": "P1_CAMARILLA_D3_S2",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.00158,
+   "label": "P1_CAMARILLA_D3_R1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 2.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.92843,
+   "label": "P1_CAMARILLA_D3_S1",
+   "level_type": "P1",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.23618,
+   "label": "P2_EMA9",
+   "level_type": "P2",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.26511,
+   "label": "P2_SMA9",
+   "level_type": "P2",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.22786,
+   "label": "P2_EMA10",
+   "level_type": "P2",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.2502,
+   "label": "P2_SMA10",
+   "level_type": "P2",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 0.0,
+   "psychological": 1.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.15778,
+   "label": "P2_EMA20",
+   "level_type": "P2",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.11405,
+   "label": "P2_SMA20",
+   "level_type": "P2",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.05896,
+   "label": "P2_EMA50",
+   "level_type": "P2",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.9891,
+   "label": "P2_SMA50",
+   "level_type": "P2",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.02074,
+   "label": "P2_EMA100",
+   "level_type": "P2",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.00982,
+   "label": "P2_SMA100",
+   "level_type": "P2",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.0392,
+   "label": "P2_EMA200",
+   "level_type": "P2",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 2.0,
+   "recapture": true,
+   "extended": false
+  },
+  {
+   "price": 100.99415,
+   "label": "P2_SMA200",
+   "level_type": "P2",
+   "style": "line",
+   "use_box": false,
+   "technical": 2.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 2.0,
+   "recapture": true,
+   "extended": false
+  },
+  {
+   "price": 100.816,
+   "label": "P5_LSZ_100.8160",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.837,
+   "label": "P5_LSZ_100.8370",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.892,
+   "label": "P5_LSZ_100.8920",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.853,
+   "label": "P5_LSZ_100.8530",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.903,
+   "label": "P5_LSZ_100.9030",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 2.0,
+   "psychological": 0.5,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.928,
+   "label": "P5_LSZ_100.9280",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.5,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.975,
+   "label": "P5_LSZ_100.9750",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.873,
+   "label": "P5_LSZ_100.8730",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.952,
+   "label": "P5_LSZ_100.9520",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.007,
+   "label": "P5_LSZ_101.0070",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.02,
+   "label": "P5_LSZ_101.0200",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.965,
+   "label": "P5_LSZ_100.9650",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.5,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.126,
+   "label": "P5_LSZ_101.1260",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.071,
+   "label": "P5_LSZ_101.0710",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.136,
+   "label": "P5_LSZ_101.1360",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.116,
+   "label": "P5_LSZ_101.1160",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.215,
+   "label": "P5_LSZ_101.2150",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.086,
+   "label": "P5_LSZ_101.0860",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.5,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.061,
+   "label": "P5_LSZ_101.0610",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.239,
+   "label": "P5_LSZ_101.2390",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.099,
+   "label": "P5_LSZ_101.0990",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.0,
+   "psychological": 0.5,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.174,
+   "label": "P5_LSZ_101.1740",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.224,
+   "label": "P5_LSZ_101.2240",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.039,
+   "label": "P5_LSZ_101.0390",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.998,
+   "label": "P5_LSZ_100.9980",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 2.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.918,
+   "label": "P5_LSZ_100.9180",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.5,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.736,
+   "label": "P5_LSZ_100.7360",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.791,
+   "label": "P5_LSZ_100.7910",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.714,
+   "label": "P5_LSZ_100.7140",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.774,
+   "label": "P5_LSZ_100.7740",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.766,
+   "label": "P5_LSZ_100.7660",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.727,
+   "label": "P5_LSZ_100.7270",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.989,
+   "label": "P5_LSZ_100.9890",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.5,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.183,
+   "label": "P5_LSZ_101.1830",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.164,
+   "label": "P5_LSZ_101.1640",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.156,
+   "label": "P5_LSZ_101.1560",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.264,
+   "label": "P5_LSZ_101.2640",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.5,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.292,
+   "label": "P5_LSZ_101.2920",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.5,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.322,
+   "label": "P5_LSZ_101.3220",
+   "level_type": "P5",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 1.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.5,
+   "label": "P6_ROUND_100.50",
+   "level_type": "P6",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 2.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.75,
+   "label": "P6_ROUND_100.75",
+   "level_type": "P6",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 1.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.0,
+   "label": "P6_ROUND_101.00",
+   "level_type": "P6",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 2.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.25,
+   "label": "P6_ROUND_101.25",
+   "level_type": "P6",
+   "style": "line",
+   "use_box": false,
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 1.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.15496,
+   "label": "P6_FIB_0.236",
+   "level_type": "P6",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 101.04852,
+   "label": "P6_FIB_0.382",
+   "level_type": "P6",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.9625,
+   "label": "P6_FIB_0.500",
+   "level_type": "P6",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.87648,
+   "label": "P6_FIB_0.618",
+   "level_type": "P6",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 100.75401,
+   "label": "P6_FIB_0.786",
+   "level_type": "P6",
+   "style": "line",
+   "use_box": false,
+   "technical": 1.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  }
+ ],
+ "zones": [
+  {
+   "name": "IP Resistance Ceiling",
+   "top": 101.322,
+   "bottom": 101.21933,
+   "zone_type": "STANDARD_WALL",
+   "confluence": 8,
+   "pressure_degree": "MODERATE_HEAVY",
+   "zfp": 42,
+   "regime": "consolidation",
+   "measured_move_target": null,
+   "structural_extreme": false,
+   "poi_tier": 2,
+   "zCat": "RES",
+   "zTir": "T1",
+   "zfp_label": 42,
+   "zfp_receipt": {
+    "pair": "DXY",
+    "zone_type": "STANDARD_WALL",
+    "base": 22.5,
+    "band": [
+     15.0,
+     30.0
+    ],
+    "modifiers": [
+     {
+      "modifier": "spring_release",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "macro_catalyst",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "momentum",
+      "value": 20.0,
+      "strength": 1.0
+     },
+     {
+      "modifier": "cross_pair",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "cascade",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "regime_change",
+      "value": 0.0,
+      "strength": 0.0
+     }
+    ],
+    "zfp": 42,
+    "formula": "round(base(zone_type) + \u03a3(modifiers))  \u2014 canon Appendix B.1 + B.2",
+    "canon": "Trident_System_Prompt_v5.3.3 \u2014 Appendix B (B.1 base by zone type + B.2 modifiers) and \u00a7Pressure Degree Assignment"
+   },
+   "degree_v8": "MODERATE-HEAVY",
+   "bom_fresh_flag": null,
+   "timeframe": "1H",
+   "levels": [
+    {
+     "price": 101.21933,
+     "label": "P1_CLASSIC_D1_R1",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 101.224,
+     "label": "P5_LSZ_101.2240",
+     "level_type": "P5",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 101.22786,
+     "label": "P2_EMA10",
+     "level_type": "P2",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 101.23618,
+     "label": "P2_EMA9",
+     "level_type": "P2",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 101.239,
+     "label": "P5_LSZ_101.2390",
+     "level_type": "P5",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 101.25,
+     "label": "P6_ROUND_101.25",
+     "level_type": "P6",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 101.2502,
+     "label": "P2_SMA10",
+     "level_type": "P2",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 101.25233,
+     "label": "P1_CLASSIC_D3_R2",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    }
+   ]
+  },
+  {
+   "name": "Upper IP Resistance",
+   "top": 101.215,
+   "bottom": 101.08267,
+   "zone_type": "STANDARD_WALL",
+   "confluence": 8,
+   "pressure_degree": "MODERATE_HEAVY",
+   "zfp": 22,
+   "regime": "consolidation",
+   "measured_move_target": null,
+   "structural_extreme": true,
+   "poi_tier": 2,
+   "zCat": "RES",
+   "zTir": "T1",
+   "zfp_label": 22,
+   "zfp_receipt": {
+    "pair": "DXY",
+    "zone_type": "STANDARD_WALL",
+    "base": 22.5,
+    "band": [
+     15.0,
+     30.0
+    ],
+    "modifiers": [
+     {
+      "modifier": "spring_release",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "macro_catalyst",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "momentum",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "cross_pair",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "cascade",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "regime_change",
+      "value": 0.0,
+      "strength": 0.0
+     }
+    ],
+    "zfp": 22,
+    "formula": "round(base(zone_type) + \u03a3(modifiers))  \u2014 canon Appendix B.1 + B.2",
+    "canon": "Trident_System_Prompt_v5.3.3 \u2014 Appendix B (B.1 base by zone type + B.2 modifiers) and \u00a7Pressure Degree Assignment"
+   },
+   "degree_v8": "MODERATE-HEAVY",
+   "bom_fresh_flag": null,
+   "timeframe": "1H",
+   "levels": [
+    {
+     "price": 101.08267,
+     "label": "P1_CLASSIC_D1_PP",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 101.086,
+     "label": "P5_LSZ_101.0860",
+     "level_type": "P5",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 101.08732,
+     "label": "P1_CAMARILLA_D1_R2",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 101.08912,
+     "label": "P1_CAMARILLA_W_R2",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 101.099,
+     "label": "P5_LSZ_101.0990",
+     "level_type": "P5",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 101.09992,
+     "label": "P1_FIB_D3_R2",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 101.10867,
+     "label": "P1_CLASSIC_D3_R1",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 101.11405,
+     "label": "P2_SMA20",
+     "level_type": "P2",
+     "style": "line",
+     "use_box": false
+    }
+   ]
+  },
+  {
+   "name": "Equilibrium Zone",
+   "top": 101.07473,
+   "bottom": 100.84605,
+   "zone_type": "HARD_WALL",
+   "confluence": 10,
+   "pressure_degree": "HEAVY",
+   "zfp": 10,
+   "regime": "consolidation",
+   "measured_move_target": null,
+   "structural_extreme": false,
+   "poi_tier": 2,
+   "zCat": "MID",
+   "zTir": "T1",
+   "zfp_label": 10,
+   "zfp_receipt": {
+    "pair": "DXY",
+    "zone_type": "HARD_WALL",
+    "base": 10.0,
+    "band": [
+     5.0,
+     15.0
+    ],
+    "modifiers": [
+     {
+      "modifier": "spring_release",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "macro_catalyst",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "momentum",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "cross_pair",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "cascade",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "regime_change",
+      "value": 0.0,
+      "strength": 0.0
+     }
+    ],
+    "zfp": 10,
+    "formula": "round(base(zone_type) + \u03a3(modifiers))  \u2014 canon Appendix B.1 + B.2",
+    "canon": "Trident_System_Prompt_v5.3.3 \u2014 Appendix B (B.1 base by zone type + B.2 modifiers) and \u00a7Pressure Degree Assignment"
+   },
+   "degree_v8": "HEAVY",
+   "bom_fresh_flag": null,
+   "timeframe": "1H",
+   "levels": [
+    {
+     "price": 100.84605,
+     "label": "P1_CAMARILLA_D1_S4",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.853,
+     "label": "P5_LSZ_100.8530",
+     "level_type": "P5",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.85333,
+     "label": "P1_CLASSIC_D3_PP",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.85528,
+     "label": "P1_CAMARILLA_D3_S3",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.86662,
+     "label": "P1_CAMARILLA_D2_S2",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.873,
+     "label": "P5_LSZ_100.8730",
+     "level_type": "P5",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.87648,
+     "label": "P6_FIB_0.618",
+     "level_type": "P6",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.87934,
+     "label": "P1_FIB_D1_S2",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    }
+   ]
+  },
+  {
+   "name": "Mid-Range Support",
+   "top": 100.84342,
+   "bottom": 100.70967,
+   "zone_type": "STANDARD_WALL",
+   "confluence": 9,
+   "pressure_degree": "MODERATE_HEAVY",
+   "zfp": 22,
+   "regime": "consolidation",
+   "measured_move_target": null,
+   "structural_extreme": true,
+   "poi_tier": 2,
+   "zCat": "SUP",
+   "zTir": "T1",
+   "zfp_label": 22,
+   "zfp_receipt": {
+    "pair": "DXY",
+    "zone_type": "STANDARD_WALL",
+    "base": 22.5,
+    "band": [
+     15.0,
+     30.0
+    ],
+    "modifiers": [
+     {
+      "modifier": "spring_release",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "macro_catalyst",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "momentum",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "cross_pair",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "cascade",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "regime_change",
+      "value": 0.0,
+      "strength": 0.0
+     }
+    ],
+    "zfp": 22,
+    "formula": "round(base(zone_type) + \u03a3(modifiers))  \u2014 canon Appendix B.1 + B.2",
+    "canon": "Trident_System_Prompt_v5.3.3 \u2014 Appendix B (B.1 base by zone type + B.2 modifiers) and \u00a7Pressure Degree Assignment"
+   },
+   "degree_v8": "MODERATE-HEAVY",
+   "bom_fresh_flag": null,
+   "timeframe": "1H",
+   "levels": [
+    {
+     "price": 100.70967,
+     "label": "P1_CLASSIC_D3_S1",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.714,
+     "label": "P5_LSZ_100.7140",
+     "level_type": "P5",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.727,
+     "label": "P5_LSZ_100.7270",
+     "level_type": "P5",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.736,
+     "label": "P5_LSZ_100.7360",
+     "level_type": "P5",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.74555,
+     "label": "P1_CAMARILLA_D3_S4",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.75,
+     "label": "P6_ROUND_100.75",
+     "level_type": "P6",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.75367,
+     "label": "P1_CLASSIC_D1_S2",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.75367,
+     "label": "P1_FIB_D1_S3",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    }
+   ]
+  },
+  {
+   "name": "Key IP Support",
+   "top": 100.70092,
+   "bottom": 100.60675,
+   "zone_type": "STANDARD_WALL",
+   "confluence": 8,
+   "pressure_degree": "MODERATE_HEAVY",
+   "zfp": 22,
+   "regime": "consolidation",
+   "measured_move_target": null,
+   "structural_extreme": true,
+   "poi_tier": 2,
+   "zCat": "SUP",
+   "zTir": "T1",
+   "zfp_label": 22,
+   "zfp_receipt": {
+    "pair": "DXY",
+    "zone_type": "STANDARD_WALL",
+    "base": 22.5,
+    "band": [
+     15.0,
+     30.0
+    ],
+    "modifiers": [
+     {
+      "modifier": "spring_release",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "macro_catalyst",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "momentum",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "cross_pair",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "cascade",
+      "value": 0.0,
+      "strength": 0.0
+     },
+     {
+      "modifier": "regime_change",
+      "value": 0.0,
+      "strength": 0.0
+     }
+    ],
+    "zfp": 22,
+    "formula": "round(base(zone_type) + \u03a3(modifiers))  \u2014 canon Appendix B.1 + B.2",
+    "canon": "Trident_System_Prompt_v5.3.3 \u2014 Appendix B (B.1 base by zone type + B.2 modifiers) and \u00a7Pressure Degree Assignment"
+   },
+   "degree_v8": "MODERATE-HEAVY",
+   "bom_fresh_flag": null,
+   "timeframe": "1H",
+   "levels": [
+    {
+     "price": 100.60675,
+     "label": "P1_FIB_D3_S2",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.617,
+     "label": "P1_CLASSIC_W_S1",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.65967,
+     "label": "P1_CLASSIC_D2_S2",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.65967,
+     "label": "P1_FIB_D2_S3",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.68739,
+     "label": "P1_FIB_W_S1",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    },
+    {
+     "price": 100.70092,
+     "label": "P1_FIB_D3_S1",
+     "level_type": "P1",
+     "style": "line",
+     "use_box": false
+    }
+   ]
+  }
+ ],
+ "shapes": {},
+ "lsz": [
+  {
+   "range": [
+    100.816,
+    100.866
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 2
+  },
+  {
+   "range": [
+    100.837,
+    100.887
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 2
+  },
+  {
+   "range": [
+    100.892,
+    100.942
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 2
+  },
+  {
+   "range": [
+    100.853,
+    100.903
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 2
+  },
+  {
+   "range": [
+    100.903,
+    100.953
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 2
+  },
+  {
+   "range": [
+    100.928,
+    100.978
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    100.975,
+    101.025
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 2
+  },
+  {
+   "range": [
+    100.873,
+    100.923
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 2
+  },
+  {
+   "range": [
+    100.952,
+    101.002
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 2
+  },
+  {
+   "range": [
+    101.007,
+    101.057
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 2
+  },
+  {
+   "range": [
+    101.02,
+    101.07
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    100.965,
+    101.015
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    101.126,
+    101.176
+   ],
+   "type": "Supply-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 2
+  },
+  {
+   "range": [
+    101.071,
+    101.121
+   ],
+   "type": "Supply-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 2
+  },
+  {
+   "range": [
+    101.136,
+    101.186
+   ],
+   "type": "Supply-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    101.116,
+    101.166
+   ],
+   "type": "Supply-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    101.215,
+    101.265
+   ],
+   "type": "Supply-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 2
+  },
+  {
+   "range": [
+    101.086,
+    101.136
+   ],
+   "type": "Supply-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    101.061,
+    101.111
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    101.239,
+    101.289
+   ],
+   "type": "Supply-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    101.099,
+    101.149
+   ],
+   "type": "Supply-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    101.174,
+    101.224
+   ],
+   "type": "Supply-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    101.224,
+    101.274
+   ],
+   "type": "Supply-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    101.039,
+    101.089
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 2
+  },
+  {
+   "range": [
+    100.998,
+    101.048
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 2
+  },
+  {
+   "range": [
+    100.918,
+    100.968
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    100.736,
+    100.786
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    100.791,
+    100.841
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    100.714,
+    100.764
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    100.774,
+    100.824
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    100.766,
+    100.816
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    100.727,
+    100.777
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    100.989,
+    101.039
+   ],
+   "type": "Demand-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    101.183,
+    101.233
+   ],
+   "type": "Supply-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    101.164,
+    101.214
+   ],
+   "type": "Supply-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    101.156,
+    101.206
+   ],
+   "type": "Supply-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    101.264,
+    101.314
+   ],
+   "type": "Supply-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    101.292,
+    101.342
+   ],
+   "type": "Supply-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  },
+  {
+   "range": [
+    101.322,
+    101.372
+   ],
+   "type": "Supply-side",
+   "source": "P5 sweep \u2014 the prior exact swing low/high",
+   "function": "liquidity sweep zone (brief breach then reversal)",
+   "priority": 1
+  }
+ ],
+ "notes": [
+  "144 candidate levels clustered into 5 zones",
+  "12/12 pivot sets PASS the mandatory formula+symmetry+sanity+range verification (4 timeframes x 3 variants)"
+ ],
+ "temporal_boundary_utc": ""
+}

@@ -1,0 +1,14 @@
+{
+  "image": "/tmp/cu-guest-build/guest-bootable.qcow2",
+  "image_sha256": "df5b6976f3b990f3d3bc77d71d80ffde1dcb880f68bf4ceaed02658965d98a3f",
+  "boot": "real installed Alpine 3.22 qcow2 with syslinux on /dev/vda1 and root on /dev/vda3",
+  "ssh": "root@127.0.0.1:2300 authenticated with the workspace ed25519 key",
+  "assert": "GUEST_IMAGE_INCOMPLETE=0",
+  "adapter": "xvfb",
+  "display": ":3",
+  "spawn": "xev window 2097153",
+  "frame": "/tmp/guest-frame.png",
+  "frame_sha256": "f10d2ed194c3b8bcad77fd3f2b4a1f22de1ac54837ab005ba2c6773d44690249",
+  "frame_colours": 12,
+  "observed": "white xev canvas with black square, opened by the primary agent"
+}

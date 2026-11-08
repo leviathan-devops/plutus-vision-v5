@@ -1,0 +1,132 @@
+GOAL
+Finish computer-use v2 AND PINEBOX to 100 percent production grade: both gate chains green on the
+final code, the mandated ship gate returning GATE: PASS with 0 critical and 0 high on BOTH trees,
+every capability observed in opened pixels; stop only when that is proven in tool results or a
+named hard block has its evidence.
+HONEST_CLASS: product_tui. Density: multi_day, multi_front, Shape B.
+
+BASELINE
+Re-measure every line below on your first reply. These numbers are STALE until you re-run them.
+Repo A: /home/leviathan/.omp/agent at 93f6f31 (fix(cu-v2): close the seven audit criticals).
+Repo B: /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION at 6f643a7.
+CU v2 tree: /home/leviathan/.omp/agent/extensions/computer-use-v2, 47 files, MANIFEST 66 rows.
+PINEBOX tree: PLUTUS_VISION/scripts/pinebox, 19 files; forwarder extensions/pinebox/index.ts.
+deploy.sh verify: DEPLOY: OK sealed=66 files nofocus=854207cee6d0 hostwin=88579d713640 mcp=2/2.
+PINEBOX default chain: 8 gates, 0 failed. With --full: multi N=7 REFUSED (5.9 GB free, needs 7.8 GB).
+CU chain: cmp-guard, strings, mutate 12/0, deploy verify PASS.
+c3-no-raise rc=124 on the Chrome-CDP step.
+The commit before the fixes (1c4e2af) fails c3-no-raise identically, so the mechanism is UNNAMED.
+Chrome spawn passes BY HAND: xvfb 1.65s, weston-x11 5.6s.
+Inside the c3 replica rig it never maps.
+Host: load average 8.08, 4.7 GB available, a shared llama-server at 80 percent CPU.
+Ship gate, last verdicts: CU v2 FAIL (7 critical, 78 high); PINEBOX FAIL (1 critical, 35 high).
+Fixed but NOT re-audited: all 8 criticals and the injection/scope/evidence highs. Verdict is STALE.
+Audit artifacts: /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/.ocr-runs/*2db8054d*.json.
+Open product gaps: Backtest room (9443/9446/9447) not provisioned per instance, shows ROOM_DOWN.
+Open product gaps: guest qcow2 only in /tmp/cu-guest-build (1051066368 B);
+weston is absent inside the guest.
+Authority: design/DESIGN_BLUEPRINT_CU_v2.md, DESIGN_BLUEPRINT_PINEBOX.md,
+and DESIGN_BLUEPRINT_PINEBOX_v3_EXPANSION.md.
+Handover and evidence dir: PLUTUS_VISION/reports/overnight-2026-11-01/
+(HANDOVER.md, visual/, artifacts/).
+
+WAVES
+W1 — c3-gate — name the mechanism of the stalled Chrome step, then make the gate honest
+  files: test/c3-no-raise.sh, test/run.sh, test/replica.sh (CU v2 tree only)
+  deliverable: the NAMED mechanism with file:line and a measured number, not a load excuse.
+  deliverable: every step has its own deadline; a starved host yields INSTRUMENT_INVALID, never rc=124.
+  deliverable: c3-no-raise 0 failed on the final code, or a hard block with three routes tried.
+  gate: bun test -t ST-1_chrome_step_names_its_mechanism and the full CU chain 9 gates, 0 failed.
+W2 — cu-audit — close the ship gate on computer-use v2
+  files: core/** except core/guest/**, helpers/**, index.ts, mcp/**, scoped/**, deploy.sh
+  deliverable: re-run the scan; every critical and high FIXED with a failing-first probe,
+  or ADJUDICATED.
+  deliverable: adjudication is a written Side-A/Side-B entry carrying the probe output.
+  There is no third state.
+  gate: code-review scan on repo A returns GATE: PASS (0 critical/high) with a session id.
+W3 — pb-audit — close the ship gate on PINEBOX
+  files: scripts/pinebox/** (existing files), extensions/pinebox/index.ts, pv-server.py, inject.py
+  deliverable: same standard as W2 on repo B; findings are re-read from the NEW scan,
+  not from memory.
+  gate: code-review scan on repo B returns GATE: PASS (0 critical/high) with a session id.
+W4 — room — provision the Backtest room per instance (after W3; it adds files only)
+  files: scripts/pinebox/stages/room.sh (NEW), scripts/pinebox/test/room.sh (NEW), actions.json
+  deliverable: up starts the room's services on the instance port block, claimed by pb_claim.
+  deliverable: the opened Backtest pane shows the room UP, a session created, replay driven on pixels.
+  gate: bun test -t ST-2_room_up_per_instance and ST-3_room_down_refuses_loudly in the Pinebox chain.
+W5 — guest — a durable, gated guest runtime
+  files: core/guest/**, deploy.sh install step for the guest path, test/guest.sh (NEW)
+  deliverable: image installed under ~/.cache/computer-use/guest with a recorded sha256.
+  deliverable: guest gate boots it through op_guest, spawns an app, captures and OPENS the frame.
+  deliverable: weston inside the guest, or the exact missing package named with the install attempt.
+  gate: bun test -t ST-4_guest_boot_serves_pixels inside the CU chain; teardown leaves 0 qemu.
+W6 — final — zero-trust re-run of everything on the final sealed code
+  files: reports/overnight-2026-11-01/runtime-results.json (NEW), HANDOVER.md (append only)
+  deliverable: both chains FULL on a quiet host, both ship gates PASS, fresh opened frames, one seal.
+  gate: every pass token below present in this session's tool results, none inherited.
+
+LAWS
+Builder under audit: every claim is a tool result; the scan verdict is the tool's, never yours.
+AUTOMATIC VIOLATION: theatrical slop, a claim without its tool result, a stub standing in for
+working machinery, or a weakened gate automatically fails the wave on sight; fix and re-run it.
+RIPWIRE FIRST-CLASS: call ripwire (map, for, callers, impact) before every structural edit, and
+quality-delta or edit-check after it. A blind or grep-then-edit change is derailed; remap first.
+Blueprint package: the three authority blueprints named in BASELINE are the fixed requirements.
+Named test design: bun test -t ST-1_chrome_step_names_its_mechanism,
+bun test -t ST-2_room_up_per_instance,
+bun test -t ST-3_room_down_refuses_loudly, bun test -t ST-4_guest_boot_serves_pixels,
+bun test -t ST-5_scan_verdict_is_fresh, bun test -t ST-6_seal_matches_deployed_bytes.
+These ids name live scenarios, not unit-suite proof. Each runs host-live against the real deployed
+artifact in a fresh instance, with a passToken matched in a tool result and a failToken absent.
+One semantic commit per change; the body carries commands, counts, hashes and verdicts.
+Append-only: BUILD_REPORT.md, DEBUG_LOG.md, HANDOVER.md. Never rewrite history.
+Test failures first: attack input and known-bad control BEFORE the happy path;
+run the OLD code as a control.
+Never read zero as an answer: prove an instrument can fail before trusting its silence.
+No backward-compat shims, no fallbacks the operator did not ask for, no stubs of working machinery.
+Bash exec N>file is INHERITED by children: any new lock must be closed for spawned services.
+Run gates one at a time: the host is shared and loaded; check load before blaming code.
+A finding gets exactly one treatment: FIXED with a re-run, or ADJUDICATED with probe output.
+The finding count is the tool's design; progress is confirmed defects closed and gates passed.
+If a tool fails, check its documented arguments first, retry the same path, never invent a bypass.
+
+HARD STOPS
+Never edit or kill anything outside the two trees. Other agents have uncommitted work in
+PLUTUS_VISION (PROOF/, Ship_Packages/, vcards/, design/): do not stage, revert or delete it.
+Only signal a process whose identity you recorded (pid plus start time). No pkill by pattern.
+Never touch the operator's display :0/:1/:2 for input; the C3 focus guard stays enforced.
+Secrets stay out of repo, chat and logs. The leaked Google key rotation is operator-owned.
+Record that need in HANDOVER.md and continue; do not stall on it.
+Never weaken C3, the scope guard, the frozen-page rule or a failing gate to obtain green.
+A missing dependency or quota is a hard block only after corrected inputs and three distinct routes.
+Do not stop at a phase boundary and do not ask permission; the instruction is the authorization.
+If the host cannot meet a gate's stated resource floor, report BLOCKED with the resume condition.
+
+PROOF CONTRACT
+Pass tokens must appear in a tool result or artifact, never in agent prose.
+Token DEPLOY: OK sealed= from deploy.sh verify on the final bytes, after the last edit.
+Token 9 gates · 0 failed from the CU chain, and 9 gates · 0 failed from the Pinebox chain --full.
+Token GATE: PASS (0 critical/high) from each of the two ship-gate scans, with a session id.
+Token "verdict":"WORKS" from pinebox verify on a chart that changed since the last frame.
+Fail tokens that must be ABSENT: DEPLOY_DRIFT, INSTRUMENT_INVALID, FOCUS_STOLEN, BACKTEST_ROOM_DOWN.
+Results artifact: PLUTUS_VISION/reports/overnight-2026-11-01/runtime-results.json with per-scenario
+passTokenMatch, failTokenAbsent, artifact path, sha256 and verdict.
+Visual artifacts: write the expected render BEFORE capture, open the capture the same turn, name deltas.
+Circuit breaker before any green claim: deployed sha matches, all scenarios ran, adversarial ran,
+no circular token, results artifact exists, teardown left no process, port or lock behind.
+Zero-broken-windows: after every fix re-run the exact failing input, then the full chain.
+Independent zero-trust pass: re-run every gate yourself; one broken old PASS voids a new PASS.
+
+STOP
+Legal stop: W1 through W6 green in tool results this session, both chains full-green, both ship
+gates GATE: PASS, one seal that verifies, the results artifact written, every capture opened.
+A legal stop is never one chain green, a fixture hunt, a count of tests, or memory of a prior run.
+BLOCKED is legal only with the evidence, three routes tried, and the exact resume condition.
+First reply: re-measure the BASELINE, then fire W1 and W2 in the same turn. No approval round.
+Resume pointers: the todo board, HANDOVER.md and runtime-results.json; continue from disk.
+ANTI-DERAIL: blaming load or the model for a stall; a fix without a failing-first probe;
+claiming a seal after later edits; staging another agent's files; killing by pattern;
+treating a wrapper's success field as the artifact; weakening a gate to pass.
+ANTI-STOP: stationarity; a quiet host assumed instead of measured; a stale scan verdict reported
+as current; one chain green while the other is unproven; a blocked gate reported as passed.
+Anything less is OPEN and the run continues on every unblocked front.

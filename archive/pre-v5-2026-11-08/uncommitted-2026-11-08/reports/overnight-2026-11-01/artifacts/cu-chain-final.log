@@ -1,0 +1,23 @@
+══ computer-use v2 · the gate chain ══
+cmp-guard      (A9)            PASS
+strings        (A1-A11)        PASS
+mutate         (detectors)     PASS
+state battery  (V6)            PASS
+mcp            (V9)            PASS
+forwarder      (ext)           PASS
+state-cli      (scope)         PASS
+helpers         (C + build)    PASS
+xtest input     (XTEST law)    PASS
+core attacks   (ship-gate classes) PASS
+spawn-lock     (ST-1)          PASS
+c3-no-raise    (V3)            PASS
+isolation      (V4/V5)         PASS
+guest           (ST-4)         PASS
+mutate --slow (gates bite)     PASS
+deploy verify  (seal/helpers/mcp/probe) PASS
+leak-check     (nothing left)  PASS
+══ 17 gates · 0 failed ══
+
+real	2m37.712s
+user	0m27.996s
+sys	0m23.139s

@@ -1,9 +1,0 @@
-//@version=5
-// W14 EURUSD E1 zones (report-anchored, GENERATED for verification — not canon)
-indicator("W14 EU E1", overlay=true)
-t0 = timestamp("GMT+0", 2026, 03, 30, 0, 0)
-t1 = timestamp("GMT+0", 2026, 04, 04, 0, 0)
-box.new(t0, 1.1640, t1, 1.1600, xloc=xloc.bar_time, bgcolor=color.new(color.red, 80), border_color=color.red, text="R2 BoM 9", text_halign=text.halign.left)
-box.new(t0, 1.1575, t1, 1.1545, xloc=xloc.bar_time, bgcolor=color.new(color.orange, 82), border_color=color.orange, text="R1 MoM 7", text_halign=text.halign.left)
-box.new(t0, 1.1515, t1, 1.1495, xloc=xloc.bar_time, bgcolor=color.new(color.blue, 82), border_color=color.blue, text="D1 MoM 8", text_halign=text.halign.left)
-box.new(t0, 1.1460, t1, 1.1430, xloc=xloc.bar_time, bgcolor=color.new(color.green, 80), border_color=color.green, text="D2 BoM 8", text_halign=text.halign.left)

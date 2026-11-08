@@ -1,0 +1,549 @@
+# PLUTUS VISION — BUILD WORKFLOW v5 (CLOUDFLARE)
+## 29 turns. Every turn ends at a pinned gate. The executor decides nothing.
+
+**Builds:** `design/DESIGN_BLUEPRINT_v4.0_CLOUDFLARE.md` (cited as BP§n). **Executor:** a worker agent
+with no prior context. **Resume:** `runtime/record.json` (§4). **CLI:** the project carries
+`cf/wrangler.jsonc`, so every Cloudflare command is `npx wrangler …` (cloudflare skill: Wrangler
+projects keep Wrangler); `cf` is used only for read-only resource listing.
+
+---
+
+# §0 · PSTACK — the operational engine
+
+```
+1 pstack-create-verification-skill -> .omp/skills/verify-plutus/SKILL.md
+     LAUNCH   npx wrangler dev --env staging (Worker) ; host/rig-driver.ts (Pine)
+     DOCTOR   gates/G0.sh  (build_sha + bindings)
+     DRIVE    POST /run · GET /card.pine · rig paste · frame capture
+     EVIDENCE PROOF/<turn>/ (frames, card json, ledger rows, gate stdout)
+     CLEANUP  wrangler dev stopped; rig tab closed; PROOF/ untouched
+   + features/F1..F5 (zones · face B · chain · setups · delivery), four fixed H2s each
+2 THE FEATURE MAP is the coverage denominator: a phase closes only when every feature it
+  touches has a PASS card.
+3 show-me-your-work: PROOF/decision-trail.tsv, one row per gate run, written by gates/gate.sh.
+4 principles: encode-lessons-in-structure (2nd occurrence -> check + fixture) ·
+  attack-the-premise (2 fixes fail one gate -> stop, census) · prove-it-works (the deployed
+  Worker, never the source).
+```
+**Enforcement:** a turn whose G line does not name a gate and a card id is refused by the hook (§10).
+
+---
+
+# §1 · THE VERIFICATION CARD
+
+The judge (G3, Clef-flash, 24,576-token window) sees ONE card, never the repo.
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│ VCARD  vcards/<card_id>.json                      budget 3,500 · cap 6,000│
+├──────────────────────────────────────────────────────────────────────────┤
+│ identity   card_id = <turn>.<feature>.<gate>  e.g. P2.T3.F1.G3           │
+│ context    mandate: the BP§ excerpt for this turn (<= 2,000 tok, copied) │
+│            laws: the rulings that bind this turn · acceptance: the G line │
+│ subject    artifact paths + sha256 + the measurements the gates produced │
+│ claim      the executor's own words this turn, verbatim (<= 300 tok)     │
+│ query      noul mandate_met · noul claim_contradicted ·                  │
+│            choice defect_class (§5 classes + "none") · score completeness │
+│ verdict    written by gates/gate.sh only                                 │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+`gates/G3.sh` refuses a card over 6,000 tokens (`CARD_OVERFLOW`, exit 4) — a truncated card silently
+destroys the judgement, so it is never sent.
+
+---
+
+# §2 · THE SIX GATES
+
+| gate | file | subject | PASS predicate | bad fixture that must FAIL |
+|---|---|---|---|---|
+| G0 | `gates/G0.sh` | deployed staging Worker | `/health.build_sha == git HEAD` ∧ 9 bindings `ok` | `fixtures/G0.bad` = health JSON with an old sha |
+| G1 | `gates/G1.sh` → `scripts/chart_validator.py` | frame PNG | C01–C20 | `fixtures/G1.bad.png` = solid slab |
+| G2 | `gates/G2.sh` → `POST /gate/g2` | card JSON + Pine string | receipts validate · setups ⊂ zones · round-trip · checksum | `fixtures/G2.bad.json` = one receipt with raw+1 |
+| G3 | `gates/G3.sh` → `POST /gate/judge` | vcard | `mandate_met ≥ act_g3` ∧ `claim_contradicted < act_g3` | `fixtures/G3.bad.json` = claim "5 roles drawn", subject 0 zones |
+| G4 | `gates/G4.sh` → `POST /gate/g4` | frame PNG + card | Clairic labels == card (zone_count, zfp_labels, line_count) | `fixtures/G4.bad.png` = slab |
+| G5 | `gates/G5.sh` | G1..G4 verdict files | all PASS ∧ G1 and G4 refused the slab in this run | `fixtures/G5.bad.json` = mixed verdicts |
+
+```
+EXIT 0 PASS · 1 FAIL · 2 INCONCLUSIVE · 3 VOID/STALE/TAMPERED · 4 GATE_DEFECT
+ALGEBRA (gates/G5.sh, not reinterpretable):
+  any G1/G2 critical -> FAIL · claim_contradicted >= act -> FAIL · mandate_met < act -> FAIL
+  G1..G4 disagree -> INCONCLUSIVE · the slab control passes -> VOID · all agree -> PASS
+```
+Every gate runs through `gates/gate.sh <gate> <subject> <sha|-> <card_id>`, which (1) refuses a gate
+whose sha ≠ `gates/pins/<gate>.sha` (exit 3), (2) refuses a subject whose sha ≠ the given sha (exit 3),
+(3) runs the gate on `fixtures/<gate>.good` and `.bad` and exits 4 unless they separate, (4) judges,
+(5) writes `vcards/<card_id>.verdict.json` and the TSV row. Proven on this host: all five exits.
+
+---
+
+# §3 · CALIBRATION
+
+`act` for e1 · e2 · e3 · g3 · g4 exists only as a D1 `policies` row written by Workflow `pv-calibrate`
+(BP§10). Protocol: ≥ 20 labelled items · sweep 0.50/0.60/0.70/0.80/0.90 · max < 0.5 → the question is
+broken (rewrite, bump version) · spread < 0.25 → no discrimination · positive control ≥ 0.85 and
+negative ≤ 0.15 · choose false_allow = 0 with max recall. A surface with no row → `Refusal
+E_UNCALIBRATED`; the run stops.
+
+---
+
+# §4 · THE LOOP
+
+```
+OUTER  read runtime/record.json -> run next_command -> the turn's A/E -> its G
+       rc 0  gate wrote verdict + TSV; set record.turn = next; commit (C line)
+       rc 1  read vcards/<id>.verdict.json defect_class -> §5 owner file -> fix -> same G, same subject
+       rc 2  supply the missing input named in stdout; never re-run blind
+       rc 3  the subject moved or the gate changed: re-capture / re-pin (pins change only at P0)
+       rc 4  the gate cannot separate its fixtures: repair the GATE, never the subject
+INNER  every gate run: pin check -> subject sha -> good/bad separation -> judge -> verdict
+DONE   P5 replay PASS on the frozen BUILD_SHA. Nothing the executor says closes a phase.
+```
+`runtime/record.json`:
+```json
+{"phase":"P0","turn":"P0.T0","last_pass_card":null,"frozen_build_sha":null,
+ "next_command":"see §11 P0.T0 A","blocked":[]}
+```
+
+---
+
+# §5 · FAILURE ROUTING (`defect_class` → owner)
+
+```
+MISREAD_VALUE      cf/src/steps/clairic.ts      field schema / invariant
+CAPTURE_WRONG      cf/src/steps/capture.ts, selectors.ts
+TIER_PROMOTION     cf/src/e1/zfp.ts             B.1 conjunction
+RECEIPT_BROKEN     cf/src/e1/zfp.ts, context.ts modifier gate input
+ZONE_WRONG         cf/src/e1/build.ts           levels / cluster / confluence / roles
+UNLICENSED_SHAPE   cf/src/e2/candidates.ts      LICENSED table
+CHAIN_WRONG        cf/src/e2/chain.ts           walk / TRANSITION / days / alt
+GEOMETRY_WRONG     cf/src/e3/setups.ts          entry / sl / tp / composite / kills
+REPLAY_SIDE_EFFECT cf/src/workflow/*.ts         a write outside step.do
+RENDER_WRONG       pine/plutus-vision.pine      parse / draw / anchor
+CLAIM_FALSE        the executor's claim         (the code is not changed)
+```
+2nd occurrence of a class → add a check to the owning gate + a fixture pair, re-pin at the next P0
+maintenance turn. Three failed rounds on one gate → stop; write `PROOF/<turn>/census.md`; re-derive.
+
+---
+
+# §6 · LAWS
+
+```
+1 a gate's subject is the deployed artifact or its emitted output — never its own source
+2 a gate accepts its good fixture and refuses its bad one on every run
+3 a verdict comes from the artifact — never prose, a count, a filename, a status field
+4 the executor runs gates; it never edits a pinned gate, never writes a verdict
+5 every phase exits on a judged artifact
+6 the trail is written as the run happens
+```
+
+# §7 · DEBUG
+
+FAIL → class → owner file → same gate on the same subject. Max 3 rounds per gate. A fix that turns
+another check red is a regression: restore, narrow.
+
+# §8 · FORBIDDEN (injected verbatim into every turn prompt by the runner)
+
+```
+advance on a red gate                          weaken or lower a gate to pass it
+reuse evidence produced before a fix           describe an artifact you did not open
+report a count/sha/suite/token as a verdict    let a filename assert a verdict
+edit a pinned gate during the build            write the verdict you are judged by
+pass the corpus to the judge instead of a card set a threshold without pv-calibrate
+declare done without a frozen-artifact PASS    skip the control because it "always" passes
+add a fallback, default, or substitute value   build anything not named in the turn's A line
+```
+
+# §9 · CHECKS THAT EARN THEIR PLACE
+
+`deploy equality` (G0) · `subject sha` (gate.sh) · `control separation` (gate.sh) · `card budget` (G3)
+· `region control` (G1 C-checks on the zone area, not the whole frame) · `substitute value` (firewall
+D10) · `side effect outside a step` (firewall D11) · `byte step result` (firewall D12) · `scope before a
+zero` (every count printed with its R2 prefix / D1 query).
+
+# §10 · MECHANICAL BLOCKING
+
+```
+gates/gate.sh            the only runner; exit 0..4
+gates/pins/*.sha         a changed gate exits 3 before judging
+gates/firewall.sh        D1..D12, one command, nonzero = refused
+.githooks/pre-commit     refuses a commit touching cf/src pine/ host/ unless
+                         PROOF/decision-trail.tsv has a code-0 row for the card id named
+                         in the commit body (line "card: <id>")
+                         WIRED ONLY BY `upper attach <project path>` (jarvis-upper), which sets the
+                         hooks path AND asserts the directory exists and the hook is executable.
+                         Setting the hooks path by hand is forbidden: a path to a missing directory
+                         runs nothing, silently.
+runtime/record.json      the resumable state
+```
+Firewall detectors added in P0.T6 (names fixed now):
+```
+D9  catch-swallow     grep -rnE 'catch *\([^)]*\) *\{ *(return|\})' cf/src/{e1,e2,e3,steps,workflow}
+D10 substitute value  grep -rnE '\?\? *(0|""|\[\]|false|null|NaN)\b|\|\| *(0|"")' cf/src/{e1,e2,e3,steps,workflow}
+D11 write outside step  scripts/lint-steps.ts: env.R2.put|env.D1|LEDGER|WEEK_SEAL only inside step.do callbacks
+D12 byte step result  scripts/lint-steps.ts: no step.do callback returns Uint8Array|ArrayBuffer
+```
+
+---
+
+# §11 · THE TURNS
+
+Format: **P0** entry · **A** action (literal) · **E** evidence (path) · **R** reason · **G** gate ·
+**C** commit (`<type>(<scope>): <subject>` + body `card: <id>` + gate rc).
+
+## P0 · INSTRUMENT
+
+### P0.T0 · ACCOUNT RESOURCES
+```
+P0 record.turn == P0.T0 ; CLOUDFLARE_API_TOKEN exported (Workers, R2, D1, Workers AI, Browser Run: edit)
+A  cd cf && npm install
+   npx wrangler r2 bucket create plutus-vision
+   npx wrangler d1 create plutus-vision            # paste database_id into wrangler.jsonc
+   npx wrangler d1 migrations apply plutus-vision --remote
+   npx wrangler secret put INGEST_TOKEN            # value from the operator; never echoed
+E  PROOF/P0.T0/resources.txt = output of:
+   npx wrangler r2 bucket list ; npx wrangler d1 execute plutus-vision --remote \
+     --command "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+R  every binding in BP§2.2 must exist before any code can be judged against it
+G  gates/G0.sh --resources PROOF/P0.T0/resources.txt : bucket present AND tables == labels,policies,runs
+   card P0.T0.F0.G0
+C  chore(cf): provision R2, D1, secrets
+BLOCKED until the operator supplies the token: record.blocked += CLOUDFLARE_TOKEN_ABSENT
+```
+
+### P0.T1 · THE HEALTH WORKER + G0
+```
+P0 P0.T0 rc=0
+A  write cf/src/index.ts with ONLY GET /health:
+     {build_sha: env.BUILD_SHA, bindings: {AI, BROWSER, R2, D1, WEEK_SEAL, LEDGER, PV_WEEK,
+      PV_REPLAY, PV_CALIBRATE}: "ok" | "<error code>"} — each probed by a real call
+     (R2.head("health"), D1 "SELECT 1", DO getByName("health").read(), AI binding present)
+   write the two DO classes (BP§6, BP§5.2 ledger) and Workflow classes that throw
+     Fatal("NOT_BUILT") — they exist so wrangler can deploy the bindings
+   npx wrangler deploy --env staging --var BUILD_SHA:$(git rev-parse HEAD)
+   write gates/G0.sh: curl $STAGING/health ; jq: build_sha == git HEAD and every binding "ok"
+   fixtures/G0.good = live response ; fixtures/G0.bad = same with build_sha "0000" ; pin G0
+E  PROOF/P0.T1/health.json
+R  deploy equality is the first check: a stale Worker serves yesterday's build
+G  bash gates/gate.sh G0 PROOF/P0.T1/health.json <sha256 of it> P0.T1.F0.G0   card P0.T1.F0.G0
+C  feat(cf): health worker + G0 deploy-equality gate
+```
+
+### P0.T2 · verify-plutus (pstack)
+```
+P0 P0.T1 rc=0
+A  run skill pstack-create-verification-skill against PLUTUS_VISION with the LAUNCH/DOCTOR/DRIVE/
+   EVIDENCE/CLEANUP of §0 ; it writes .omp/skills/verify-plutus/SKILL.md + features/F1..F5
+E  PROOF/P0.T2/verify-run.log = the skill executed once: LAUNCH -> DOCTOR (G0) -> DRIVE F5
+   (GET /health) -> EVIDENCE -> CLEANUP ; the evidence file still exists after CLEANUP
+R  a generated skill that never ran is a draft
+G  gates/G0.sh on PROOF/P0.T2/evidence.json -> 0                    card P0.T2.F5.G0
+C  feat(verify): verify-plutus generated and run once
+```
+
+### P0.T3 · THE CLEF DOOR + G3
+```
+P0 P0.T2 rc=0
+A  write cf/src/steps/{errors,guards,clef}.ts exactly per BP§5.1–5.2
+   write cf/src/gate/judge.ts: POST /gate/judge {vcard} -> ask(env,"gates","G3","1",vcard.state,
+     Q_G3, policyFor("g3")) where Q_G3 = mandate_met (noul) + claim_contradicted (noul).
+     Until P0.T5 writes the g3 policy, /gate/judge returns 503 E_UNCALIBRATED (never a default bar)
+   write gates/G3.sh: token-count the vcard (refuse > 6000, exit 4) ; POST ; map answers to rc
+   fixtures: G3.good.json (claim matches subject) · G3.bad.json (claim "5 roles", subject 0 zones)
+   deploy staging
+E  PROOF/P0.T3/judge-raw.json for both fixtures (the Clef response, unedited)
+R  every judgement in the system goes through one door that refuses absent evidence
+G  gates/gate.sh G3 … returns 2 (INCONCLUSIVE: E_UNCALIBRATED) on both. rc 0 here is a DEFECT
+   (a bar was invented).                                          card P0.T3.F0.G3
+C  feat(gates): Clef door + G3 judge endpoint (uncalibrated)
+```
+
+### P0.T4 · G2 + G4
+```
+P0 P0.T3 rc=2 with stdout E_UNCALIBRATED
+A  write cf/src/gate/g2.ts (BP§6 invariants) and cf/src/gate/g4.ts (Clairic FRAME_FIELDS =
+   {zone_count:number, zfp_labels:list<text>, tier_labels:list<text>, line_count:number};
+   code compares to the card) ; gates/G2.sh, gates/G4.sh ; fixtures good/bad per §2 ; pin both
+E  PROOF/P0.T4/{g2-good,g2-bad,g4-good,g4-bad}.json
+R  pixels cannot show a receipt that does not add up (G2); code cannot read a label (G4)
+G  G2: good -> 0, bad -> 1 ; G4: good frame -> 0, slab -> 1 (zone_count 0)
+   card P0.T4.F1.G2 · card P0.T4.F1.G4
+C  feat(gates): G2 structural + G4 perception
+```
+
+### P0.T5 · pv-calibrate + the g3/g4 bars
+```
+P0 P0.T4 rc=0
+A  write cf/src/workflow/pv-calibrate.ts (BP§10) ; upload 20 labelled vcards to labels/g3/ and 20
+   labelled frame pairs to labels/g4/ ; INSERT the label rows ; deploy ;
+   npx wrangler workflows trigger pv-calibrate '{"surface":"g3"}' ; same for g4
+E  PROOF/P0.T5/policies.json = SELECT * FROM policies ; R2 calibration/g3/*.json, g4/*.json
+R  a threshold exists only as a swept row
+G  policies has g3 and g4 rows with false_allow 0 ; re-run P0.T3's G3: good -> 0, bad -> 1
+   card P0.T5.F0.G3
+C  feat(gates): derived g3/g4 policies
+```
+
+### P0.T6 · G5 · HOOK · FIREWALL D9–D12
+```
+P0 P0.T5 rc=0
+A  gates/G5.sh (§2 algebra) ; .githooks/pre-commit (§10) wired by `upper attach` ;
+   add D9–D12 to gates/firewall.sh ; scripts/lint-steps.ts ; pin all
+E  PROOF/P0.T6/hook-refused.txt (a commit without a PASS row) ; hook-accepted.txt
+R  the hook is what makes a gate unskippable
+G  G5 on fixtures: all-pass -> 0 · mixed -> 2 · control-passed -> 3 ; bash gates/firewall.sh -> 0 ;
+   the unproven commit is refused                                  card P0.T6.F0.G5
+C  chore(gates): G5, pre-commit hook, firewall D9-D12
+```
+
+### P0.T7 · THE PINE PASTE LIMIT (pi-durable P-2)
+```
+P0 P0.T6 rc=0
+A  write host/rig-driver.ts: open the Pine IDE on the agent display, load a test indicator that
+   draws str.length(input.string) in a label, paste strings of 1k, 2k, 4k, 8k, 16k, 32k chars,
+   capture each frame
+E  PROOF/P0.T7/limit.json {max_accepted_chars, frames:[…]}
+R  BP§6 cannot size the Pine string until the limit is measured
+G  G4 reads the drawn length per frame; the largest frame whose drawn length == sent length is the
+   limit ; G4 rc 0 on that frame                                    card P0.T7.F5.G4
+C  test(pine): measured input.string limit
+```
+
+## P1 · L0 DATA
+
+### P1.T1 · BAR INGEST (pi-durable P-1)
+```
+P0 P0 closed ; ruling D15 ruled (golden render pair)
+A  /ingest/bars per BP§4.1 ; host/uploader.ts reads the host feed and PUTs EURUSD, GBPUSD, DXY for
+   the golden week 2026-07-06 (4H >= 200 bars, 1H >= 300, 30m)
+E  PROOF/P1.T1/ingest.json (three 201s with shas) ; a changed re-upload -> 409 W1_BARS_CONFLICT
+R  bars are the only non-rendered input; they are immutable per week
+G  cf/test/ingest-mutations.ts against staging: lookahead -> W1_LOOKAHEAD ; ragged -> W1_BARS_RAGGED ;
+   OHLC violation -> W1_BARS_OHLC ; short 4H -> W1_4H_SHORT ; valid -> 201
+   gate G2 on the mutation report                                  card P1.T1.F2.G2
+C  feat(l0): bar ingest + host uploader
+BLOCKED if the host feed lacks EURUSD 4H/30m: record.blocked += GOLDEN_BARS_ABSENT
+```
+
+### P1.T2 · CAPTURE + SELECTORS
+```
+P0 P1.T1 rc=0
+A  write capture.ts (BP§4.3) ; take one FULL-PAGE Browser Run screenshot of the options URL and of the
+   calendar URL ; open both PNGs ; record the ladder-table and calendar-table selectors in
+   cf/src/steps/selectors.ts
+E  PROOF/P1.T2/{options-full.png, calendar-full.png, options-el.png, calendar-el.png}
+R  the element, not the page, is what Clairic reads
+G  G4 with FRAME_FIELDS={row_count:number} on options-el.png: row_count >= 5 ; a selector for a
+   missing element -> W2_CAPTURE_SELECTOR                         card P1.T2.F0.G4
+C  feat(l0): Browser Run capture with recorded selectors
+BLOCKED if the options URL format is unknown: record.blocked += OPTIONS_URL_UNKNOWN
+```
+
+### P1.T3 · CLAIRIC OPTIONS + INVARIANTS
+```
+P0 P1.T2 rc=0
+A  clairic.ts extractOptions (BP§4.4) ; save the raw Clairic response for the golden capture to
+   cf/test/fixtures/options.raw.json ; cf/test/clairic-mutations.ts mutates that JSON:
+   notionals /1000 · drop one strike · expiry +8 days · total +10% · one p_null = 0.9
+E  PROOF/P1.T3/mutations.txt
+R  invariants turn a misread into a named refusal
+G  the five mutations raise W2_I2_UNITS, W2_I1_ALIGNMENT, W2_I4_WINDOW, W2_I5_TOTAL, W2_INCONCLUSIVE;
+   the unmutated response returns Walls ; gate G2 on mutations.txt      card P1.T3.F1.G2
+C  feat(l0): Clairic options extraction with five invariants
+```
+
+### P1.T4 · CLAIRIC CALENDAR + ABSTENTION
+```
+P0 P1.T3 rc=0
+A  extractCalendar (BP§4.5) ; build a planted image: the golden calendar PNG with one impact cell
+   painted over ; run extractCalendar on it
+E  PROOF/P1.T4/{calendar.json, planted.raw.json}
+R  an unreadable cell must return null, never a guess
+G  planted: p_null > 0.5 -> W3_INCONCLUSIVE ; clean capture returns events ; gate G2   card P1.T4.F1.G2
+C  feat(l0): Clairic calendar + planted-null control
+```
+
+## P2 · E1
+
+### P2.T1 · ZFP PORT + PARITY
+```
+P0 P1 closed ; rulings D1 D2 D3 D11 D12 D13 ruled
+A  cf/src/e1/zfp.ts per BP§5.4.2 ; cf/test/zfp-parity.ts runs the 24 mutations + tier cases of
+   cf/verify/zfp_verify.py and compares every receipt field
+E  PROOF/P2.T1/parity.txt (python and ts outputs side by side)
+R  the TS engine must be the verified engine
+G  bun cf/test/zfp-parity.ts -> 0 failures AND python3 cf/verify/zfp_verify.py -> VERDICT PASS ;
+   gate G2 on parity.txt                                          card P2.T1.F1.G2
+C  feat(e1): ZFP port at parity with the reference
+```
+
+### P2.T2 · ZONE MAP
+```
+P0 P2.T1 rc=0
+A  build.ts + context.ts (BP§5.4.1, two-pass cascade, per-zone context) ; Workflow steps arm,
+   harvest, harvest.siblings, capture.*, extract.*, e1.compute ; deploy ; trigger pv-week for the
+   golden week with payload {"stopAfter":"e1.compute"} which writes zones to R2 debug/<run>.json
+E  PROOF/P2.T2/zones.json
+R  every number in E1 is arithmetic over declared inputs
+G  G2 E1-mode: every receipt validates · stdev(zfp) >= 1.0 · width x0.5/x1.5 leaves zfp unchanged ·
+   5 roles ; fixture with identical zfp -> E1_ZFP_FLAT              card P2.T2.F1.G2
+C  feat(e1): zone map with receipts
+```
+
+### P2.T3 · ATTESTATION
+```
+P0 P2.T2 rc=0
+A  Q_E1A (BP§5.4.4 verbatim) ; attestZones with perItem and the __plant__ zone ; label 20 zones
+   (10 faithful, 10 with a fabricated pillar or a wrong gate) ; pv-calibrate surface e1
+E  PROOF/P2.T3/{attest.json, policy-e1.json}
+R  the judge audits the derivation, with a plant it must catch
+G  the plant is DENIED ; drift < 20% on the golden week ; e1 policy row exists   card P2.T3.F1.G3
+C  feat(e1): Clef attestation with planted control
+```
+
+### P2.T4 · E1 ON THE CHART
+```
+P0 P2.T3 rc=0
+A  seal a card containing zones only (chain/setups empty) ; GET /card.pine ; P-2 pastes it ; frame
+E  PROOF/P2.T4/frame.png + card.json
+R  the zones must survive to pixels
+G  G1 (C01–C20) · G4 zone_count == card zones and every zfp label matches · G5 -> 0
+   card P2.T4.F1.G5
+C  feat(e1): zones rendered and verified
+```
+
+## P3 · E2
+
+### P3.T1 · CANDIDATES
+```
+A  cf/src/e2/candidates.ts (BP§5.5) with the LICENSED table from spec §5 ; cf/test/e2-candidates.ts
+G  every candidate's shape ∈ its licensed set ; > 8 sliced to 8 ; empty -> E2_NO_CANDIDATES ;
+   gate G2                                                         card P3.T1.F3.G2
+C  feat(e2): licensed candidates
+```
+
+### P3.T2 · STAGES A + B
+```
+A  Q_E2A, Q_E2B (verbatim from BP§5.5) ; label 20 candidates ; pv-calibrate surface e2
+G  a mis-shaped span is vetoed ; a long into resistance is vetoed ; a singleton licensed set issues
+   no choice question (question count read from the ledger row) ; e2 policy exists
+   card P3.T2.F3.G3
+C  feat(e2): Clef stages A and B
+```
+
+### P3.T3 · WALK · STAGE C · DAYS · ALTERNATIVE
+```
+A  cf/src/e2/chain.ts (BP§5.5) ; cf/test/e2-controls.ts ports the 11 controls of cf/e2/e2_core.py
+G  bun cf/test/e2-controls.ts -> 11/11 (swapped pair -> E2_CHAIN_ORDER ; trim raising confidence ->
+   E2_CONFIDENCE_INVERSION ; identical alt -> E2_ALTERNATIVE_INVALID ; constant judge ->
+   E_JUDGE_CONSTANT) ; gate G2                                     card P3.T3.F3.G2
+C  feat(e2): walk, days, alternative
+```
+
+### P3.T4 · E2 ON THE GOLDEN WEEK
+```
+A  pv-week through e2.chain ; seal ; paste ; frame
+G  the chain's shape sequence ∈ the 12 observed sequences (spec §5.4) ; G1 ; G4 line_count == 1 ;
+   G5 -> 0                                                        card P3.T4.F3.G5
+C  feat(e2): chain rendered and verified
+```
+
+## P4 · E3
+
+### P4.T1 · GEOMETRY + KILLS
+```
+A  cf/src/e3/setups.ts geometry + K1–K6 (BP§5.6) ; ruling D14 ; cf/test/e3-kills.ts
+G  2.4 RRR -> E3_RRR_BELOW_FLOOR ; 9th setup -> E3_WEEKLY_CAP ; 4th on a day -> daily cap ;
+   4H anchor -> E3_ANCHOR_TF_INVALID ; no TP -> E3_TP_NULL        card P4.T1.F4.G2
+C  feat(e3): geometry and kill clauses
+```
+
+### P4.T2 · STAGES A + B + EVICT
+```
+A  Q_E3A, Q_E3B ; label 20 setups ; pv-calibrate surface e3
+G  SL inside the noise -> E3_VETO ; duplicate -> E3_DUPLICATE ; zero survivors -> result
+   E3_NO_SETUPS (not an error) ; e3 policy exists                card P4.T2.F4.G3
+C  feat(e3): Clef stages and eviction
+```
+
+### P4.T3 · FULL CARD + PINE STRING
+```
+A  seal step ; cf/src/card/pine.ts (BP§6 format + fnv1a32) ; cf/test/pine-roundtrip.ts ;
+   pine/plutus-vision.pine (BP§7) ; length checked against PROOF/P0.T7/limit.json
+G  G2: the Pine string parses back to identical numbers ; a one-char truncation fails the checksum ;
+   a second seal write returns created:false ; the 8 golden setups reproduce (direction, entry, sl,
+   tp, day) within 1 pip                                           card P4.T3.F4.G2
+C  feat(card): sealed card + Pine string
+```
+
+## P5 · REPLAY
+
+### P5.T1 · FREEZE
+```
+A  git tag freeze/<date> ; npx wrangler deploy --var BUILD_SHA:$(git rev-parse HEAD) (production) ;
+   record.frozen_build_sha = HEAD
+G  G0 on production -> 0                                         card P5.T1.F0.G0
+C  chore(release): freeze
+```
+
+### P5.T2 · HELD-OUT REPLAY
+```
+P0 the operator has uploaded 10 held-out label files drawn AFTER the freeze (drawn_after_freeze=1)
+A  pv-replay over the golden week + 10 held-out weeks on the frozen Worker
+G  golden >= 90% AND held-out >= 90% ; golden >= 90% with held-out < 90% -> REJECT HARDCODED ;
+   gate G5 on replay.json                                          card P5.T2.F4.G5
+C  test(replay): held-out acceptance
+BLOCKED until the operator draws the held-out set: record.blocked += HELDOUT_ABSENT
+```
+
+## P6 · VERIFY
+
+### P6.T1 · G3 + G4 ON REAL FRAMES
+```
+A  for each replay week: P-2 renders, G1/G4 judge the frame, G3 judges the turn's vcard
+G  a corrupted card (one zfp changed) -> G2 FAIL naming the field ; a wrong label -> G4 FAIL naming
+   the delta                                                      card P6.T1.F1.G5
+C  test(verify): frame gates on replay weeks
+```
+
+### P6.T2 · THE SLAB THROUGH THE WHOLE CHAIN
+```
+G  the slab frame -> G5 VOID (3) and every verdict of that run is discarded   card P6.T2.F0.G5
+C  test(verify): control voids the run
+```
+
+## P7 · DELIVERY
+
+### P7.T1 · PASTE
+```
+G  the card renders ; removing it renders face B + "CARD: ABSENT — FACE A OMITTED" (G4 reads the
+   text)                                                           card P7.T1.F5.G4
+C  feat(delivery): paste path
+```
+
+### P7.T2 · TAB
+```
+G  the dashboard tab and the paste produce frames with identical G4 readings ; sha(card) equal
+   card P7.T2.F5.G5
+C  feat(delivery): tab parity
+```
+
+---
+
+# §12 · SELF-CHECK
+
+```
+any turn closing on a file property, a count, or a sha?        NO   every G is a gate rc
+can the executor edit a gate or write a verdict?                NO   pins + gate.sh writes
+a card for every judged unit, within budget?                    YES  vcard + 6,000 cap (G3)
+positive AND negative control on every arm?                     YES  fixtures/<gate>.good|bad, exit 4
+every threshold from a recorded sweep?                          YES  pv-calibrate -> D1 policies
+can a cold agent resume at the exact turn?                      YES  runtime/record.json
+coverage = the feature map?                                     YES  F1..F5 in every card id
+if every agent lied, what still catches it?                     G2 receipts · G4 labels · replay
+if the judge were blind?                                        planted zone (E1), slab (G5 VOID)
+```
+
+**Named blocks (never converted into a smaller target):** `CLOUDFLARE_TOKEN_ABSENT` (P0.T0) ·
+`OPTIONS_URL_UNKNOWN` (P1.T2) · `GOLDEN_BARS_ABSENT` (P1.T1) · `RULING_PENDING D1–D4 D11–D15`
+(P2.T1, P4.T1) · `HELDOUT_ABSENT` (P5.T2).

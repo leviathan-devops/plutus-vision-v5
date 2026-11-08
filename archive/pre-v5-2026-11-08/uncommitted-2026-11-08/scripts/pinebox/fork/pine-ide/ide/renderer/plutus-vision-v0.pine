@@ -1,0 +1,1521 @@
+// PLUTUS VISION v0 — merged bundle (W1 namespace + single declaration)
+// SOURCES (CC BY-NC-SA 4.0, © LuxAlgo — attribution retained per L-6/L-7):
+//   SMC smart-money-concepts.pine sha a8046ad353c1b495 (848L)
+//   SWEEPS sources/liquidity-sweeps.pine sha c81921370a81425e (160L)
+//   VOIDS sources/liquidity-voids-fvg.pine sha e2a5223d726f43fa (112L)
+//   POOLS sources/buyside-sellside-liquidity.pine sha 6cc2fd6ea98cfa77 (347L)
+// RENAME: smc_* / swp_* / voi_* / bsl_* · types pv_* · voi_bar/bsl_bar split ·
+//   SWEEPS n/p/l/br -> swp_has/swp_pct/swp_line/swp_break_box · BSLIQ in_out -> bsl_roll
+// BUDGET: one script = one 500-box ceiling. Only VOIDS is bounded (its own oldest slices
+//   deleted past 380) so SMC's bar-0 order-block pool is never garbage-collected.
+// BEHAVIOR (measured, scripts/compare.py, EUR/USD 1H 1603 bars): SMC 195/195 · POOLS 25/25 ·
+//   SWEEPS 258/258 (vs its section alone; the raw source crashes in PineTS) · VOIDS newest 380
+//   kept, strictly oldest evicted · 0 drawings not in any source.
+
+indicator('Plutus Vision v0', 'Plutus Vision v0', overlay = true, max_labels_count = 500, max_lines_count = 500, max_boxes_count = 500)
+
+// MERGE EDITS vs sources (everything else is verbatim modulo the prefixes):
+//   SMC  - order blocks drawn; nothing changed      POOLS - type field kept as `x` (was a bad rename)
+//   VOIDS - voi_all footprint cap (380, evict oldest) SWEEPS - engine-compat inlining only
+// ═══ SMC ═══
+// This work is licensed under a Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) https://creativecommons.org/licenses/by-nc-sa/4.0/
+// © LuxAlgo
+
+//@version=6
+// [merged] SMC indicator() decl removed (single-decl rule L-4): indicator('Smart Money Concepts', 'Smart Money Concepts', overlay = true, max_labels_count = 500, max_lines_count = 500, max_boxes_count = 500)
+//---------------------------------------------------------------------------------------------------------------------}
+//CONSTANTS & STRINGS & INPUTS
+//---------------------------------------------------------------------------------------------------------------------{
+BULLISH_LEG                     = 1
+BEARISH_LEG                     = 0
+
+BULLISH                         = +1
+BEARISH                         = -1
+
+GREEN                           = #089981
+RED                             = #F23645
+BLUE                            = #2157f3
+GRAY                            = #878b94
+MONO_BULLISH                    = #b2b5be
+MONO_BEARISH                    = #5d606b
+
+HISTORICAL                      = 'Historical'
+PRESENT                         = 'Present'
+
+COLORED                         = 'Colored'
+MONOCHROME                      = 'Monochrome'
+
+ALL                             = 'All'
+BOS                             = 'BOS'
+CHOCH                           = 'CHoCH'
+
+TINY                            = size.tiny
+SMALL                           = size.small
+NORMAL                          = size.normal
+
+ATR                             = 'Atr'
+RANGE                           = 'Cumulative Mean Range'
+
+CLOSE                           = 'Close'
+HIGHLOW                         = 'High/Low'
+
+SOLID                           = '⎯⎯⎯'
+DASHED                          = '----'
+DOTTED                          = '····'
+
+SMART_GROUP                     = 'Smart Money Concepts'
+INTERNAL_GROUP                  = 'Real Time Internal Structure'
+SWING_GROUP                     = 'Real Time Swing Structure'
+BLOCKS_GROUP                    = 'Order Blocks'
+EQUAL_GROUP                     = 'EQH/EQL'
+GAPS_GROUP                      = 'Fair Value Gaps'
+LEVELS_GROUP                    = 'Highs & Lows MTF'
+ZONES_GROUP                     = 'Premium & Discount Zones'
+
+modeTooltip                     = 'Allows to display historical Structure or only the recent ones'
+styleTooltip                    = 'Indicator color theme'
+showTrendTooltip                = 'Display additional candles with a color reflecting the current pv_trend detected by structure'
+showInternalsTooltip            = 'Display internal market structure'
+internalFilterConfluenceTooltip = 'Filter non significant internal structure breakouts'
+showStructureTooltip            = 'Display swing market Structure'
+showSwingsTooltip               = 'Display swing point as labels on the chart'
+showHighLowSwingsTooltip        = 'Highlight most recent strong and weak high/low points on the chart'
+showInternalOrderBlocksTooltip  = 'Display internal order blocks on the chart\n\nNumber of internal order blocks to display on the chart'
+showSwingOrderBlocksTooltip     = 'Display swing order blocks on the chart\n\nNumber of internal swing blocks to display on the chart'
+orderBlockFilterTooltip         = 'Method used to filter out volatile order blocks \n\nIt is recommended to use the cumulative mean range method when a low amount of data is available'
+orderBlockMitigationTooltip     = 'Select what values to use for order block mitigation'
+showEqualHighsLowsTooltip       = 'Display equal smc_highs and equal smc_lows on the chart'
+equalHighsLowsLengthTooltip     = 'Number of bars used to confirm equal smc_highs and equal smc_lows'
+equalHighsLowsThresholdTooltip  = 'Sensitivity threshold in a range (0, 1) used for the detection of equal smc_highs & smc_lows\n\nLower values will return fewer but more pertinent results'
+showFairValueGapsTooltip        = 'Display fair values gaps on the chart'
+fairValueGapsThresholdTooltip   = 'Filter out non significant fair value gaps'
+fairValueGapsTimeframeTooltip   = 'Fair value gaps timeframe'
+fairValueGapsExtendTooltip      = 'Determine how many bars to extend the Fair Value Gap boxes on chart'
+showPremiumDiscountZonesTooltip = 'Display premium, discount, and equilibrium zones on chart'
+
+modeInput                       = input.string( HISTORICAL, 'Mode',                     group = SMART_GROUP,    tooltip = modeTooltip, options = [HISTORICAL, PRESENT])
+styleInput                      = input.string( COLORED,    'Style',                    group = SMART_GROUP,    tooltip = styleTooltip,options = [COLORED, MONOCHROME])
+showTrendInput                  = input.bool(false, 'Color Candles', group = SMART_GROUP, tooltip = showTrendTooltip)
+
+showInternalsInput              = input.bool(true, 'Show Internal Structure', group = INTERNAL_GROUP, tooltip = showInternalsTooltip)
+showInternalBullInput           = input.string( ALL,        'Bullish Structure',        group = INTERNAL_GROUP, inline = 'ibull', options = [ALL,BOS,CHOCH])
+internalBullColorInput          = input.color(GREEN, '', group = INTERNAL_GROUP, inline = 'ibull')
+showInternalBearInput           = input.string( ALL,        'Bearish Structure' ,       group = INTERNAL_GROUP, inline = 'ibear', options = [ALL,BOS,CHOCH])
+internalBearColorInput          = input.color(RED, '', group = INTERNAL_GROUP, inline = 'ibear')
+internalFilterConfluenceInput   = input.bool(false, 'Confluence Filter', group = INTERNAL_GROUP, tooltip = internalFilterConfluenceTooltip)
+internalStructureSize           = input.string( TINY,       'Internal Label Size',      group = INTERNAL_GROUP, options = [TINY,SMALL,NORMAL])
+
+showStructureInput              = input.bool(true, 'Show Swing Structure', group = SWING_GROUP, tooltip = showStructureTooltip)
+showSwingBullInput              = input.string( ALL,        'Bullish Structure',        group = SWING_GROUP,    inline = 'bull',    options = [ALL,BOS,CHOCH])
+swingBullColorInput             = input.color(GREEN, '', group = SWING_GROUP, inline = 'bull')
+showSwingBearInput              = input.string( ALL,        'Bearish Structure',        group = SWING_GROUP,    inline = 'bear',    options = [ALL,BOS,CHOCH])
+swingBearColorInput             = input.color(RED, '', group = SWING_GROUP, inline = 'bear')
+swingStructureSize              = input.string( SMALL,      'Swing Label Size',         group = SWING_GROUP,    options = [TINY,SMALL,NORMAL])
+showSwingsInput                 = input.bool(false, 'Show Swings Points', group = SWING_GROUP, tooltip = showSwingsTooltip, inline = 'swings')
+swingsLengthInput               = input.int(    50,         '',                         group = SWING_GROUP,    minval = 10,                inline = 'swings')
+showHighLowSwingsInput          = input.bool(true, 'Show Strong/Weak High/Low', group = SWING_GROUP, tooltip = showHighLowSwingsTooltip)
+
+showInternalOrderBlocksInput    = input.bool(true, 'Internal Order Blocks', group = BLOCKS_GROUP, tooltip = showInternalOrderBlocksTooltip, inline = 'iob')
+internalOrderBlocksSizeInput    = input.int(    5,          '',                         group = BLOCKS_GROUP,   minval = 1, maxval = 20,                    inline = 'iob')
+showSwingOrderBlocksInput       = input.bool(false, 'Swing Order Blocks', group = BLOCKS_GROUP, tooltip = showSwingOrderBlocksTooltip, inline = 'ob')
+swingOrderBlocksSizeInput       = input.int(    5,          '',                         group = BLOCKS_GROUP,   minval = 1, maxval = 20,                    inline = 'ob') 
+orderBlockFilterInput           = input.string( 'Atr',      'Order Block Filter',       group = BLOCKS_GROUP,   tooltip = orderBlockFilterTooltip,          options = [ATR, RANGE])
+orderBlockMitigationInput       = input.string( HIGHLOW,    'Order Block Mitigation',   group = BLOCKS_GROUP,   tooltip = orderBlockMitigationTooltip,      options = [CLOSE,HIGHLOW])
+internalBullishOrderBlockColor  = input.color(color.new(#3179f5, 80), 'Internal Bullish OB',    group = BLOCKS_GROUP)
+internalBearishOrderBlockColor  = input.color(color.new(#f77c80, 80), 'Internal Bearish OB',    group = BLOCKS_GROUP)
+swingBullishOrderBlockColor     = input.color(color.new(#1848cc, 80), 'Bullish OB',             group = BLOCKS_GROUP)
+swingBearishOrderBlockColor     = input.color(color.new(#b22833, 80), 'Bearish OB',             group = BLOCKS_GROUP)
+
+showEqualHighsLowsInput         = input.bool(true, 'Equal High/Low', group = EQUAL_GROUP, tooltip = showEqualHighsLowsTooltip)
+equalHighsLowsLengthInput       = input.int(    3,          'Bars Confirmation',        group = EQUAL_GROUP,    tooltip = equalHighsLowsLengthTooltip,      minval = 1)
+equalHighsLowsThresholdInput    = input.float(  0.1,        'Threshold',                group = EQUAL_GROUP,    tooltip = equalHighsLowsThresholdTooltip,   minval = 0, maxval = 0.5, step = 0.1)
+equalHighsLowsSizeInput         = input.string( TINY,       'Label Size',               group = EQUAL_GROUP,    options = [TINY,SMALL,NORMAL])
+
+showFairValueGapsInput          = input.bool(false, 'Fair Value Gaps', group = GAPS_GROUP, tooltip = showFairValueGapsTooltip)
+fairValueGapsThresholdInput     = input.bool(true, 'Auto Threshold', group = GAPS_GROUP, tooltip = fairValueGapsThresholdTooltip)
+fairValueGapsTimeframeInput     = input.timeframe('',       'Timeframe',                group = GAPS_GROUP,     tooltip = fairValueGapsTimeframeTooltip)
+fairValueGapsBullColorInput     = input.color(color.new(#00ff68, 70), 'Bullish FVG' , group = GAPS_GROUP)
+fairValueGapsBearColorInput     = input.color(color.new(#ff0008, 70), 'Bearish FVG' , group = GAPS_GROUP)
+fairValueGapsExtendInput        = input.int(    1,          'Extend FVG',               group = GAPS_GROUP,     tooltip = fairValueGapsExtendTooltip,       minval = 0)
+
+showDailyLevelsInput            = input.bool(false, 'Daily', group = LEVELS_GROUP, inline = 'daily')
+dailyLevelsStyleInput           = input.string( SOLID,      '',         group = LEVELS_GROUP,   inline = 'daily',   options = [SOLID,DASHED,DOTTED])
+dailyLevelsColorInput           = input.color(BLUE, '', group = LEVELS_GROUP, inline = 'daily')
+showWeeklyLevelsInput           = input.bool(false, 'Weekly', group = LEVELS_GROUP, inline = 'weekly')
+weeklyLevelsStyleInput          = input.string( SOLID,      '',         group = LEVELS_GROUP,   inline = 'weekly',  options = [SOLID,DASHED,DOTTED])
+weeklyLevelsColorInput          = input.color(BLUE, '', group = LEVELS_GROUP, inline = 'weekly')
+showMonthlyLevelsInput          = input.bool(false, 'Monthly', group = LEVELS_GROUP, inline = 'monthly')
+monthlyLevelsStyleInput         = input.string( SOLID,      '',         group = LEVELS_GROUP,   inline = 'monthly', options = [SOLID,DASHED,DOTTED])
+monthlyLevelsColorInput         = input.color(BLUE, '', group = LEVELS_GROUP, inline = 'monthly')
+
+showPremiumDiscountZonesInput   = input.bool(false, 'Premium/Discount Zones', group = ZONES_GROUP, tooltip = showPremiumDiscountZonesTooltip)
+premiumZoneColorInput           = input.color(  RED,        'Premium Zone',             group = ZONES_GROUP)
+equilibriumZoneColorInput       = input.color(  GRAY,       'Equilibrium Zone',         group = ZONES_GROUP)
+discountZoneColorInput          = input.color(  GREEN,      'Discount Zone',            group = ZONES_GROUP)
+
+//---------------------------------------------------------------------------------------------------------------------}
+//DATA STRUCTURES & VARIABLES
+//---------------------------------------------------------------------------------------------------------------------{
+// @type                            UDT representing pv_alerts as bool fields
+// @field internalBullishBOS        internal structure custom alert
+// @field internalBearishBOS        internal structure custom alert
+// @field internalBullishCHoCH      internal structure custom alert
+// @field internalBearishCHoCH      internal structure custom alert
+// @field swingBullishBOS           swing structure custom alert
+// @field swingBearishBOS           swing structure custom alert
+// @field swingBullishCHoCH         swing structure custom alert
+// @field swingBearishCHoCH         swing structure custom alert
+// @field internalBullishOrderBlock internal order block custom alert
+// @field internalBearishOrderBlock internal order block custom alert
+// @field swingBullishOrderBlock    swing order block custom alert
+// @field swingBearishOrderBlock    swing order block custom alert
+// @field equalHighs                equal high low custom alert
+// @field equalLows                 equal high low custom alert
+// @field bullishFairValueGap       fair value gap custom alert
+// @field bearishFairValueGap       fair value gap custom alert
+type pv_alerts
+    bool internalBullishBOS         = false
+    bool internalBearishBOS         = false
+    bool internalBullishCHoCH       = false
+    bool internalBearishCHoCH       = false
+    bool swingBullishBOS            = false
+    bool swingBearishBOS            = false
+    bool swingBullishCHoCH          = false
+    bool swingBearishCHoCH          = false
+    bool internalBullishOrderBlock  = false
+    bool internalBearishOrderBlock  = false
+    bool swingBullishOrderBlock     = false
+    bool swingBearishOrderBlock     = false
+    bool equalHighs                 = false
+    bool equalLows                  = false
+    bool bullishFairValueGap        = false
+    bool bearishFairValueGap        = false
+
+// @type                            UDT representing last swing extremes (top & bottom)
+// @field top                       last top swing price
+// @field bottom                    last bottom swing price
+// @field barTime                   last swing bar time
+// @field barIndex                  last swing bar index
+// @field lastTopTime               last top swing time
+// @field lastBottomTime            last bottom swing time
+type pv_trailingExtremes
+    float top
+    float bottom
+    int barTime
+    int barIndex
+    int lastTopTime
+    int lastBottomTime
+
+// @type                            UDT representing Fair Value Gaps
+// @field top                       top price
+// @field bottom                    bottom price
+// @field bias                      bias (BULLISH or BEARISH)
+// @field topBox                    top box
+// @field bottomBox                 bottom box
+type pv_fairValueGap
+    float top
+    float bottom
+    int bias
+    box topBox
+    box bottomBox
+
+// @type                            UDT representing pv_trend bias
+// @field bias                      BULLISH or BEARISH
+type pv_trend
+    int bias    
+
+// @type                            UDT representing Equal Highs Lows display
+// @field l_ine                     displayed line
+// @field l_abel                    displayed label
+type pv_equalDisplay
+    line l_ine      = na
+    label l_abel    = na
+
+// @type                            UDT representing a pv_pivot point (swing point) 
+// @field currentLevel              current price level
+// @field lastLevel                 last price level
+// @field crossed                   true if price level is crossed
+// @field barTime                   bar time
+// @field barIndex                  bar index    
+type pv_pivot
+    float currentLevel
+    float lastLevel
+    bool crossed
+    int barTime     = time
+    int barIndex    = bar_index
+
+// @type                            UDT representing an order block
+// @field barHigh                   bar high
+// @field barLow                    bar low
+// @field barTime                   bar time
+// @field bias                      BULLISH or BEARISH
+type pv_orderBlock
+    float barHigh
+    float barLow
+    int barTime    
+    int bias
+
+// @variable                        current swing pv_pivot high    
+var pv_pivot smc_swingHigh                 = pv_pivot.new(na,na,false)
+// @variable                        current swing pv_pivot low
+var pv_pivot smc_swingLow                  = pv_pivot.new(na,na,false)
+// @variable                        current internal pv_pivot high
+var pv_pivot smc_internalHigh              = pv_pivot.new(na,na,false)
+// @variable                        current internal pv_pivot low
+var pv_pivot smc_internalLow               = pv_pivot.new(na,na,false)
+// @variable                        current equal high pv_pivot
+var pv_pivot smc_equalHigh                 = pv_pivot.new(na,na,false)
+// @variable                        current equal low pv_pivot
+var pv_pivot smc_equalLow                  = pv_pivot.new(na,na,false)
+// @variable                        swing pv_trend bias
+var pv_trend smc_swingTrend                = pv_trend.new(0)
+// @variable                        internal pv_trend bias
+var pv_trend smc_internalTrend             = pv_trend.new(0)
+// @variable                        equal high display
+var pv_equalDisplay smc_equalHighDisplay   = pv_equalDisplay.new()
+// @variable                        equal low display
+var pv_equalDisplay smc_equalLowDisplay    = pv_equalDisplay.new()
+// @variable                        storage for pv_fairValueGap UDTs
+var array<pv_fairValueGap> smc_fairValueGaps = array.new<pv_fairValueGap>()
+// @variable                        storage for parsed smc_highs
+var array<float> smc_parsedHighs        = array.new<float>()
+// @variable                        storage for parsed smc_lows
+var array<float> smc_parsedLows         = array.new<float>()
+// @variable                        storage for raw smc_highs
+var array<float> smc_highs              = array.new<float>()
+// @variable                        storage for raw smc_lows
+var array<float> smc_lows               = array.new<float>()
+// @variable                        storage for bar time values
+var array<int> smc_times                = array.new<int>()
+// @variable                        last smc_trailing swing high and low
+var pv_trailingExtremes smc_trailing       = pv_trailingExtremes.new()
+// @variable                                storage for pv_orderBlock UDTs (swing order blocks)
+var array<pv_orderBlock> smc_swingOrderBlocks      = array.new<pv_orderBlock>()
+// @variable                                storage for pv_orderBlock UDTs (internal order blocks)
+var array<pv_orderBlock> smc_internalOrderBlocks   = array.new<pv_orderBlock>()
+// @variable                                storage for swing order blocks boxes
+var array<box> smc_swingOrderBlocksBoxes        = array.new<box>()
+// @variable                                storage for internal order blocks boxes
+var array<box> smc_internalOrderBlocksBoxes     = array.new<box>()
+// @variable                        color for swing bullish structures
+var smc_swingBullishColor               = styleInput == MONOCHROME ? MONO_BULLISH : swingBullColorInput
+// @variable                        color for swing bearish structures
+var smc_swingBearishColor               = styleInput == MONOCHROME ? MONO_BEARISH : swingBearColorInput
+// @variable                        color for bullish fair value gaps
+var smc_fairValueGapBullishColor        = styleInput == MONOCHROME ? color.new(MONO_BULLISH,70) : fairValueGapsBullColorInput
+// @variable                        color for bearish fair value gaps
+var smc_fairValueGapBearishColor        = styleInput == MONOCHROME ? color.new(MONO_BEARISH,70) : fairValueGapsBearColorInput
+// @variable                        color for premium zone
+var smc_premiumZoneColor                = styleInput == MONOCHROME ? MONO_BEARISH : premiumZoneColorInput
+// @variable                        color for discount zone
+var smc_discountZoneColor               = styleInput == MONOCHROME ? MONO_BULLISH : discountZoneColorInput 
+// @variable                        bar index on current script iteration
+varip int smc_currentBarIndex           = bar_index
+// @variable                        bar index on last script iteration
+varip int smc_lastBarIndex              = bar_index
+// @variable                        pv_alerts in current bar
+pv_alerts smc_currentAlerts                = pv_alerts.new()
+// @variable                        time at start of chart
+var smc_initialTime                     = time
+
+// we create the needed boxes for displaying order blocks at the first execution
+if barstate.isfirst
+    if showSwingOrderBlocksInput
+        for index = 1 to swingOrderBlocksSizeInput
+            smc_swingOrderBlocksBoxes.push(box.new(na,na,na,na,xloc = xloc.bar_time,extend = extend.right))
+    if showInternalOrderBlocksInput
+        for index = 1 to internalOrderBlocksSizeInput
+            smc_internalOrderBlocksBoxes.push(box.new(na,na,na,na,xloc = xloc.bar_time,extend = extend.right))
+
+// @variable                        source to use in bearish order blocks mitigation
+smc_bearishOrderBlockMitigationSource   = orderBlockMitigationInput == CLOSE ? close : high
+// @variable                        source to use in bullish order blocks mitigation
+smc_bullishOrderBlockMitigationSource   = orderBlockMitigationInput == CLOSE ? close : low
+// @variable                        default volatility measure
+smc_atrMeasure                          = ta.atr(200)
+// @variable                        parsed volatility measure by user settings
+smc_volatilityMeasure                   = orderBlockFilterInput == ATR ? smc_atrMeasure : ta.cum(ta.tr)/bar_index
+// @variable                        true if current bar is a high volatility bar
+smc_highVolatilityBar                   = (high - low) >= (2 * smc_volatilityMeasure)
+// @variable                        parsed high
+smc_parsedHigh                          = smc_highVolatilityBar ? low : high
+// @variable                        parsed low
+smc_parsedLow                           = smc_highVolatilityBar ? high : low
+
+// we store current values into the arrays at each bar
+smc_parsedHighs.push(smc_parsedHigh)
+smc_parsedLows.push(smc_parsedLow)
+smc_highs.push(high)
+smc_lows.push(low)
+smc_times.push(time)
+
+//---------------------------------------------------------------------------------------------------------------------}
+//USER-DEFINED FUNCTIONS
+//---------------------------------------------------------------------------------------------------------------------{
+// @function            Get the value of the current smc_leg, it can be 0 (bearish) or 1 (bullish)
+// @returns             int
+smc_leg(int size) =>
+    var smc_leg     = 0    
+    newLegHigh  = high[size] > ta.highest( size)
+    newLegLow   = low[size]  < ta.lowest(  size)
+    
+    if newLegHigh
+        smc_leg := BEARISH_LEG
+    else if newLegLow
+        smc_leg := BULLISH_LEG
+    smc_leg
+
+// @function            Identify whether the current value is the start of a new smc_leg (swing)
+// @param smc_leg           (int) Current smc_leg value
+// @returns             bool
+smc_startOfNewLeg(int smc_leg)      => ta.change(smc_leg) != 0
+
+// @function            Identify whether the current level is the start of a new bearish smc_leg (swing)
+// @param smc_leg           (int) Current smc_leg value
+// @returns             bool
+smc_startOfBearishLeg(int smc_leg)  => ta.change(smc_leg) == -1
+
+// @function            Identify whether the current level is the start of a new bullish smc_leg (swing)
+// @param smc_leg           (int) Current smc_leg value
+// @returns             bool
+smc_startOfBullishLeg(int smc_leg)  => ta.change(smc_leg) == +1
+
+// @function            create a new label
+// @param labelTime     bar time coordinate
+// @param labelPrice    price coordinate
+// @param tag           text to display
+// @param labelColor    text color
+// @param labelStyle    label style
+// @returns             label ID
+smc_drawLabel(int labelTime, float labelPrice, string tag, color labelColor, string labelStyle) =>    
+    var label l_abel = na
+
+    if modeInput == PRESENT
+        l_abel.delete()
+
+    l_abel := label.new(chart.point.new(labelTime,na,labelPrice),tag,xloc.bar_time,color=color(na),textcolor=labelColor,style = labelStyle,size = size.small)
+
+// @function            create a new line and label representing an EQH or EQL
+// @param p_ivot        starting pv_pivot
+// @param level         price level of current pv_pivot
+// @param size          how many bars ago was the current pv_pivot detected
+// @param smc_equalHigh     true for EQH, false for EQL
+// @returns             label ID
+smc_drawEqualHighLow(pv_pivot p_ivot, float level, int size, bool smc_equalHigh) =>
+    pv_equalDisplay e_qualDisplay = smc_equalHigh ? smc_equalHighDisplay : smc_equalLowDisplay
+    
+    string tag          = 'EQL'
+    color equalColor    = smc_swingBullishColor
+    string labelStyle   = label.style_label_up
+
+    if smc_equalHigh
+        tag         := 'EQH'
+        equalColor  := smc_swingBearishColor
+        labelStyle  := label.style_label_down
+
+    if modeInput == PRESENT
+        line.delete(    e_qualDisplay.l_ine)
+        label.delete(   e_qualDisplay.l_abel)
+        
+    e_qualDisplay.l_ine     := line.new(chart.point.new(p_ivot.barTime,na,p_ivot.currentLevel), chart.point.new(time[size],na,level), xloc = xloc.bar_time, color = equalColor, style = line.style_dotted)
+    labelPosition           = math.round(0.5*(p_ivot.barIndex + bar_index - size))
+    e_qualDisplay.l_abel    := label.new(chart.point.new(na,labelPosition,level), tag, xloc.bar_index, color = color(na), textcolor = equalColor, style = labelStyle, size = equalHighsLowsSizeInput)
+
+// @function            store current structure and smc_trailing swing points, and also display swing points and equal smc_highs/smc_lows
+// @param size          (int) structure size
+// @param equalHighLow  (bool) true for displaying current smc_highs/smc_lows
+// @param internal      (bool) true for getting internal structures
+// @returns             label ID
+smc_getCurrentStructure(int size,bool equalHighLow = false, bool internal = false) =>        
+    currentLeg              = smc_leg(size)
+    newPivot                = smc_startOfNewLeg(currentLeg)
+    pivotLow                = smc_startOfBullishLeg(currentLeg)
+    pivotHigh               = smc_startOfBearishLeg(currentLeg)
+
+    if newPivot
+        if pivotLow
+            pv_pivot p_ivot    = equalHighLow ? smc_equalLow : internal ? smc_internalLow : smc_swingLow    
+
+            if equalHighLow and math.abs(p_ivot.currentLevel - low[size]) < equalHighsLowsThresholdInput * smc_atrMeasure                
+                smc_drawEqualHighLow(p_ivot, low[size], size, false)
+                smc_currentAlerts.equalLows := true
+
+            p_ivot.lastLevel    := p_ivot.currentLevel
+            p_ivot.currentLevel := low[size]
+            p_ivot.crossed      := false
+            p_ivot.barTime      := time[size]
+            p_ivot.barIndex     := bar_index[size]
+
+            if not equalHighLow and not internal
+                smc_trailing.bottom         := p_ivot.currentLevel
+                smc_trailing.barTime        := p_ivot.barTime
+                smc_trailing.barIndex       := p_ivot.barIndex
+                smc_trailing.lastBottomTime := p_ivot.barTime
+
+            if showSwingsInput and not internal and not equalHighLow
+                smc_drawLabel(time[size], p_ivot.currentLevel, p_ivot.currentLevel < p_ivot.lastLevel ? 'LL' : 'HL', smc_swingBullishColor, label.style_label_up)            
+        else
+            pv_pivot p_ivot = equalHighLow ? smc_equalHigh : internal ? smc_internalHigh : smc_swingHigh
+
+            if equalHighLow and math.abs(p_ivot.currentLevel - high[size]) < equalHighsLowsThresholdInput * smc_atrMeasure
+                smc_drawEqualHighLow(p_ivot,high[size],size,true)
+                smc_currentAlerts.equalHighs := true               
+
+            p_ivot.lastLevel    := p_ivot.currentLevel
+            p_ivot.currentLevel := high[size]
+            p_ivot.crossed      := false
+            p_ivot.barTime      := time[size]
+            p_ivot.barIndex     := bar_index[size]
+
+            if not equalHighLow and not internal
+                smc_trailing.top            := p_ivot.currentLevel
+                smc_trailing.barTime        := p_ivot.barTime
+                smc_trailing.barIndex       := p_ivot.barIndex
+                smc_trailing.lastTopTime    := p_ivot.barTime
+
+            if showSwingsInput and not internal and not equalHighLow
+                smc_drawLabel(time[size], p_ivot.currentLevel, p_ivot.currentLevel > p_ivot.lastLevel ? 'HH' : 'LH', smc_swingBearishColor, label.style_label_down)
+                
+// @function                draw line and label representing a structure
+// @param p_ivot            base pv_pivot point
+// @param tag               test to display
+// @param structureColor    base color
+// @param lineStyle         line style
+// @param labelStyle        label style
+// @param labelSize         text size
+// @returns                 label ID
+smc_drawStructure(pv_pivot p_ivot, string tag, color structureColor, string lineStyle, string labelStyle, string labelSize) =>    
+    var line l_ine      = line.new(na,na,na,na,xloc = xloc.bar_time)
+    var label l_abel    = label.new(na,na)
+
+    if modeInput == PRESENT
+        l_ine.delete()
+        l_abel.delete()
+
+    l_ine   := line.new(chart.point.new(p_ivot.barTime,na,p_ivot.currentLevel), chart.point.new(time,na,p_ivot.currentLevel), xloc.bar_time, color=structureColor, style=lineStyle)
+    l_abel  := label.new(chart.point.new(na,math.round(0.5*(p_ivot.barIndex+bar_index)),p_ivot.currentLevel), tag, xloc.bar_index, color=color(na), textcolor=structureColor, style=labelStyle, size = labelSize)
+
+// @function            delete order blocks
+// @param internal      true for internal order blocks
+// @returns             pv_orderBlock ID
+smc_deleteOrderBlocks(bool internal = false) =>
+    array<pv_orderBlock> orderBlocks = internal ? smc_internalOrderBlocks : smc_swingOrderBlocks
+
+    for [index,eachOrderBlock] in orderBlocks
+        bool crossedOderBlock = false
+        
+        if smc_bearishOrderBlockMitigationSource > eachOrderBlock.barHigh and eachOrderBlock.bias == BEARISH
+            crossedOderBlock := true
+            if internal
+                smc_currentAlerts.internalBearishOrderBlock := true
+            else
+                smc_currentAlerts.swingBearishOrderBlock    := true
+        else if smc_bullishOrderBlockMitigationSource < eachOrderBlock.barLow and eachOrderBlock.bias == BULLISH
+            crossedOderBlock := true
+            if internal
+                smc_currentAlerts.internalBullishOrderBlock := true
+            else
+                smc_currentAlerts.swingBullishOrderBlock    := true
+        if crossedOderBlock                    
+            orderBlocks.remove(index)            
+
+// @function            fetch and store order blocks
+// @param p_ivot        base pv_pivot point
+// @param internal      true for internal order blocks
+// @param bias          BULLISH or BEARISH
+// @returns             void
+smc_storeOrdeBlock(pv_pivot p_ivot,bool internal = false,int bias) =>
+    if (not internal and showSwingOrderBlocksInput) or (internal and showInternalOrderBlocksInput)
+
+        array<float> a_rray = na
+        int parsedIndex = na
+
+        if bias == BEARISH
+            a_rray      := smc_parsedHighs.slice(p_ivot.barIndex,bar_index)
+            parsedIndex := p_ivot.barIndex + a_rray.indexof(a_rray.max())  
+        else
+            a_rray      := smc_parsedLows.slice(p_ivot.barIndex,bar_index)
+            parsedIndex := p_ivot.barIndex + a_rray.indexof(a_rray.min())                        
+
+        pv_orderBlock o_rderBlock          = pv_orderBlock.new(smc_parsedHighs.get(parsedIndex), smc_parsedLows.get(parsedIndex), smc_times.get(parsedIndex),bias)
+        array<pv_orderBlock> orderBlocks   = internal ? smc_internalOrderBlocks : smc_swingOrderBlocks
+        
+        if orderBlocks.size() >= 100
+            orderBlocks.pop()
+        orderBlocks.unshift(o_rderBlock)
+
+// @function            draw order blocks as boxes
+// @param internal      true for internal order blocks
+// @returns             void
+smc_drawOrderBlocks(bool internal = false) =>        
+    array<pv_orderBlock> orderBlocks = internal ? smc_internalOrderBlocks : smc_swingOrderBlocks
+    orderBlocksSize = orderBlocks.size()
+
+    if orderBlocksSize > 0        
+        maxOrderBlocks                      = internal ? internalOrderBlocksSizeInput : swingOrderBlocksSizeInput
+        array<pv_orderBlock> parsedOrdeBlocks  = orderBlocks.slice(0, math.min(maxOrderBlocks,orderBlocksSize))
+        array<box> b_oxes                   = internal ? smc_internalOrderBlocksBoxes : smc_swingOrderBlocksBoxes        
+
+        for [index,eachOrderBlock] in parsedOrdeBlocks
+            orderBlockColor = styleInput == MONOCHROME ? (eachOrderBlock.bias == BEARISH ? color.new(MONO_BEARISH,80) : color.new(MONO_BULLISH,80)) : internal ? (eachOrderBlock.bias == BEARISH ? internalBearishOrderBlockColor : internalBullishOrderBlockColor) : (eachOrderBlock.bias == BEARISH ? swingBearishOrderBlockColor : swingBullishOrderBlockColor)
+
+            box b_ox        = b_oxes.get(index)
+            b_ox.set_top_left_point(    chart.point.new(eachOrderBlock.barTime,na,eachOrderBlock.barHigh))
+            b_ox.set_bottom_right_point(chart.point.new(last_bar_time,na,eachOrderBlock.barLow))        
+            b_ox.set_border_color(      internal ? na : orderBlockColor)
+            b_ox.set_bgcolor(           orderBlockColor)
+
+// @function            detect and draw structures, also detect and store order blocks
+// @param internal      true for internal structures or order blocks
+// @returns             void
+smc_displayStructure(bool internal = false) =>
+    var bullishBar = true
+    var bearishBar = true
+
+    if internalFilterConfluenceInput
+        bullishBar := high - math.max(close, open) > math.min(close, open - low)
+        bearishBar := high - math.max(close, open) < math.min(close, open - low)
+    
+    pv_pivot p_ivot    = internal ? smc_internalHigh : smc_swingHigh
+    pv_trend t_rend    = internal ? smc_internalTrend : smc_swingTrend
+
+    lineStyle       = internal ? line.style_dashed : line.style_solid
+    labelSize       = internal ? internalStructureSize : swingStructureSize
+
+    extraCondition  = internal ? smc_internalHigh.currentLevel != smc_swingHigh.currentLevel and bullishBar : true
+    bullishColor    = styleInput == MONOCHROME ? MONO_BULLISH : internal ? internalBullColorInput : swingBullColorInput
+
+    if ta.crossover(close,p_ivot.currentLevel) and not p_ivot.crossed and extraCondition
+        string tag = t_rend.bias == BEARISH ? CHOCH : BOS
+
+        if internal
+            smc_currentAlerts.internalBullishCHoCH  := tag == CHOCH
+            smc_currentAlerts.internalBullishBOS    := tag == BOS
+        else
+            smc_currentAlerts.swingBullishCHoCH     := tag == CHOCH
+            smc_currentAlerts.swingBullishBOS       := tag == BOS
+
+        p_ivot.crossed  := true
+        t_rend.bias     := BULLISH
+
+        displayCondition = internal ? showInternalsInput and (showInternalBullInput == ALL or (showInternalBullInput == BOS and tag != CHOCH) or (showInternalBullInput == CHOCH and tag == CHOCH)) : showStructureInput and (showSwingBullInput == ALL or (showSwingBullInput == BOS and tag != CHOCH) or (showSwingBullInput == CHOCH and tag == CHOCH))
+
+        if displayCondition                        
+            smc_drawStructure(p_ivot,tag,bullishColor,lineStyle,label.style_label_down,labelSize)
+
+        if (internal and showInternalOrderBlocksInput) or (not internal and showSwingOrderBlocksInput)
+            smc_storeOrdeBlock(p_ivot,internal,BULLISH)
+
+    p_ivot          := internal ? smc_internalLow : smc_swingLow    
+    extraCondition  := internal ? smc_internalLow.currentLevel != smc_swingLow.currentLevel and bearishBar : true
+    bearishColor    = styleInput == MONOCHROME ? MONO_BEARISH : internal ? internalBearColorInput : swingBearColorInput
+
+    if ta.crossunder(close,p_ivot.currentLevel) and not p_ivot.crossed and extraCondition
+        string tag = t_rend.bias == BULLISH ? CHOCH : BOS
+
+        if internal
+            smc_currentAlerts.internalBearishCHoCH  := tag == CHOCH
+            smc_currentAlerts.internalBearishBOS    := tag == BOS
+        else
+            smc_currentAlerts.swingBearishCHoCH     := tag == CHOCH
+            smc_currentAlerts.swingBearishBOS       := tag == BOS
+
+        p_ivot.crossed := true
+        t_rend.bias := BEARISH
+
+        displayCondition = internal ? showInternalsInput and (showInternalBearInput == ALL or (showInternalBearInput == BOS and tag != CHOCH) or (showInternalBearInput == CHOCH and tag == CHOCH)) : showStructureInput and (showSwingBearInput == ALL or (showSwingBearInput == BOS and tag != CHOCH) or (showSwingBearInput == CHOCH and tag == CHOCH))
+        
+        if displayCondition                        
+            smc_drawStructure(p_ivot,tag,bearishColor,lineStyle,label.style_label_up,labelSize)
+
+        if (internal and showInternalOrderBlocksInput) or (not internal and showSwingOrderBlocksInput)
+            smc_storeOrdeBlock(p_ivot,internal,BEARISH)
+
+// @function            draw one fair value gap box (each fair value gap has two boxes)
+// @param leftTime      left time coordinate
+// @param rightTime     right time coordinate
+// @param topPrice      top price level
+// @param bottomPrice   bottom price level
+// @param boxColor      box color
+// @returns             box ID
+smc_fairValueGapBox(leftTime,rightTime,topPrice,bottomPrice,boxColor) => box.new(chart.point.new(leftTime,na,topPrice),chart.point.new(rightTime + fairValueGapsExtendInput * (time-time[1]),na,bottomPrice), xloc=xloc.bar_time, border_color = boxColor, bgcolor = boxColor)
+
+// @function            delete fair value gaps
+// @returns             pv_fairValueGap ID
+smc_deleteFairValueGaps() =>
+    for [index,eachFairValueGap] in smc_fairValueGaps
+        if (low < eachFairValueGap.bottom and eachFairValueGap.bias == BULLISH) or (high > eachFairValueGap.top and eachFairValueGap.bias == BEARISH)
+            eachFairValueGap.topBox.delete()
+            eachFairValueGap.bottomBox.delete()
+            smc_fairValueGaps.remove(index)
+    
+// @function            draw fair value gaps
+// @returns             pv_fairValueGap ID
+smc_drawFairValueGaps() => 
+    [lastClose, lastOpen, lastTime, currentHigh, currentLow, currentTime, last2High, last2Low] = request.security(syminfo.tickerid, fairValueGapsTimeframeInput, [close[1], open[1], time[1], high[0], low[0], time[0], high[2], low[2]],lookahead = barmerge.lookahead_on)
+
+    barDeltaPercent     = (lastClose - lastOpen) / (lastOpen * 100)
+    newTimeframe        = timeframe.change(fairValueGapsTimeframeInput)
+    threshold           = fairValueGapsThresholdInput ? ta.cum(math.abs(newTimeframe ? barDeltaPercent : 0)) / bar_index * 2 : 0
+
+    bullishFairValueGap = currentLow > last2High and lastClose > last2High and barDeltaPercent > threshold and newTimeframe
+    bearishFairValueGap = currentHigh < last2Low and lastClose < last2Low and -barDeltaPercent > threshold and newTimeframe
+
+    if bullishFairValueGap
+        smc_currentAlerts.bullishFairValueGap := true
+        smc_fairValueGaps.unshift(pv_fairValueGap.new(currentLow,last2High,BULLISH,smc_fairValueGapBox(lastTime,currentTime,currentLow,math.avg(currentLow,last2High),smc_fairValueGapBullishColor),smc_fairValueGapBox(lastTime,currentTime,math.avg(currentLow,last2High),last2High,smc_fairValueGapBullishColor)))
+    if bearishFairValueGap
+        smc_currentAlerts.bearishFairValueGap := true
+        smc_fairValueGaps.unshift(pv_fairValueGap.new(currentHigh,last2Low,BEARISH,smc_fairValueGapBox(lastTime,currentTime,currentHigh,math.avg(currentHigh,last2Low),smc_fairValueGapBearishColor),smc_fairValueGapBox(lastTime,currentTime,math.avg(currentHigh,last2Low),last2Low,smc_fairValueGapBearishColor)))
+
+// @function            get line style from string
+// @param style         line style
+// @returns             string
+smc_getStyle(string style) =>
+    switch style
+        SOLID => line.style_solid
+        DASHED => line.style_dashed
+        DOTTED => line.style_dotted
+
+// @function            draw MultiTimeFrame levels
+// @param timeframe     base timeframe
+// @param sameTimeframe true if chart timeframe is same as base timeframe
+// @param style         line style
+// @param levelColor    line and text color
+// @returns             void
+smc_drawLevels(string timeframe, bool sameTimeframe, string style, color levelColor) =>
+    [topLevel, bottomLevel, leftTime, rightTime] = request.security(syminfo.tickerid, timeframe, [high[1], low[1], time[1], time],lookahead = barmerge.lookahead_on)
+
+    float parsedTop         = sameTimeframe ? high : topLevel
+    float parsedBottom      = sameTimeframe ? low : bottomLevel    
+
+    int parsedLeftTime      = sameTimeframe ? time : leftTime
+    int parsedRightTime     = sameTimeframe ? time : rightTime
+
+    int parsedTopTime       = time
+    int parsedBottomTime    = time
+
+    if not sameTimeframe
+        int leftIndex               = smc_times.binary_search_rightmost(parsedLeftTime)
+        int rightIndex              = smc_times.binary_search_rightmost(parsedRightTime)
+
+        array<int> timeArray        = smc_times.slice(leftIndex,rightIndex)
+        array<float> topArray       = smc_highs.slice(leftIndex,rightIndex)
+        array<float> bottomArray    = smc_lows.slice(leftIndex,rightIndex)
+
+        parsedTopTime               := timeArray.size() > 0 ? timeArray.get(topArray.indexof(topArray.max())) : smc_initialTime
+        parsedBottomTime            := timeArray.size() > 0 ? timeArray.get(bottomArray.indexof(bottomArray.min())) : smc_initialTime
+
+    var line topLine        = line.new(na, na, na, na, xloc = xloc.bar_time, color = levelColor, style = smc_getStyle(style))
+    var line bottomLine     = line.new(na, na, na, na, xloc = xloc.bar_time, color = levelColor, style = smc_getStyle(style))
+    var label topLabel      = label.new(na, na, xloc = xloc.bar_time, text = str.format('P{0}H',timeframe), color=color(na), textcolor = levelColor, size = size.small, style = label.style_label_left)
+    var label bottomLabel   = label.new(na, na, xloc = xloc.bar_time, text = str.format('P{0}L',timeframe), color=color(na), textcolor = levelColor, size = size.small, style = label.style_label_left)
+
+    topLine.set_first_point(    chart.point.new(parsedTopTime,na,parsedTop))
+    topLine.set_second_point(   chart.point.new(last_bar_time + 20 * (time-time[1]),na,parsedTop))   
+    topLabel.set_point(         chart.point.new(last_bar_time + 20 * (time-time[1]),na,parsedTop))
+
+    bottomLine.set_first_point( chart.point.new(parsedBottomTime,na,parsedBottom))    
+    bottomLine.set_second_point(chart.point.new(last_bar_time + 20 * (time-time[1]),na,parsedBottom))
+    bottomLabel.set_point(      chart.point.new(last_bar_time + 20 * (time-time[1]),na,parsedBottom))
+
+// @function            true if chart timeframe is higher than provided timeframe
+// @param timeframe     timeframe to check
+// @returns             bool
+smc_higherTimeframe(string timeframe) => timeframe.in_seconds() > timeframe.in_seconds(timeframe)
+
+// @function            update smc_trailing swing points
+// @returns             int
+smc_updateTrailingExtremes() =>
+    smc_trailing.top            := math.max(high,smc_trailing.top)
+    smc_trailing.lastTopTime    := smc_trailing.top == high ? time : smc_trailing.lastTopTime
+    smc_trailing.bottom         := math.min(low,smc_trailing.bottom)
+    smc_trailing.lastBottomTime := smc_trailing.bottom == low ? time : smc_trailing.lastBottomTime
+
+// @function            draw smc_trailing swing points
+// @returns             void
+smc_drawHighLowSwings() =>
+    var line topLine        = line.new(na, na, na, na, color = smc_swingBearishColor, xloc = xloc.bar_time)
+    var line bottomLine     = line.new(na, na, na, na, color = smc_swingBullishColor, xloc = xloc.bar_time)
+    var label topLabel      = label.new(na, na, color=color(na), textcolor = smc_swingBearishColor, xloc = xloc.bar_time, style = label.style_label_down, size = size.tiny)
+    var label bottomLabel   = label.new(na, na, color=color(na), textcolor = smc_swingBullishColor, xloc = xloc.bar_time, style = label.style_label_up, size = size.tiny)
+
+    rightTimeBar            = last_bar_time + 20 * (time - time[1])
+
+    topLine.set_first_point(    chart.point.new(smc_trailing.lastTopTime, na, smc_trailing.top))
+    topLine.set_second_point(   chart.point.new(rightTimeBar, na, smc_trailing.top))
+    topLabel.set_point(         chart.point.new(rightTimeBar, na, smc_trailing.top))
+    topLabel.set_text(          smc_swingTrend.bias == BEARISH ? 'Strong High' : 'Weak High')
+
+    bottomLine.set_first_point( chart.point.new(smc_trailing.lastBottomTime, na, smc_trailing.bottom))
+    bottomLine.set_second_point(chart.point.new(rightTimeBar, na, smc_trailing.bottom))
+    bottomLabel.set_point(      chart.point.new(rightTimeBar, na, smc_trailing.bottom))
+    bottomLabel.set_text(       smc_swingTrend.bias == BULLISH ? 'Strong Low' : 'Weak Low')
+
+// @function            draw a zone with a label and a box
+// @param labelLevel    price level for label
+// @param labelIndex    bar index for label
+// @param top           top price level for box
+// @param bottom        bottom price level for box
+// @param tag           text to display
+// @param zoneColor     base color
+// @param style         label style
+// @returns             void
+smc_drawZone(float labelLevel, int labelIndex, float top, float bottom, string tag, color zoneColor, string style) =>
+    var label l_abel    = label.new(na,na,text = tag, color=color(na),textcolor = zoneColor, style = style, size = size.small)
+    var box b_ox        = box.new(na,na,na,na,bgcolor = color.new(zoneColor,80),border_color = color(na), xloc = xloc.bar_time)
+
+    b_ox.set_top_left_point(    chart.point.new(smc_trailing.barTime,na,top))
+    b_ox.set_bottom_right_point(chart.point.new(last_bar_time,na,bottom))
+
+    l_abel.set_point(           chart.point.new(na,labelIndex,labelLevel))
+
+// @function            draw premium/discount zones
+// @returns             void
+smc_drawPremiumDiscountZones() =>
+    smc_drawZone(smc_trailing.top, math.round(0.5*(smc_trailing.barIndex + last_bar_index)), smc_trailing.top, 0.95*smc_trailing.top + 0.05*smc_trailing.bottom, 'Premium', smc_premiumZoneColor, label.style_label_down)
+
+    equilibriumLevel = math.avg(smc_trailing.top, smc_trailing.bottom)
+    smc_drawZone(equilibriumLevel, last_bar_index, 0.525*smc_trailing.top + 0.475*smc_trailing.bottom, 0.525*smc_trailing.bottom + 0.475*smc_trailing.top, 'Equilibrium', equilibriumZoneColorInput, label.style_label_left)
+
+    smc_drawZone(smc_trailing.bottom, math.round(0.5*(smc_trailing.barIndex + last_bar_index)), 0.95*smc_trailing.bottom + 0.05*smc_trailing.top, smc_trailing.bottom, 'Discount', smc_discountZoneColor, label.style_label_up)
+
+//---------------------------------------------------------------------------------------------------------------------}
+//MUTABLE VARIABLES & EXECUTION
+//---------------------------------------------------------------------------------------------------------------------{
+parsedOpen  = showTrendInput ? open : na
+candleColor = smc_internalTrend.bias == BULLISH ? smc_swingBullishColor : smc_swingBearishColor
+plotcandle(parsedOpen,high,low,close,color = candleColor, wickcolor = candleColor, bordercolor = candleColor)
+
+if showHighLowSwingsInput or showPremiumDiscountZonesInput
+    smc_updateTrailingExtremes()
+
+    if showHighLowSwingsInput
+        smc_drawHighLowSwings()
+
+    if showPremiumDiscountZonesInput
+        smc_drawPremiumDiscountZones()
+
+if showFairValueGapsInput
+    smc_deleteFairValueGaps()
+
+smc_getCurrentStructure(swingsLengthInput,false)
+smc_getCurrentStructure(5,false,true)
+
+if showEqualHighsLowsInput
+    smc_getCurrentStructure(equalHighsLowsLengthInput,true)
+
+if showInternalsInput or showInternalOrderBlocksInput or showTrendInput
+    smc_displayStructure(true)
+
+if showStructureInput or showSwingOrderBlocksInput or showHighLowSwingsInput
+    smc_displayStructure()
+
+if showInternalOrderBlocksInput
+    smc_deleteOrderBlocks(true)
+
+if showSwingOrderBlocksInput
+    smc_deleteOrderBlocks()
+
+if showFairValueGapsInput
+    smc_drawFairValueGaps()
+
+if barstate.islastconfirmedhistory or barstate.islast
+    if showInternalOrderBlocksInput        
+        smc_drawOrderBlocks(true)
+        
+    if showSwingOrderBlocksInput        
+        smc_drawOrderBlocks()
+
+smc_lastBarIndex    := smc_currentBarIndex
+smc_currentBarIndex := bar_index
+newBar          = smc_currentBarIndex != smc_lastBarIndex
+
+if barstate.islastconfirmedhistory or (barstate.isrealtime and newBar)
+    if showDailyLevelsInput and not smc_higherTimeframe('D')
+        smc_drawLevels('D',timeframe.isdaily,dailyLevelsStyleInput,dailyLevelsColorInput)
+
+    if showWeeklyLevelsInput and not smc_higherTimeframe('W')
+        smc_drawLevels('W',timeframe.isweekly,weeklyLevelsStyleInput,weeklyLevelsColorInput)
+
+    if showMonthlyLevelsInput and not smc_higherTimeframe('M')
+        smc_drawLevels('M',timeframe.ismonthly,monthlyLevelsStyleInput,monthlyLevelsColorInput)
+
+//---------------------------------------------------------------------------------------------------------------------}
+//ALERTS
+//---------------------------------------------------------------------------------------------------------------------{
+alertcondition(smc_currentAlerts.internalBullishBOS,        'Internal Bullish BOS',         'Internal Bullish BOS formed')
+alertcondition(smc_currentAlerts.internalBullishCHoCH,      'Internal Bullish CHoCH',       'Internal Bullish CHoCH formed')
+alertcondition(smc_currentAlerts.internalBearishBOS,        'Internal Bearish BOS',         'Internal Bearish BOS formed')
+alertcondition(smc_currentAlerts.internalBearishCHoCH,      'Internal Bearish CHoCH',       'Internal Bearish CHoCH formed')
+
+alertcondition(smc_currentAlerts.swingBullishBOS,           'Bullish BOS',                  'Internal Bullish BOS formed')
+alertcondition(smc_currentAlerts.swingBullishCHoCH,         'Bullish CHoCH',                'Internal Bullish CHoCH formed')
+alertcondition(smc_currentAlerts.swingBearishBOS,           'Bearish BOS',                  'Bearish BOS formed')
+alertcondition(smc_currentAlerts.swingBearishCHoCH,         'Bearish CHoCH',                'Bearish CHoCH formed')
+
+alertcondition(smc_currentAlerts.internalBullishOrderBlock, 'Bullish Internal OB Breakout', 'Price broke bullish internal OB')
+alertcondition(smc_currentAlerts.internalBearishOrderBlock, 'Bearish Internal OB Breakout', 'Price broke bearish internal OB')
+alertcondition(smc_currentAlerts.swingBullishOrderBlock,    'Bullish Swing OB Breakout',    'Price broke bullish swing OB')
+alertcondition(smc_currentAlerts.swingBearishOrderBlock,    'Bearish Swing OB Breakout',    'Price broke bearish swing OB')
+
+alertcondition(smc_currentAlerts.equalHighs,                'Equal Highs',                  'Equal smc_highs detected')
+alertcondition(smc_currentAlerts.equalLows,                 'Equal Lows',                   'Equal smc_lows detected')
+
+alertcondition(smc_currentAlerts.bullishFairValueGap,       'Bullish FVG',                  'Bullish FVG formed')
+alertcondition(smc_currentAlerts.bearishFairValueGap,       'Bearish FVG',                  'Bearish FVG formed')
+
+//---------------------------------------------------------------------------------------------------------------------}
+// ═══ SWEEPS ═══
+// This work is licensed under a Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) https://creativecommons.org/licenses/by-nc-sa/4.0/
+// © LuxAlgo
+
+//@version=6
+// [merged] SWEEPS indicator() decl removed (single-decl L-4)
+
+//------------------------------------------------------------------------------
+//Settings
+//-----------------------------------------------------------------------------{
+swp_len = input.int(5, 'Swings', minval=1, group='Liquidity Sweeps')
+swp_opt    = input.string('Only Wicks', 'options'
+       , options=['Only Wicks', 'Only Outbreaks & Retest', 'Wicks + Outbreaks & Retest'], group='Liquidity Sweeps')
+
+swp_colBl  = input.color(#089981, 'Bull ', group='Liquidity Sweeps', inline='c1')
+swp_colBr  = input.color(#f23645, 'Bear' , group='Liquidity Sweeps', inline='c2')
+swp_colBl2 = input.color(#08998180,  ''  , group='Liquidity Sweeps', inline='c1')
+swp_colBr2 = input.color(#f2364580,  ''  , group='Liquidity Sweeps', inline='c2')
+
+swp_extend = input.bool(true, 'Extend', group='Sweep Area') 
+swp_maxB   = input.int(300, 'Max bars', minval=1, maxval=5000, group='Sweep Area')
+swp_colBl3 = input.color(#08998141, 'Bull ', group='Sweep Area')
+swp_colBr3 = input.color(#f2364541, 'Bear' , group='Sweep Area')
+
+swp_oW = swp_opt == 'Only Wicks'
+swp_oO = swp_opt == 'Only Outbreaks & Retest'
+swp_WO = swp_opt == 'Wicks + Outbreaks & Retest'
+
+swp_n = bar_index 
+
+//-----------------------------------------------------------------------------}      
+//UDT's
+//-----------------------------------------------------------------------------{
+type swp_piv
+    float prc // price
+    int   bix // bar_index
+    bool  brk // broken
+    bool  mit // mitigated
+    bool  tak // taken
+    bool  wic // wick
+    line  lin 
+
+type swp_boxBr 
+    box  swp_bx 
+    line ln
+    bool br
+    int  dr
+
+//-----------------------------------------------------------------------------}      
+//Variables
+//-----------------------------------------------------------------------------{
+var array< swp_piv >swp_aPivH  = array.new< swp_piv >(1, swp_piv.new  ())
+var array< swp_piv >swp_aPivL  = array.new< swp_piv >(1, swp_piv.new  ())
+var array<swp_boxBr>swp_aBoxBr = array.new<swp_boxBr>(1, swp_boxBr.new())
+
+//-----------------------------------------------------------------------------}      
+//Methods - functions
+//-----------------------------------------------------------------------------{
+method swp_isSet(float swp_val) => bool out = not na(swp_val)
+
+method swp_pct(swp_piv swp_obj, float val) => float out = (100 / swp_obj.prc * val) - 100
+
+method swp_line(swp_piv swp_get, color c, string s='sd') => 
+    style = switch s 
+        'dt' => line.style_dotted
+        'ds' => line.style_dashed
+        =>      line.style_solid 
+    line.new(swp_get.bix, swp_get.prc, swp_n, swp_get.prc, color=c, style = style)
+
+method swp_break_box(swp_piv swp_get, color c3, color c, int d) =>
+    y1 = d == 1 ? high : swp_get.prc
+    y2 = d == 1 ? swp_get.prc : low
+    swp_boxBr.new( 
+     box.new(swp_n -1, y1, swp_n +1, y2
+     , border_color
+     = color.new(
+       na, na   )
+     , bgcolor=c3)
+     , line.new(swp_n , y1, swp_n, y2, color=c, width=3)
+     , false
+     , d)
+
+swp_lnDot(y, c) => line.new(swp_n, y, swp_n+3, y, color=c, style=line.style_dotted)
+
+//-----------------------------------------------------------------------------}      
+//Execution
+//-----------------------------------------------------------------------------{
+swp_ph = ta.pivothigh(swp_len, swp_len)
+swp_pl = ta.pivotlow (swp_len, swp_len)
+
+if swp_ph.swp_isSet() 
+    swp_aPivH.unshift(swp_piv.new(swp_ph, swp_n - swp_len, false, false, false, false))
+
+if swp_pl.swp_isSet() 
+    swp_aPivL.unshift(swp_piv.new(swp_pl, swp_n - swp_len, false, false, false, false)) 
+
+for swp_i = swp_aPivH.size() -1 to 0
+    swp_get = swp_aPivH.get(swp_i)
+    if not swp_get.mit
+        if not swp_get.brk
+            if close > swp_get.prc 
+                if not swp_oW
+                    swp_get.brk := true
+                else 
+                    swp_get.mit := true
+            if not swp_oO and not swp_get.wic 
+                if high > swp_get.prc and close < swp_get.prc                   
+                    swp_aBoxBr.unshift(swp_boxBr.new(
+     box.new(swp_n -1, 1 == 1 ? high : swp_get.prc, swp_n +1, 1 == 1 ? swp_get.prc : low
+     , border_color = color.new(na, na), bgcolor = swp_colBr3)
+     , line.new(swp_n, 1 == 1 ? high : swp_get.prc, swp_n, 1 == 1 ? swp_get.prc : low, color = swp_colBr, width = 3)
+     , false, 1))       
+                    swp_get.l(swp_colBr2, 'dt'), swp_lnDot(low, swp_colBr)
+                    swp_get.wic := true  
+        else 
+            if close < swp_get.prc 
+                swp_get.mit := true
+            if not swp_oW and low < swp_get.prc and close > swp_get.prc                    
+                swp_aBoxBr.unshift(swp_boxBr.new(
+     box.new(swp_n -1, -1 == 1 ? high : swp_get.prc, swp_n +1, -1 == 1 ? swp_get.prc : low
+     , border_color = color.new(na, na), bgcolor = swp_colBl3)
+     , line.new(swp_n, -1 == 1 ? high : swp_get.prc, swp_n, -1 == 1 ? swp_get.prc : low, color = swp_colBl, width = 3)
+     , false, -1))    
+                swp_get.l(swp_colBl2, 'ds'), swp_lnDot(high, swp_colBl)
+                swp_get.tak := true 
+
+    if swp_n - swp_get.bix > 2000 or swp_get.mit or swp_get.tak 
+        swp_aPivH.remove(swp_i).lin.delete()
+
+for swp_i = swp_aPivL.size() -1 to 0
+    swp_get = swp_aPivL.get(swp_i)
+    if not swp_get.mit
+        if not swp_get.brk
+            if close < swp_get.prc 
+                if not swp_oW
+                    swp_get.brk := true
+                else 
+                    swp_get.mit := true
+            if not swp_oO and not swp_get.wic 
+                if low < swp_get.prc and close > swp_get.prc                              
+                    swp_aBoxBr.unshift(swp_boxBr.new(
+     box.new(swp_n -1, -1 == 1 ? high : swp_get.prc, swp_n +1, -1 == 1 ? swp_get.prc : low
+     , border_color = color.new(na, na), bgcolor = swp_colBl3)
+     , line.new(swp_n, -1 == 1 ? high : swp_get.prc, swp_n, -1 == 1 ? swp_get.prc : low, color = swp_colBl, width = 3)
+     , false, -1))     
+                    swp_get.l(swp_colBl2, 'dt'), swp_lnDot(high, swp_colBl)
+                    swp_get.wic := true 
+        else 
+            if close > swp_get.prc 
+                swp_get.mit := true
+            if not swp_oW and high > swp_get.prc and close < swp_get.prc                     
+                swp_aBoxBr.unshift(swp_boxBr.new(
+     box.new(swp_n -1, 1 == 1 ? high : swp_get.prc, swp_n +1, 1 == 1 ? swp_get.prc : low
+     , border_color = color.new(na, na), bgcolor = swp_colBr3)
+     , line.new(swp_n, 1 == 1 ? high : swp_get.prc, swp_n, 1 == 1 ? swp_get.prc : low, color = swp_colBr, width = 3)
+     , false, 1))    
+                swp_get.l(swp_colBr2, 'ds'), swp_lnDot(low, swp_colBr)
+                swp_get.tak := true  
+
+    if swp_n - swp_get.bix > 2000 or swp_get.mit or swp_get.tak 
+        swp_aPivL.remove(swp_i).lin.delete()
+
+if swp_extend
+    for swp_bx in swp_aBoxBr 
+    if not na(swp_bx.swp_bx)
+        if not swp_bx.br and swp_n - swp_bx.swp_bx.get_left() -1 <= swp_maxB 
+            swp_bx.swp_bx.set_right(bar_index)
+            if swp_bx.dr == -1 and close < swp_bx.swp_bx.get_bottom() 
+                swp_bx.br := true 
+            if swp_bx.dr ==  1 and close > swp_bx.swp_bx.get_top   () 
+                swp_bx.br := true 
+
+//-----------------------------------------------------------------------------} 
+// ═══ VOIDS ═══
+// This work is licensed under a Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) https://creativecommons.org/licenses/by-nc-sa/4.0/
+// © LuxAlgo
+//@version=6
+
+// [merged] indicator() decl removed
+
+//------------------------------------------------------------------------------
+// Settings
+//-----------------------------------------------------------------------------{
+
+mdTT = 'The voi_mode option controls the number of visual objects presented, where\n\n- Historical, takes into account all data available to the user\n- Present, takes into account only the last X bars specified in the \'# Bars\' option'
+voi_mode = input.string('Historical', title = 'Mode', options =['Present', 'Historical'], inline = 'MOD')
+back = input.int   (360, ' # Bars', minval = 100, maxval = 5000, step = 10, inline = 'MOD', tooltip = mdTT)
+
+lqGR = 'Liquidity Detection'
+lqTT = 'Act as a filter while detecting the Liquidity Voids. When set to 0 means no filtering is applied, increasing the value causes the script to check the width of the void compared to a fixed-length ATR value'
+voi_lqTH = input.float(.5, 'Liquidity Voids Threshold', minval = 0, step = .1, group = lqGR, tooltip = lqTT)
+voi_lqBC = input.color(color.new(#089981, 73), 'Bullish', inline = 'VD', group = lqGR)
+voi_lqSC = input.color(color.new(#f23645, 73), 'Bearish', inline = 'VD', group = lqGR)
+voi_lqTX = input.bool (false, 'Label', inline = 'VD', group = lqGR)
+
+lqFT = 'Toggles the visibility of the Filled Liquidity Voids'
+voi_lqVF = input.bool (true, 'Filled Liquidity Voids', inline = 'FL', group = lqGR, tooltip = lqFT)
+voi_lqFC = input.color(color.new(#787b86, 73), '', inline = 'FL', group = lqGR)
+
+//-----------------------------------------------------------------------------}
+// User Defined Types
+//-----------------------------------------------------------------------------{
+
+// @type        voi_bar properties with their values 
+//
+// @field h     (float) high price of the voi_bar
+// @field l     (float) low price of the voi_bar
+// @field c     (float) close price of the voi_bar
+// @field i     (int) index of the voi_bar
+
+type voi_bar
+    float h = high
+    float l = low
+    float c = close
+    int   i = bar_index
+
+//-----------------------------------------------------------------------------}
+// Variables
+//-----------------------------------------------------------------------------{
+
+voi_bar voi_b = voi_bar.new()
+var voi_lqV = array.new_box()
+
+//-----------------------------------------------------------------------------}
+// Calculations
+//-----------------------------------------------------------------------------{
+
+voi_per = voi_mode == 'Present' ? last_bar_index - voi_b.i <= back : true
+voi_atr = ta.atr(144) * voi_lqTH
+
+// [merged] one script = one 500-box ceiling. SMC pre-allocates its order-block
+// boxes on bar 0 (the OLDEST objects); VOIDS keeps filled voids drawn forever, so
+// its footprint grows until the engine deletes oldest-first and takes SMC's pool.
+// Bound VOIDS' total footprint (every slice, filled or not): delete its own oldest.
+var array<box> voi_all = array.new<box>()
+
+if voi_per
+    voi_bull = (voi_b.l - voi_b.h[2]) > voi_atr and voi_b.l > voi_b.h[2] and voi_b.c[1] > voi_b.h[2]
+    if voi_bull 
+        l = 13
+        if voi_bull[1] 
+            voi_st = math.abs(voi_b.l - voi_b.l[1]) / l
+            for i = 0 to l - 1
+                voi_nb = box.new(voi_b.i - 2, voi_b.l[1] + (i + 1) * voi_st, voi_b.i, voi_b.l[1] + i * voi_st, na, bgcolor = voi_lqBC )
+                voi_all.push(voi_nb)
+                voi_lqV.push(voi_nb)
+        else   
+            voi_st = math.abs(voi_b.l - voi_b.h[2]) / l
+            for i = 0 to l - 1
+                if voi_lqTX and i == 0
+                    voi_nb = box.new(voi_b.i - 2, voi_b.h[2] + (i + 1) * voi_st, voi_b.i, voi_b.h[2] + i * voi_st, na, text = 'Liquidity Void   ', text_size = size.tiny, text_halign = text.align_right, text_valign = text.align_bottom, text_color = na, bgcolor = voi_lqBC )
+                    voi_all.push(voi_nb)
+                    voi_lqV.push(voi_nb)
+                else
+                    voi_nb = box.new(voi_b.i - 2, voi_b.h[2] + (i + 1) * voi_st, voi_b.i, voi_b.h[2] + i * voi_st, na, bgcolor = voi_lqBC )
+                    voi_all.push(voi_nb)
+                    voi_lqV.push(voi_nb)
+
+    voi_bear = (voi_b.l[2] - voi_b.h) > voi_atr and voi_b.h < voi_b.l[2] and voi_b.c[1] < voi_b.l[2]
+
+    if voi_bear
+        l = 13
+        if voi_bear[1]
+            voi_st = math.abs(voi_b.h[1] - voi_b.h) / l
+            for i = 0 to l - 1
+                voi_nb = box.new(voi_b.i - 2, voi_b.h + (i + 1) * voi_st, voi_b.i, voi_b.h + i * voi_st, na, bgcolor = voi_lqSC )
+                voi_all.push(voi_nb)
+                voi_lqV.push(voi_nb)
+        else
+            voi_st = math.abs(voi_b.l[2] - voi_b.h) / l
+            for i = 0 to l - 1
+                if voi_lqTX and i == l - 1
+                    voi_nb = box.new(voi_b.i - 2, voi_b.h + (i + 1) * voi_st, voi_b.i, voi_b.h + i * voi_st, na, text = 'Liquidity Void   ', text_size = size.tiny, text_halign = text.align_right, text_valign = text.align_top, text_color = na, bgcolor = voi_lqSC )
+                    voi_all.push(voi_nb)
+                    voi_lqV.push(voi_nb)
+                else
+                    voi_nb = box.new(voi_b.i - 2, voi_b.h + (i + 1) * voi_st, voi_b.i, voi_b.h + i * voi_st, na, bgcolor = voi_lqSC )
+                    voi_all.push(voi_nb)
+                    voi_lqV.push(voi_nb)
+
+if voi_lqV.size() > 0
+    voi_qt = voi_lqV.size()
+
+    for voi_bn = voi_qt - 1 to 0
+        if voi_bn < voi_lqV.size()
+            voi_cb = voi_lqV.get(voi_bn)
+            voi_tBX = voi_cb.get_top()
+            voi_bBX = voi_cb.get_bottom()
+            if voi_b.h > voi_bBX and voi_b.l < voi_tBX
+                if voi_lqVF
+                    voi_cb.set_bgcolor(voi_lqFC)
+                else
+                    voi_cb.delete()
+                voi_lqV.remove(voi_bn)
+            else
+                voi_cb.set_right(voi_b.i + 1)
+
+                if voi_b.i - voi_cb.get_left() > 21
+                    voi_cb.set_text_color(chart.fg_color)
+
+    if voi_lqV.size() > 500
+        voi_lqV.shift()
+while voi_all.size() > 380
+    box.delete(voi_all.shift())
+//-----------------------------------------------------------------------------}
+// ═══ POOLS ═══
+// This work is licensed under a Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) https://creativecommons.org/licenses/by-nc-sa/4.0/
+// © LuxAlgo
+ 
+//@version=6
+// [merged] indicator() decl removed
+//------------------------------------------------------------------------------
+//Settings
+//-----------------------------------------------------------------------------{
+liqGrp = 'Liquidity Detection'
+bsl_liqLen = input.int   (7, title = 'Detection Length', minval = 3, maxval = 13, inline = 'LIQ', group = liqGrp)
+bsl_liqMar = 10 / input.float (6.9, 'Margin', minval = 4, maxval = 9, step = 0.1, inline = 'LIQ', group = liqGrp)
+
+bsl_liqBuy = input.bool (true, 'Buyside Liquidity Zones, Margin', inline = 'Buyside', group = liqGrp)
+bsl_marBuy    = input.float(2.3, '', minval = 1.5, maxval = 10, step = .1, inline = 'Buyside', group = liqGrp)
+bsl_cLIQ_B = input.color (color.new(#4caf50,  0), '', inline = 'Buyside', group = liqGrp)
+
+bsl_liqSel = input.bool (true, 'Sellside Liquidity Zones, Margin', inline = 'Sellside', group = liqGrp)
+bsl_marSel = input.float(2.3, '', minval = 1.5, maxval = 10, step = .1, inline = 'Sellside', group = liqGrp)
+bsl_cLIQ_S = input.color (color.new(#f23645,  0), '', inline = 'Sellside', group = liqGrp)
+
+bsl_lqVoid = input.bool (false, 'Liquidity Voids, Bullish', inline = 'void', group = liqGrp)
+bsl_cLQV_B = input.color (color.new(#4caf50,  0), '', inline = 'void', group = liqGrp)
+bsl_cLQV_S = input.color (color.new(#f23645,  0), 'Bearish', inline = 'void', group = liqGrp)
+bsl_lqText = input.bool (false, 'Label', inline = 'void', group = liqGrp)
+
+bsl_mode   = input.string('Present', title = 'Mode', options =['Present', 'Historical'], inline = 'MOD', group = liqGrp)
+bsl_visLiq = input.int   (3, '    # Visible Levels', minval = 1, maxval = 50, inline = 'MOD', group = liqGrp)
+
+//-----------------------------------------------------------------------------}
+//General Calculations
+//-----------------------------------------------------------------------------{
+bsl_maxSize = 50
+bsl_atr     = ta.atr(10)
+bsl_atr200  = ta.atr(200)
+bsl_per     = bsl_mode == 'Present' ? last_bar_index - bar_index <=  500 : true
+
+//-----------------------------------------------------------------------------}
+//User Defined Types
+//-----------------------------------------------------------------------------{
+// @type        used to store pivot high/low data 
+//
+// @field d     (array<int>) The array where the trend direction is to be maintained
+// @field bsl_x     (array<int>) The array where the bsl_bar index value of pivot high/low is to be maintained
+// @field y     (array<float>) The array where the price value of pivot high/low is to be maintained
+
+type bsl_ZZ 
+    int   [] d
+    int   [] x 
+    float [] y 
+
+// @type        bsl_bar properties with their values 
+//
+// @field o     (float) open price of the bsl_bar
+// @field h     (float) high price of the bsl_bar
+// @field l     (float) low price of the bsl_bar
+// @field c     (float) close price of the bsl_bar
+// @field i     (int) index of the bsl_bar
+
+type bsl_bar
+    float o = open
+    float h = high
+    float l = low
+    float c = close
+    int   i = bar_index
+
+// @type        liquidity object definition 
+//
+// @field bx    (box) box maitaing the liquity level margin extreme levels
+// @field bxz   (box) box maitaing the liquity zone margin extreme levels
+// @field bxt   (box) box maitaing the labels
+// @field brZ   (bool) mainains broken zone status
+// @field brL   (bool) mainains broken level status
+// @field ln    (line) maitaing the liquity level line
+// @field lne   (line) maitaing the liquity extended level line
+
+type bsl_liq
+    box   bx
+    box   bxz
+    box   bxt
+    bool  brZ
+    bool  brL
+    line  ln
+    line  lne
+
+//-----------------------------------------------------------------------------}
+//Variables
+//-----------------------------------------------------------------------------{
+var bsl_ZZ bsl_aZZ = bsl_ZZ.new(
+ array.new <int>  (bsl_maxSize,  0), 
+ array.new <int>  (bsl_maxSize,  0), 
+ array.new <float>(bsl_maxSize, na)
+ )
+
+bsl_bar bsl_b = bsl_bar.new()
+
+var bsl_liq[] bsl_b_liq_B = array.new<bsl_liq> (1, bsl_liq.new(box(na), box(na), box(na), false, false, line(na), line(na)))
+var bsl_liq[] bsl_b_liq_S = array.new<bsl_liq> (1, bsl_liq.new(box(na), box(na), box(na), false, false, line(na), line(na)))
+
+var bsl_b_liq_V = array.new_box()
+
+var int bsl_dir = na, var int bsl_x1 = na, var float bsl_y1 = na, var int bsl_x2 = na, var float bsl_y2 = na
+
+//-----------------------------------------------------------------------------}
+//Functions/methods
+//-----------------------------------------------------------------------------{
+// @function        maintains arrays 
+//                     it prepends a `value` to the arrays and removes their oldest element at last position
+// @param bsl_aZZ       (UDT<array<int>, array<int>, array<float>>) The UDT obejct of arrays
+// @param _d        (array<int>) The array where the trend direction is maintained
+// @param _x        (array<int>) The array where the bsl_bar index value of pivot high/low is maintained
+// @param _y        (array<float>) The array where the price value of pivot high/low is maintained
+//
+// @returns         none
+
+method bsl_roll(bsl_ZZ bsl_aZZ, int _d, int _x, float _y) =>
+    bsl_aZZ.d.unshift(_d), bsl_aZZ.x.unshift(_x), bsl_aZZ.y.unshift(_y), bsl_aZZ.d.pop(), bsl_aZZ.x.pop(), bsl_aZZ.y.pop()
+
+
+// @function        (build-in) sets the maximum number of bars that is available for historical reference 
+                    
+max_bars_back(time, 1000)
+
+//-----------------------------------------------------------------------------}
+//Calculations
+//-----------------------------------------------------------------------------{
+bsl_x2 := bsl_b.i - 1
+bsl_ph  = ta.pivothigh(bsl_liqLen, 1)
+bsl_pl  = ta.pivotlow (bsl_liqLen, 1)
+
+if bsl_ph   
+    bsl_dir := bsl_aZZ.d.get(0) 
+    bsl_x1  := bsl_aZZ.x.get(0) 
+    bsl_y1  := bsl_aZZ.y.get(0) 
+    bsl_y2  := nz(bsl_b.h[1])
+
+    if bsl_dir < 1
+        bsl_aZZ.bsl_roll(1, bsl_x2, bsl_y2)
+    else
+        if bsl_dir == 1 and bsl_ph > bsl_y1 
+            bsl_aZZ.x.set(0, bsl_x2), bsl_aZZ.y.set(0, bsl_y2)
+    
+    if bsl_per
+        bsl_count = 0
+        bsl_st_P  = 0.
+        bsl_st_B  = 0
+        bsl_minP  = 0.
+        bsl_maxP  = 10e6
+
+        for i = 0 to bsl_maxSize - 1
+            if bsl_aZZ.d.get(i) ==  1 
+                if bsl_aZZ.y.get(i) > bsl_ph + (bsl_atr / bsl_liqMar)
+                    break
+                else
+                    if bsl_aZZ.y.get(i) > bsl_ph - (bsl_atr / bsl_liqMar) and bsl_aZZ.y.get(i) < bsl_ph + (bsl_atr / bsl_liqMar)
+                        bsl_count += 1
+                        bsl_st_B := bsl_aZZ.x.get(i)
+                        bsl_st_P := bsl_aZZ.y.get(i)
+                        if bsl_aZZ.y.get(i) > bsl_minP
+                            bsl_minP := bsl_aZZ.y.get(i)
+                        if bsl_aZZ.y.get(i) < bsl_maxP 
+                            bsl_maxP := bsl_aZZ.y.get(i)
+
+        if bsl_count > 2
+            bsl_getB = bsl_b_liq_B.get(0)
+
+            if not na(bsl_getB.bx) and bsl_st_B == bsl_getB.bx.get_left()
+                bsl_getB.bx.set_top(math.avg(bsl_minP, bsl_maxP) + (bsl_atr / bsl_liqMar))
+                bsl_getB.bx.set_rightbottom(bsl_b.i + 10, math.avg(bsl_minP, bsl_maxP) - (bsl_atr / bsl_liqMar))
+            else
+                bsl_b_liq_B.unshift(
+                 bsl_liq.new(
+                   box.new(bsl_st_B, math.avg(bsl_minP, bsl_maxP) + (bsl_atr / bsl_liqMar), bsl_b.i + 10, math.avg(bsl_minP, bsl_maxP) - (bsl_atr / bsl_liqMar), bgcolor=color(na), border_color=color(na)), 
+                   box.new(na, na, na, na, bgcolor = color(na), border_color = color(na)),
+                   box.new(bsl_st_B, bsl_st_P, bsl_b.i + 10, bsl_st_P, text = 'Buyside liquidity', text_size = size.tiny, text_halign = text.align_left, text_valign = text.align_bottom, text_color = color.new(bsl_cLIQ_B, 25), bgcolor = color(na), border_color = color(na)),
+                   false, 
+                   false,
+                   line.new(bsl_st_B   , bsl_st_P, bsl_b.i - 1, bsl_st_P, color = color.new(bsl_cLIQ_B, 0)),
+                   line.new(bsl_b.i - 1, bsl_st_P, na     , bsl_st_P, color = color.new(bsl_cLIQ_B, 0), style = line.style_dotted))
+                 )
+
+                alert('buyside liquidity level detected/updated for ' + syminfo.ticker)
+
+            if bsl_b_liq_B.size() > bsl_visLiq
+                bsl_getLast = bsl_b_liq_B.pop()
+                bsl_getLast.bx.delete()
+                bsl_getLast.bxz.delete()
+                bsl_getLast.bxt.delete()
+                bsl_getLast.ln.delete()
+                bsl_getLast.lne.delete()               
+
+if bsl_pl
+    bsl_dir := bsl_aZZ.d.get (0) 
+    bsl_x1  := bsl_aZZ.x.get (0) 
+    bsl_y1  := bsl_aZZ.y.get (0) 
+    bsl_y2  := nz(bsl_b.l[1])
+    
+    if bsl_dir > -1
+        bsl_aZZ.bsl_roll(-1, bsl_x2, bsl_y2)
+    else
+        if bsl_dir == -1 and bsl_pl < bsl_y1 
+            bsl_aZZ.x.set(0, bsl_x2), bsl_aZZ.y.set(0, bsl_y2)
+    
+    if bsl_per
+        bsl_count = 0
+        bsl_st_P  = 0.
+        bsl_st_B  = 0
+        bsl_minP  = 0.
+        bsl_maxP  = 10e6
+
+        for i = 0 to bsl_maxSize - 1
+            if bsl_aZZ.d.get(i) == -1 
+                if bsl_aZZ.y.get(i) < bsl_pl - (bsl_atr / bsl_liqMar)
+                    break
+                else
+                    if bsl_aZZ.y.get(i) > bsl_pl - (bsl_atr / bsl_liqMar) and bsl_aZZ.y.get(i) < bsl_pl + (bsl_atr / bsl_liqMar)
+                        bsl_count += 1
+                        bsl_st_B := bsl_aZZ.x.get(i)
+                        bsl_st_P := bsl_aZZ.y.get(i)
+                        if bsl_aZZ.y.get(i) > bsl_minP
+                            bsl_minP := bsl_aZZ.y.get(i)
+                        if bsl_aZZ.y.get(i) < bsl_maxP 
+                            bsl_maxP := bsl_aZZ.y.get(i)
+
+        if bsl_count > 2
+            bsl_getB = bsl_b_liq_S.get(0)
+
+            if not na(bsl_getB.bx) and bsl_st_B == bsl_getB.bx.get_left()
+                bsl_getB.bx.set_top(math.avg(bsl_minP, bsl_maxP) + (bsl_atr / bsl_liqMar))
+                bsl_getB.bx.set_rightbottom(bsl_b.i + 10, math.avg(bsl_minP, bsl_maxP) - (bsl_atr / bsl_liqMar))
+            else
+                bsl_b_liq_S.unshift(
+                 bsl_liq.new(
+                   box.new(bsl_st_B, math.avg(bsl_minP, bsl_maxP) + (bsl_atr / bsl_liqMar), bsl_b.i + 10, math.avg(bsl_minP, bsl_maxP) - (bsl_atr / bsl_liqMar), bgcolor=color(na), border_color=color(na)),
+                   box.new(na, na, na, na, bgcolor=color(na), border_color=color(na)),
+                   box.new(bsl_st_B, bsl_st_P, bsl_b.i + 10, bsl_st_P, text = 'Sellside liquidity', text_size = size.tiny, text_halign = text.align_left, text_valign = text.align_top, text_color = color.new(bsl_cLIQ_S, 25), bgcolor=color(na), border_color=color(na)),
+                   false,
+                   false,
+                   line.new(bsl_st_B   , bsl_st_P, bsl_b.i - 1, bsl_st_P, color = color.new(bsl_cLIQ_S, 0)),
+                   line.new(bsl_b.i - 1, bsl_st_P, na     , bsl_st_P, color = color.new(bsl_cLIQ_S, 0), style = line.style_dotted))
+                 )  
+
+                alert('sellside liquidity level detected/updated for ' + syminfo.ticker)
+
+            if bsl_b_liq_S.size() > bsl_visLiq
+                bsl_getLast = bsl_b_liq_S.pop()
+                bsl_getLast.bx.delete()
+                bsl_getLast.bxz.delete()
+                bsl_getLast.bxt.delete()
+                bsl_getLast.ln.delete()            
+                bsl_getLast.lne.delete()               
+
+
+for i = 0 to bsl_b_liq_B.size() - 1
+    bsl_x = bsl_b_liq_B.get(i)
+    
+    if not bsl_x.brL
+        bsl_x.lne.set_x2(bsl_b.i)
+
+        if bsl_b.h > bsl_x.bx.get_top()
+            bsl_x.brL := true
+            bsl_x.brZ := true
+            alert('buyside liquidity level breached for ' + syminfo.ticker)
+
+            bsl_x.bxz.set_lefttop(bsl_b.i - 1, math.min(bsl_x.ln.get_y1() + bsl_marBuy * (bsl_atr), bsl_b.h))
+            bsl_x.bxz.set_rightbottom(bsl_b.i + 1, bsl_x.ln.get_y1())
+            bsl_x.bxz.set_bgcolor(color.new(bsl_cLIQ_B, bsl_liqBuy ? 73 : 100))
+
+    else if bsl_x.brZ
+        if bsl_b.l > bsl_x.ln.get_y1() - bsl_marBuy * (bsl_atr) and bsl_b.h < bsl_x.ln.get_y1() + bsl_marBuy * (bsl_atr)
+            bsl_x.bxz.set_right(bsl_b.i + 1)
+            bsl_x.bxz.set_top(math.max(bsl_b.h, bsl_x.bxz.get_top()))
+            if bsl_liqBuy
+                bsl_x.lne.set_x2(bsl_b.i + 1)
+        else
+            bsl_x.brZ := false
+
+for i = 0 to bsl_b_liq_S.size() - 1
+    bsl_x = bsl_b_liq_S.get(i)
+
+    if not bsl_x.brL
+        bsl_x.lne.set_x2(bsl_b.i)
+
+        if bsl_b.l < bsl_x.bx.get_bottom()
+            bsl_x.brL := true
+            bsl_x.brZ := true
+            alert('sellside liquidity level breached for ' + syminfo.ticker)
+
+            bsl_x.bxz.set_lefttop(bsl_b.i - 1, bsl_x.ln.get_y1())
+            bsl_x.bxz.set_rightbottom(bsl_b.i + 1, math.max(bsl_x.ln.get_y1() - bsl_marSel * (bsl_atr), bsl_b.l))
+            bsl_x.bxz.set_bgcolor(color.new(bsl_cLIQ_S, bsl_liqSel ? 73 : 100))
+
+    else if bsl_x.brZ
+        if bsl_b.l > bsl_x.ln.get_y1() - bsl_marSel * (bsl_atr) and bsl_b.h < bsl_x.ln.get_y1() + bsl_marSel * (bsl_atr)
+            bsl_x.bxz.set_rightbottom(bsl_b.i + 1, math.min(bsl_b.l, bsl_x.bxz.get_bottom()))
+            if bsl_liqSel
+                bsl_x.lne.set_x2(bsl_b.i + 1)
+        else
+            bsl_x.brZ := false
+
+if bsl_lqVoid and bsl_per
+    bull = bsl_b.l - bsl_b.h[2] > bsl_atr200 and bsl_b.l > bsl_b.h[2] and bsl_b.c[1] > bsl_b.h[2]
+    bear = bsl_b.l[2] - bsl_b.h > bsl_atr200 and bsl_b.h < bsl_b.l[2] and bsl_b.c[1] < bsl_b.l[2]
+
+    if bull 
+        l  = 13
+        if bull[1] 
+            st = math.abs(bsl_b.l - bsl_b.l[1]) / l
+            for i = 0 to l - 1
+                array.push(bsl_b_liq_V, box.new(bsl_b.i - 2, bsl_b.l[1] + i * st, bsl_b.i, bsl_b.l[1] + (i + 1) * st, border_color = na, bgcolor = color.new(bsl_cLQV_B, 90) ))
+        else   
+            st = math.abs(bsl_b.l - bsl_b.h[2]) / l
+            for i = 0 to l - 1
+                if bsl_lqText and i == 0
+                    array.push(bsl_b_liq_V, box.new(bsl_b.i - 2, bsl_b.h[2] + i * st, bsl_b.i, bsl_b.h[2] + (i + 1) * st, text = 'Liquidity Void   ', text_size = size.tiny, text_halign = text.align_right, text_valign = text.align_bottom, text_color = na, border_color = na, bgcolor = color.new(bsl_cLQV_B, 90) ))
+                else
+                    array.push(bsl_b_liq_V, box.new(bsl_b.i - 2, bsl_b.h[2] + i * st, bsl_b.i, bsl_b.h[2] + (i + 1) * st, border_color = na, bgcolor = color.new(bsl_cLQV_B, 90) ))
+
+    if bear
+        l  = 13
+        if bear[1]
+            st = math.abs(bsl_b.h[1] - bsl_b.h) / l
+            for i = 0 to l - 1
+                array.push(bsl_b_liq_V, box.new(bsl_b.i - 2, bsl_b.h + i * st, bsl_b.i, bsl_b.h + (i + 1) * st, border_color = na, bgcolor = color.new(bsl_cLQV_S, 90) ))
+        else
+            st = math.abs(bsl_b.l[2] - bsl_b.h) / l
+            for i = 0 to l - 1
+                if bsl_lqText and i == l - 1
+                    array.push(bsl_b_liq_V, box.new(bsl_b.i - 2, bsl_b.h + i * st, bsl_b.i, bsl_b.h + (i + 1) * st, text = 'Liquidity Void   ', text_size = size.tiny, text_halign = text.align_right, text_valign = text.align_top, text_color = na, border_color = na, bgcolor = color.new(bsl_cLQV_S, 90) ))
+                else
+                    array.push(bsl_b_liq_V, box.new(bsl_b.i - 2, bsl_b.h + i * st, bsl_b.i, bsl_b.h + (i + 1) * st, border_color = na, bgcolor = color.new(bsl_cLQV_S, 90) ))
+
+if bsl_b_liq_V.size() > 0
+    qt = bsl_b_liq_V.size()
+    for bn = qt - 1 to 0
+        if bn < bsl_b_liq_V.size()
+            cb = bsl_b_liq_V.get(bn)
+            ba = math.avg(cb.get_bottom(), cb.get_top())
+
+            if math.sign(bsl_b.c[1] - ba) != math.sign(bsl_b.c - ba) or math.sign(bsl_b.c[1] - ba) != math.sign(bsl_b.l - ba) or math.sign(bsl_b.c[1] - ba) != math.sign(bsl_b.h - ba)
+                bsl_b_liq_V.remove(bn)
+            else
+                cb.set_right(bsl_b.i + 1)
+
+                if bsl_b.i - cb.get_left() > 21
+                    cb.set_text_color(color.new(color.gray, 25))
+
+//-----------------------------------------------------------------------------}

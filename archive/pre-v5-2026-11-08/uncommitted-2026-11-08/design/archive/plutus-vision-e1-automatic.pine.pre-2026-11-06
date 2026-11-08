@@ -1,0 +1,603 @@
+//@version=6
+indicator("Plutus Vision — E1 Automatic", overlay=true, max_boxes_count=2000, max_labels_count=2000, max_lines_count=2000)
+
+// ═══════════════════════════════════════════════════════════════════════
+// PLUTUS VISION — E1 AUTOMATIC (trident_v8 render, LSZ removed)
+//
+// CHART CONTENTS (per pair):
+//   ✅ IP Zones: Resistance=RED, Equilibrium=#FF9800, Support=TEAL
+//   ⛔ LSZ Zones: REMOVED (the authorised change — liquidity rendering out)
+//   ✅ Option Strike Targets: amber lines + labels
+//   ❌ 4H S/D Zones: REMOVED (user maps manually)
+//   ❌ Trade setups: table only (no chart drawings)
+//
+// MULTI-PAIR RULES:
+//   - Each pair's data maps ONLY to its own chart (no cross-mapping)
+//   - Pair detection via syminfo.ticker
+//   - Unknown tickers show info table only
+//   - DXY zones use DXY price scale
+//   - EU/GU/AU zones use their own price scales
+//   - NO mathematical conversion between pairs
+//
+// TABLE: 2×17 per pair, trades = 3 rows each
+// COLORS: RED=IP Resistance, #FF9800=Equilibrium, TEAL=IP Support
+//         AMBER=Option Strikes   (LSZ removed)
+// ═══════════════════════════════════════════════════════════════════════
+
+string GRP_VIS = "Visibility"
+
+show_zones   = input.bool(true, "IP Zones",        group=GRP_VIS)
+show_options = input.bool(true, "Option Strikes",    group=GRP_VIS)
+show_table   = input.bool(true, "Info Table",        group=GRP_VIS)
+
+// ── ZONE DATE RANGE: 2 weeks back + data week + 3 weeks forward ──
+int tsL   = timestamp(2026, 4, 6, 0, 0, 0)
+int tsR   = timestamp(2026, 5, 15, 23, 59, 59)
+int tsMid = (tsL + tsR) / 2
+
+// ═══════════════════════════════════════════════════════════════════════
+// COLORS — Pressure Ladder System
+// ═══════════════════════════════════════════════════════════════════════
+
+// IP Resistance (RED) — 6 pressure tiers
+R_F1 = color.new(color.rgb(180,40,30), 70),  R_B1 = color.rgb(180,40,30)
+R_F2 = color.new(color.rgb(200,60,35), 70),  R_B2 = color.rgb(200,60,35)
+R_F3 = color.new(color.rgb(210,80,40), 70),  R_B3 = color.rgb(210,80,40)
+R_F4 = color.new(color.rgb(220,100,50), 70), R_B4 = color.rgb(220,100,50)
+R_F5 = color.new(color.rgb(230,130,60), 70), R_B5 = color.rgb(230,130,60)
+R_F6 = color.new(color.rgb(240,160,90), 70), R_B6 = color.rgb(240,160,90)
+
+// IP Equilibrium (ORANGE #FF9800) — 6 pressure tiers
+G_F1 = color.new(color.rgb(255,152,0), 70),   G_B1 = color.rgb(255,152,0)
+G_F2 = color.new(color.rgb(245,145,10), 70),  G_B2 = color.rgb(245,145,10)
+G_F3 = color.new(color.rgb(235,138,20), 70),  G_B3 = color.rgb(235,138,20)
+G_F4 = color.new(color.rgb(225,131,30), 70),  G_B4 = color.rgb(225,131,30)
+G_F5 = color.new(color.rgb(215,124,40), 70),  G_B5 = color.rgb(215,124,40)
+G_F6 = color.new(color.rgb(205,117,50), 70),  G_B6 = color.rgb(205,117,50)
+
+// IP Support (TEAL) — 6 pressure tiers
+T_F1 = color.new(color.rgb(0,150,150), 70),  T_B1 = color.rgb(0,150,150)
+T_F2 = color.new(color.rgb(0,170,160), 70),  T_B2 = color.rgb(0,170,160)
+T_F3 = color.new(color.rgb(20,180,170), 70), T_B3 = color.rgb(20,180,170)
+T_F4 = color.new(color.rgb(40,190,180), 70), T_B4 = color.rgb(40,190,180)
+T_F5 = color.new(color.rgb(60,200,190), 70), T_B5 = color.rgb(60,200,190)
+T_F6 = color.new(color.rgb(80,210,200), 70), T_B6 = color.rgb(80,210,200)
+
+zfill(string cat, string deg) =>
+    color result = color.gray
+    if cat == "RES"
+        if deg == "EXTREME"
+            result := R_F1
+        else if deg == "HEAVY"
+            result := R_F2
+        else if deg == "MODERATE-HEAVY"
+            result := R_F3
+        else if deg == "MODERATE"
+            result := R_F4
+        else if deg == "LIGHT"
+            result := R_F5
+        else
+            result := R_F6
+    else if cat == "MID"
+        if deg == "EXTREME"
+            result := G_F1
+        else if deg == "HEAVY"
+            result := G_F2
+        else if deg == "MODERATE-HEAVY"
+            result := G_F3
+        else if deg == "MODERATE"
+            result := G_F4
+        else if deg == "LIGHT"
+            result := G_F5
+        else
+            result := G_F6
+    else if cat == "SUP"
+        if deg == "EXTREME"
+            result := T_F1
+        else if deg == "HEAVY"
+            result := T_F2
+        else if deg == "MODERATE-HEAVY"
+            result := T_F3
+        else if deg == "MODERATE"
+            result := T_F4
+        else if deg == "LIGHT"
+            result := T_F5
+        else
+            result := T_F6
+    else
+        result := T_F4
+    result
+
+zbord(string cat, string deg) =>
+    color result = color.gray
+    if cat == "RES"
+        if deg == "EXTREME"
+            result := R_B1
+        else if deg == "HEAVY"
+            result := R_B2
+        else if deg == "MODERATE-HEAVY"
+            result := R_B3
+        else if deg == "MODERATE"
+            result := R_B4
+        else if deg == "LIGHT"
+            result := R_B5
+        else
+            result := R_B6
+    else if cat == "MID"
+        if deg == "EXTREME"
+            result := G_B1
+        else if deg == "HEAVY"
+            result := G_B2
+        else if deg == "MODERATE-HEAVY"
+            result := G_B3
+        else if deg == "MODERATE"
+            result := G_B4
+        else if deg == "LIGHT"
+            result := G_B5
+        else
+            result := G_B6
+    else if cat == "SUP"
+        if deg == "EXTREME"
+            result := T_B1
+        else if deg == "HEAVY"
+            result := T_B2
+        else if deg == "MODERATE-HEAVY"
+            result := T_B3
+        else if deg == "MODERATE"
+            result := T_B4
+        else if deg == "LIGHT"
+            result := T_B5
+        else
+            result := T_B6
+    else
+        result := T_B4
+    result
+
+pressureLbl(string deg) =>
+    deg == "EXTREME" ? "Extreme" : deg == "HEAVY" ? "Heavy" : deg == "MODERATE-HEAVY" ? "Moderate-Heavy" : deg == "MODERATE" ? "Moderate" : deg == "LIGHT" ? "Light" : "Minimal"
+
+
+// ═══════════════════════════════════════════════════════════════════════
+// PAIR DETECTION
+// ═══════════════════════════════════════════════════════════════════════
+
+string ticker = str.upper(str.replace(syminfo.ticker, "/", ""))
+bool isDXY = ticker == "DXY" or ticker == "DX-Y.NYB" or str.contains(ticker, "DXY")
+bool isEU  = ticker == "EURUSD" or ticker == "EURUSD=X" or str.contains(ticker, "EURUSD")
+bool isGU  = ticker == "GBPUSD" or ticker == "GBPUSD=X" or str.contains(ticker, "GBPUSD")
+bool isAU  = ticker == "AUDUSD" or ticker == "AUDUSD=X" or str.contains(ticker, "AUDUSD")
+bool isKnown = isDXY or isEU or isGU or isAU
+
+string pairLabel = isDXY ? "DXY" : isEU ? "EUR/USD" : isGU ? "GBP/USD" : isAU ? "AUD/USD" : "UNKNOWN"
+
+// ── Tables — declared at global scope for Pine v6 compatibility ──
+var table tbl    = table.new(position.top_right, 2, 17, bgcolor=color.new(color.black, 10), border_color=color.rgb(40,40,45), border_width=1)
+var table tbl_eu = table.new(position.top_right, 2, 17, bgcolor=color.new(color.black, 10), border_color=color.rgb(40,40,45), border_width=1)
+var table tbl_gu = table.new(position.top_right, 2, 17, bgcolor=color.new(color.black, 10), border_color=color.rgb(40,40,45), border_width=1)
+var table tbl_au = table.new(position.top_right, 2, 17, bgcolor=color.new(color.black, 10), border_color=color.rgb(40,40,45), border_width=1)
+
+// ═══════════════════════════════════════════════════════════════════════
+// DATA — DXY (Apr 20-24 2026)
+// ═══════════════════════════════════════════════════════════════════════
+
+var array<float>  dxy_zTp   = array.from(99.23, 98.99, 98.41, 98.12, 97.97)
+var array<float>  dxy_zBt   = array.from(99.16, 98.77, 98.29, 98.00, 97.63)
+var array<string> dxy_zCat  = array.from("RES", "RES", "MID", "SUP", "SUP")
+var array<string> dxy_zDeg  = array.from("HEAVY", "MODERATE-HEAVY", "MODERATE-HEAVY", "MODERATE", "HEAVY")
+var array<string> dxy_zTir  = array.from("T2", "T1", "T2", "T2", "T1")
+var array<string> dxy_zNm   = array.from("IP Resistance Ceiling", "Upper IP Resistance", "Equilibrium Zone", "Mid-Range Support", "Key IP Support")
+
+
+var array<float>  dxy_oPr   = array.from(99.22, 98.49, 98.32, 97.78, 98.86, 98.44, 98.25)
+var array<string> dxy_oVol  = array.from("1.9bn", "2.6bn", "1.1bn", "1.0bn", "1.8bn", "1.1bn", "1.8bn")
+
+var array<float>  dxy_tEn1  = array.from(98.29, 97.85)
+var array<float>  dxy_tEn3  = array.from(98.05, 97.68)
+var array<float>  dxy_tSl   = array.from(98.50, 97.55)
+var array<float>  dxy_tTp   = array.from(97.70, 98.65)
+var array<float>  dxy_tRr   = array.from(2.8, 4.0)
+var array<string> dxy_tTir  = array.from("T2", "T1")
+var array<string> dxy_tDE   = array.from("Wed", "Thu")
+var array<string> dxy_tDT   = array.from("Thu-Fri", "Fri")
+
+var array<string> dxy_sCh   = array.from("SS>BS>R>WL")
+var array<float>  dxy_sCf   = array.from(52.0)
+var array<string> dxy_sAlt  = array.from("SS>WLS>BS")
+var array<float>  dxy_sAc   = array.from(35.0)
+
+// ═══════════════════════════════════════════════════════════════════════
+// DATA — EUR/USD (Apr 20-24 2026)
+// Structurally equivalent zones from pair-specific data sources
+// DXY RESISTANCE → EU SUPPORT, DXY SUPPORT → EU RESISTANCE
+// Price levels from EU's own MA structure, swing levels, institutional commentary
+// ═══════════════════════════════════════════════════════════════════════
+
+var array<float>  eu_zTp   = array.from(1.1720, 1.1685, 1.1635, 1.1595, 1.1555)
+var array<float>  eu_zBt   = array.from(1.1700, 1.1660, 1.1610, 1.1570, 1.1520)
+var array<string> eu_zCat  = array.from("RES", "RES", "MID", "SUP", "SUP")
+var array<string> eu_zDeg  = array.from("HEAVY", "MODERATE-HEAVY", "MODERATE-HEAVY", "MODERATE", "HEAVY")
+var array<string> eu_zTir  = array.from("T2", "T1", "T2", "T2", "T1")
+var array<string> eu_zNm   = array.from("Key IP Resistance Band", "Upper IP Resistance", "Equilibrium Zone", "Mid-Range Support", "IP Support Floor")
+
+
+var array<float>  eu_oPr   = array.from(1.1700, 1.1625, 1.1600, 1.1500, 1.1650, 1.1610, 1.1595)
+var array<string> eu_oVol  = array.from("1.9bn", "2.6bn", "1.1bn", "1.0bn", "1.8bn", "1.1bn", "1.8bn")
+
+var array<float>  eu_tEn1  = array.from(1.1595, 1.1530)
+var array<float>  eu_tEn3  = array.from(1.1570, 1.1505)
+var array<float>  eu_tSl   = array.from(1.1650, 1.1480)
+var array<float>  eu_tTp   = array.from(1.1520, 1.1680)
+var array<float>  eu_tRr   = array.from(2.6, 3.5)
+var array<string> eu_tTir  = array.from("T2", "T1")
+var array<string> eu_tDE   = array.from("Wed", "Thu")
+var array<string> eu_tDT   = array.from("Thu-Fri", "Fri")
+
+var array<string> eu_sCh   = array.from("SS>BS>R>WL")
+var array<float>  eu_sCf   = array.from(52.0)
+var array<string> eu_sAlt  = array.from("SS>WLS>BS")
+var array<float>  eu_sAc   = array.from(35.0)
+
+// ═══════════════════════════════════════════════════════════════════════
+// DATA — GBP/USD (Apr 20-24 2026)
+// Structurally equivalent zones from pair-specific data sources
+// ═══════════════════════════════════════════════════════════════════════
+
+var array<float>  gu_zTp   = array.from(1.3580, 1.3540, 1.3485, 1.3440, 1.3395)
+var array<float>  gu_zBt   = array.from(1.3555, 1.3510, 1.3460, 1.3410, 1.3360)
+var array<string> gu_zCat  = array.from("RES", "RES", "MID", "SUP", "SUP")
+var array<string> gu_zDeg  = array.from("HEAVY", "MODERATE-HEAVY", "MODERATE-HEAVY", "MODERATE", "HEAVY")
+var array<string> gu_zTir  = array.from("T2", "T1", "T2", "T2", "T1")
+var array<string> gu_zNm   = array.from("Key IP Resistance Band", "Upper IP Resistance", "Equilibrium Zone", "Mid-Range Support", "IP Support Floor")
+
+
+var array<float>  gu_oPr   = array.from(1.3560, 1.3495, 1.3470, 1.3350, 1.3525, 1.3480, 1.3465)
+var array<string> gu_oVol  = array.from("0.9bn", "1.2bn", "0.8bn", "1.0bn", "1.1bn", "0.7bn", "0.9bn")
+
+var array<float>  gu_tEn1  = array.from(1.3440, 1.3370)
+var array<float>  gu_tEn3  = array.from(1.3410, 1.3345)
+var array<float>  gu_tSl   = array.from(1.3500, 1.3320)
+var array<float>  gu_tTp   = array.from(1.3360, 1.3540)
+var array<float>  gu_tRr   = array.from(2.4, 3.2)
+var array<string> gu_tTir  = array.from("T2", "T1")
+var array<string> gu_tDE   = array.from("Wed", "Thu")
+var array<string> gu_tDT   = array.from("Thu-Fri", "Fri")
+
+var array<string> gu_sCh   = array.from("SS>BS>R>WL")
+var array<float>  gu_sCf   = array.from(52.0)
+var array<string> gu_sAlt  = array.from("SS>WLS>BS")
+var array<float>  gu_sAc   = array.from(35.0)
+
+// ═══════════════════════════════════════════════════════════════════════
+// DATA — AUD/USD (Apr 20-24 2026)
+// Structurally equivalent zones from pair-specific data sources
+// ═══════════════════════════════════════════════════════════════════════
+
+var array<float>  au_zTp   = array.from(0.7280, 0.7240, 0.7185, 0.7140, 0.7095)
+var array<float>  au_zBt   = array.from(0.7255, 0.7210, 0.7160, 0.7110, 0.7060)
+var array<string> au_zCat  = array.from("RES", "RES", "MID", "SUP", "SUP")
+var array<string> au_zDeg  = array.from("HEAVY", "MODERATE-HEAVY", "MODERATE-HEAVY", "MODERATE", "HEAVY")
+var array<string> au_zTir  = array.from("T2", "T1", "T2", "T2", "T1")
+var array<string> au_zNm   = array.from("Key IP Resistance Band", "Upper IP Resistance", "Equilibrium Zone", "Mid-Range Support", "IP Support Floor")
+
+
+var array<float>  au_oPr   = array.from(0.7260, 0.7195, 0.7170, 0.7050, 0.7225, 0.7180, 0.7165)
+var array<string> au_oVol  = array.from("0.8bn", "1.1bn", "0.7bn", "0.9bn", "1.0bn", "0.6bn", "0.8bn")
+
+var array<float>  au_tEn1  = array.from(0.7140, 0.7070)
+var array<float>  au_tEn3  = array.from(0.7110, 0.7045)
+var array<float>  au_tSl   = array.from(0.7200, 0.7020)
+var array<float>  au_tTp   = array.from(0.7060, 0.7240)
+var array<float>  au_tRr   = array.from(2.3, 3.1)
+var array<string> au_tTir  = array.from("T2", "T1")
+var array<string> au_tDE   = array.from("Wed", "Thu")
+var array<string> au_tDT   = array.from("Thu-Fri", "Fri")
+
+var array<string> au_sCh   = array.from("SS>BS>R>WL")
+var array<float>  au_sCf   = array.from(52.0)
+var array<string> au_sAlt  = array.from("SS>WLS>BS")
+var array<float>  au_sAc   = array.from(35.0)
+
+// ═══════════════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════════════
+
+volLbl(string vol) =>
+    string result = "$"
+    if str.contains(vol, "bn")
+        string num = str.replace(vol, "bn", "")
+        float val = str.tonumber(num)
+        result := "$" + str.tostring(val, "#.#") + "B"
+    else
+        result := "$" + vol
+    result
+
+// ZFP calculation — zone width as percentage of a reference range
+// For DXY: reference = 1.60 DXY points (typical weekly range)
+// For EU/GU: reference = 0.0200 (200 pips typical weekly range)
+// For AU: reference = 0.0150 (150 pips typical weekly range)
+calcZFP(float tp, float bt, string pair) =>
+    float zoneW = tp - bt
+    float refRange = pair == "DXY" ? 1.60 : pair == "EUR/USD" ? 0.0200 : pair == "GBP/USD" ? 0.0200 : 0.0150
+    int pct = math.round(zoneW / refRange * 100.0)
+    pct
+
+// ═══════════════════════════════════════════════════════════════════════
+// DRAW ON LAST BAR — Per-Pair Rendering
+// Pine v6 requires explicit if/else for array selection
+// (ternary chains don't work with array types)
+// ═══════════════════════════════════════════════════════════════════════
+
+if barstate.islast and isDXY
+    int nZ = array.size(dxy_zTp)
+    int nO = array.size(dxy_oPr)
+    string pFmt = "#.##"
+
+    // ── IP ZONES ──
+    if show_zones
+        for i = 0 to nZ - 1
+            string c   = array.get(dxy_zCat, i)
+            string d   = array.get(dxy_zDeg, i)
+            float  tp  = array.get(dxy_zTp, i)
+            float  bt  = array.get(dxy_zBt, i)
+            string nm  = array.get(dxy_zNm, i)
+            box.new(tsL, tp, tsR, bt, bgcolor=zfill(c, d), border_color=zbord(c, d), border_width=2, border_style=line.style_solid, xloc=xloc.bar_time)
+            float midY = (tp + bt) / 2.0
+            string prs = pressureLbl(d)
+            int zfp = calcZFP(tp, bt, "DXY")
+            string lbl = nm + " | " + prs + " | " + str.tostring(zfp) + "% ZFP"
+            label.new(tsMid, midY, lbl, xloc=xloc.bar_time, style=label.style_none, textcolor=color.white, size=size.normal)
+
+    // ── OPTION STRIKES ──
+    if show_options
+        for i = 0 to nO - 1
+            float  op  = array.get(dxy_oPr, i)
+            string vol = array.get(dxy_oVol, i)
+            int    ow  = str.contains(vol, "bn") ? 2 : 1
+            line.new(tsL, op, tsR, op, xloc=xloc.bar_time, color=color.rgb(255,200,60), width=ow, style=line.style_solid)
+            string oLbl = volLbl(vol) + " Option Strike Target"
+            label.new(tsMid, op, oLbl, xloc=xloc.bar_time, style=label.style_none, textcolor=color.rgb(255,200,60), size=size.normal)
+
+    // ── TABLE ──
+    if show_table
+        table.cell(tbl, 0, 0, "TRIDENT v8", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        table.cell(tbl, 1, 0, "DXY Apr20-24", text_color=color.rgb(100,150,255), text_size=size.small, bgcolor=color.rgb(20,20,40))
+        table.cell(tbl, 0, 1, "Chain", text_color=color.gray, text_size=size.small)
+        table.cell(tbl, 1, 1, array.get(dxy_sCh,0) + " " + str.tostring(array.get(dxy_sCf,0), "#") + "%", text_color=color.white, text_size=size.small)
+        table.cell(tbl, 0, 2, "Alt", text_color=color.gray, text_size=size.small)
+        table.cell(tbl, 1, 2, array.get(dxy_sAlt,0) + " " + str.tostring(array.get(dxy_sAc,0), "#") + "%", text_color=color.gray, text_size=size.small)
+        table.cell(tbl, 0, 3, "Days", text_color=color.gray, text_size=size.small)
+        table.cell(tbl, 1, 3, "M:SS/H T:SS-BS W:BS-R Th:R-SS F:SS-WL", text_color=color.white, text_size=size.small)
+        table.cell(tbl, 0, 4, "ZONES", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        table.cell(tbl, 1, 4, "", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        for i = 0 to nZ - 1
+            string c = array.get(dxy_zCat, i)
+            string tag = c == "RES" ? "RES" : c == "MID" ? "EQ" : "SUP"
+            color bg = c == "RES" ? color.rgb(60,12,8) : c == "MID" ? color.rgb(50,38,8) : color.rgb(0,40,40)
+            string pr = str.tostring(array.get(dxy_zTp,i), pFmt) + "-" + str.tostring(array.get(dxy_zBt,i), pFmt)
+            string prs = pressureLbl(array.get(dxy_zDeg, i))
+            int zfp = calcZFP(array.get(dxy_zTp, i), array.get(dxy_zBt, i), "DXY")
+            table.cell(tbl, 0, i+5, tag, text_color=color.white, text_size=size.small, bgcolor=bg)
+            table.cell(tbl, 1, i+5, pr + " " + prs + " " + str.tostring(zfp) + "%ZFP " + array.get(dxy_zTir,i), text_color=color.white, text_size=size.small, bgcolor=bg)
+        table.cell(tbl, 0, 10, "TRADES", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        table.cell(tbl, 1, 10, "", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        color sBg = color.rgb(60,12,8)
+        table.cell(tbl, 0, 11, "S " + array.get(dxy_tTir,0), text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl, 1, 11, "Entry: " + str.tostring(array.get(dxy_tEn1,0), pFmt) + " - " + str.tostring(array.get(dxy_tEn3,0), pFmt), text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl, 0, 12, "", text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl, 1, 12, "SL: " + str.tostring(array.get(dxy_tSl,0), pFmt) + "  |  TP: " + str.tostring(array.get(dxy_tTp,0), pFmt), text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl, 0, 13, "", text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl, 1, 13, array.get(dxy_tDE,0) + " > " + array.get(dxy_tDT,0) + "  |  R:R " + str.tostring(array.get(dxy_tRr,0), "#.#"), text_color=color.white, text_size=size.small, bgcolor=sBg)
+        color lBg = color.rgb(0,40,40)
+        table.cell(tbl, 0, 14, "L " + array.get(dxy_tTir,1), text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl, 1, 14, "Entry: " + str.tostring(array.get(dxy_tEn1,1), pFmt) + " - " + str.tostring(array.get(dxy_tEn3,1), pFmt), text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl, 0, 15, "", text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl, 1, 15, "SL: " + str.tostring(array.get(dxy_tSl,1), pFmt) + "  |  TP: " + str.tostring(array.get(dxy_tTp,1), pFmt), text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl, 0, 16, "", text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl, 1, 16, array.get(dxy_tDE,1) + " > " + array.get(dxy_tDT,1) + "  |  R:R " + str.tostring(array.get(dxy_tRr,1), "#.#"), text_color=color.white, text_size=size.small, bgcolor=lBg)
+
+// ═══════════════════════════════════════════════════════════════════════
+// EUR/USD RENDERING
+// ═══════════════════════════════════════════════════════════════════════
+
+if barstate.islast and isEU
+    int nZ = array.size(eu_zTp)
+    int nO = array.size(eu_oPr)
+    string pFmt = "#.####"
+
+    if show_zones
+        for i = 0 to nZ - 1
+            string c   = array.get(eu_zCat, i)
+            string d   = array.get(eu_zDeg, i)
+            float  tp  = array.get(eu_zTp, i)
+            float  bt  = array.get(eu_zBt, i)
+            string nm  = array.get(eu_zNm, i)
+            box.new(tsL, tp, tsR, bt, bgcolor=zfill(c, d), border_color=zbord(c, d), border_width=2, border_style=line.style_solid, xloc=xloc.bar_time)
+            float midY = (tp + bt) / 2.0
+            string prs = pressureLbl(d)
+            int zfp = calcZFP(tp, bt, "EUR/USD")
+            string lbl = nm + " | " + prs + " | " + str.tostring(zfp) + "% ZFP"
+            label.new(tsMid, midY, lbl, xloc=xloc.bar_time, style=label.style_none, textcolor=color.white, size=size.normal)
+
+    if show_options
+        for i = 0 to nO - 1
+            float  op  = array.get(eu_oPr, i)
+            string vol = array.get(eu_oVol, i)
+            int    ow  = str.contains(vol, "bn") ? 2 : 1
+            line.new(tsL, op, tsR, op, xloc=xloc.bar_time, color=color.rgb(255,200,60), width=ow, style=line.style_solid)
+            string oLbl = volLbl(vol) + " Option Strike Target"
+            label.new(tsMid, op, oLbl, xloc=xloc.bar_time, style=label.style_none, textcolor=color.rgb(255,200,60), size=size.normal)
+
+    if show_table
+        table.cell(tbl_eu, 0, 0, "TRIDENT v8", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        table.cell(tbl_eu, 1, 0, "EUR/USD Apr20-24", text_color=color.rgb(80,140,255), text_size=size.small, bgcolor=color.rgb(10,30,60))
+        table.cell(tbl_eu, 0, 1, "Chain", text_color=color.gray, text_size=size.small)
+        table.cell(tbl_eu, 1, 1, array.get(eu_sCh,0) + " " + str.tostring(array.get(eu_sCf,0), "#") + "%", text_color=color.white, text_size=size.small)
+        table.cell(tbl_eu, 0, 2, "Alt", text_color=color.gray, text_size=size.small)
+        table.cell(tbl_eu, 1, 2, array.get(eu_sAlt,0) + " " + str.tostring(array.get(eu_sAc,0), "#") + "%", text_color=color.gray, text_size=size.small)
+        table.cell(tbl_eu, 0, 3, "Days", text_color=color.gray, text_size=size.small)
+        table.cell(tbl_eu, 1, 3, "M:SS/H T:SS-BS W:BS-R Th:R-SS F:SS-WL", text_color=color.white, text_size=size.small)
+        table.cell(tbl_eu, 0, 4, "ZONES", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        table.cell(tbl_eu, 1, 4, "", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        for i = 0 to nZ - 1
+            string c = array.get(eu_zCat, i)
+            string tag = c == "RES" ? "RES" : c == "MID" ? "EQ" : "SUP"
+            color bg = c == "RES" ? color.rgb(60,12,8) : c == "MID" ? color.rgb(50,38,8) : color.rgb(0,40,40)
+            string pr = str.tostring(array.get(eu_zTp,i), pFmt) + "-" + str.tostring(array.get(eu_zBt,i), pFmt)
+            string prs = pressureLbl(array.get(eu_zDeg, i))
+            int zfp = calcZFP(array.get(eu_zTp, i), array.get(eu_zBt, i), "EUR/USD")
+            table.cell(tbl_eu, 0, i+5, tag, text_color=color.white, text_size=size.small, bgcolor=bg)
+            table.cell(tbl_eu, 1, i+5, pr + " " + prs + " " + str.tostring(zfp) + "%ZFP " + array.get(eu_zTir,i), text_color=color.white, text_size=size.small, bgcolor=bg)
+        table.cell(tbl_eu, 0, 10, "TRADES", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        table.cell(tbl_eu, 1, 10, "", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        color sBg = color.rgb(60,12,8)
+        table.cell(tbl_eu, 0, 11, "S " + array.get(eu_tTir,0), text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl_eu, 1, 11, "Entry: " + str.tostring(array.get(eu_tEn1,0), pFmt) + " - " + str.tostring(array.get(eu_tEn3,0), pFmt), text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl_eu, 0, 12, "", text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl_eu, 1, 12, "SL: " + str.tostring(array.get(eu_tSl,0), pFmt) + "  |  TP: " + str.tostring(array.get(eu_tTp,0), pFmt), text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl_eu, 0, 13, "", text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl_eu, 1, 13, array.get(eu_tDE,0) + " > " + array.get(eu_tDT,0) + "  |  R:R " + str.tostring(array.get(eu_tRr,0), "#.#"), text_color=color.white, text_size=size.small, bgcolor=sBg)
+        color lBg = color.rgb(0,40,40)
+        table.cell(tbl_eu, 0, 14, "L " + array.get(eu_tTir,1), text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl_eu, 1, 14, "Entry: " + str.tostring(array.get(eu_tEn1,1), pFmt) + " - " + str.tostring(array.get(eu_tEn3,1), pFmt), text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl_eu, 0, 15, "", text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl_eu, 1, 15, "SL: " + str.tostring(array.get(eu_tSl,1), pFmt) + "  |  TP: " + str.tostring(array.get(eu_tTp,1), pFmt), text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl_eu, 0, 16, "", text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl_eu, 1, 16, array.get(eu_tDE,1) + " > " + array.get(eu_tDT,1) + "  |  R:R " + str.tostring(array.get(eu_tRr,1), "#.#"), text_color=color.white, text_size=size.small, bgcolor=lBg)
+
+// ═══════════════════════════════════════════════════════════════════════
+// GBP/USD RENDERING
+// ═══════════════════════════════════════════════════════════════════════
+
+if barstate.islast and isGU
+    int nZ = array.size(gu_zTp)
+    int nO = array.size(gu_oPr)
+    string pFmt = "#.####"
+
+    if show_zones
+        for i = 0 to nZ - 1
+            string c   = array.get(gu_zCat, i)
+            string d   = array.get(gu_zDeg, i)
+            float  tp  = array.get(gu_zTp, i)
+            float  bt  = array.get(gu_zBt, i)
+            string nm  = array.get(gu_zNm, i)
+            box.new(tsL, tp, tsR, bt, bgcolor=zfill(c, d), border_color=zbord(c, d), border_width=2, border_style=line.style_solid, xloc=xloc.bar_time)
+            float midY = (tp + bt) / 2.0
+            string prs = pressureLbl(d)
+            int zfp = calcZFP(tp, bt, "GBP/USD")
+            string lbl = nm + " | " + prs + " | " + str.tostring(zfp) + "% ZFP"
+            label.new(tsMid, midY, lbl, xloc=xloc.bar_time, style=label.style_none, textcolor=color.white, size=size.normal)
+
+    if show_options
+        for i = 0 to nO - 1
+            float  op  = array.get(gu_oPr, i)
+            string vol = array.get(gu_oVol, i)
+            int    ow  = str.contains(vol, "bn") ? 2 : 1
+            line.new(tsL, op, tsR, op, xloc=xloc.bar_time, color=color.rgb(255,200,60), width=ow, style=line.style_solid)
+            string oLbl = volLbl(vol) + " Option Strike Target"
+            label.new(tsMid, op, oLbl, xloc=xloc.bar_time, style=label.style_none, textcolor=color.rgb(255,200,60), size=size.normal)
+
+    if show_table
+        table.cell(tbl_gu, 0, 0, "TRIDENT v8", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        table.cell(tbl_gu, 1, 0, "GBP/USD Apr20-24", text_color=color.rgb(180,100,220), text_size=size.small, bgcolor=color.rgb(40,15,50))
+        table.cell(tbl_gu, 0, 1, "Chain", text_color=color.gray, text_size=size.small)
+        table.cell(tbl_gu, 1, 1, array.get(gu_sCh,0) + " " + str.tostring(array.get(gu_sCf,0), "#") + "%", text_color=color.white, text_size=size.small)
+        table.cell(tbl_gu, 0, 2, "Alt", text_color=color.gray, text_size=size.small)
+        table.cell(tbl_gu, 1, 2, array.get(gu_sAlt,0) + " " + str.tostring(array.get(gu_sAc,0), "#") + "%", text_color=color.gray, text_size=size.small)
+        table.cell(tbl_gu, 0, 3, "Days", text_color=color.gray, text_size=size.small)
+        table.cell(tbl_gu, 1, 3, "M:SS/H T:SS-BS W:BS-R Th:R-SS F:SS-WL", text_color=color.white, text_size=size.small)
+        table.cell(tbl_gu, 0, 4, "ZONES", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        table.cell(tbl_gu, 1, 4, "", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        for i = 0 to nZ - 1
+            string c = array.get(gu_zCat, i)
+            string tag = c == "RES" ? "RES" : c == "MID" ? "EQ" : "SUP"
+            color bg = c == "RES" ? color.rgb(60,12,8) : c == "MID" ? color.rgb(50,38,8) : color.rgb(0,40,40)
+            string pr = str.tostring(array.get(gu_zTp,i), pFmt) + "-" + str.tostring(array.get(gu_zBt,i), pFmt)
+            string prs = pressureLbl(array.get(gu_zDeg, i))
+            int zfp = calcZFP(array.get(gu_zTp, i), array.get(gu_zBt, i), "GBP/USD")
+            table.cell(tbl_gu, 0, i+5, tag, text_color=color.white, text_size=size.small, bgcolor=bg)
+            table.cell(tbl_gu, 1, i+5, pr + " " + prs + " " + str.tostring(zfp) + "%ZFP " + array.get(gu_zTir,i), text_color=color.white, text_size=size.small, bgcolor=bg)
+        table.cell(tbl_gu, 0, 10, "TRADES", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        table.cell(tbl_gu, 1, 10, "", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        color sBg = color.rgb(60,12,8)
+        table.cell(tbl_gu, 0, 11, "S " + array.get(gu_tTir,0), text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl_gu, 1, 11, "Entry: " + str.tostring(array.get(gu_tEn1,0), pFmt) + " - " + str.tostring(array.get(gu_tEn3,0), pFmt), text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl_gu, 0, 12, "", text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl_gu, 1, 12, "SL: " + str.tostring(array.get(gu_tSl,0), pFmt) + "  |  TP: " + str.tostring(array.get(gu_tTp,0), pFmt), text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl_gu, 0, 13, "", text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl_gu, 1, 13, array.get(gu_tDE,0) + " > " + array.get(gu_tDT,0) + "  |  R:R " + str.tostring(array.get(gu_tRr,0), "#.#"), text_color=color.white, text_size=size.small, bgcolor=sBg)
+        color lBg = color.rgb(0,40,40)
+        table.cell(tbl_gu, 0, 14, "L " + array.get(gu_tTir,1), text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl_gu, 1, 14, "Entry: " + str.tostring(array.get(gu_tEn1,1), pFmt) + " - " + str.tostring(array.get(gu_tEn3,1), pFmt), text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl_gu, 0, 15, "", text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl_gu, 1, 15, "SL: " + str.tostring(array.get(gu_tSl,1), pFmt) + "  |  TP: " + str.tostring(array.get(gu_tTp,1), pFmt), text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl_gu, 0, 16, "", text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl_gu, 1, 16, array.get(gu_tDE,1) + " > " + array.get(gu_tDT,1) + "  |  R:R " + str.tostring(array.get(gu_tRr,1), "#.#"), text_color=color.white, text_size=size.small, bgcolor=lBg)
+
+// ═══════════════════════════════════════════════════════════════════════
+// AUD/USD RENDERING
+// ═══════════════════════════════════════════════════════════════════════
+
+if barstate.islast and isAU
+    int nZ = array.size(au_zTp)
+    int nO = array.size(au_oPr)
+    string pFmt = "#.####"
+
+    if show_zones
+        for i = 0 to nZ - 1
+            string c   = array.get(au_zCat, i)
+            string d   = array.get(au_zDeg, i)
+            float  tp  = array.get(au_zTp, i)
+            float  bt  = array.get(au_zBt, i)
+            string nm  = array.get(au_zNm, i)
+            box.new(tsL, tp, tsR, bt, bgcolor=zfill(c, d), border_color=zbord(c, d), border_width=2, border_style=line.style_solid, xloc=xloc.bar_time)
+            float midY = (tp + bt) / 2.0
+            string prs = pressureLbl(d)
+            int zfp = calcZFP(tp, bt, "AUD/USD")
+            string lbl = nm + " | " + prs + " | " + str.tostring(zfp) + "% ZFP"
+            label.new(tsMid, midY, lbl, xloc=xloc.bar_time, style=label.style_none, textcolor=color.white, size=size.normal)
+
+    if show_options
+        for i = 0 to nO - 1
+            float  op  = array.get(au_oPr, i)
+            string vol = array.get(au_oVol, i)
+            int    ow  = str.contains(vol, "bn") ? 2 : 1
+            line.new(tsL, op, tsR, op, xloc=xloc.bar_time, color=color.rgb(255,200,60), width=ow, style=line.style_solid)
+            string oLbl = volLbl(vol) + " Option Strike Target"
+            label.new(tsMid, op, oLbl, xloc=xloc.bar_time, style=label.style_none, textcolor=color.rgb(255,200,60), size=size.normal)
+
+    if show_table
+        table.cell(tbl_au, 0, 0, "TRIDENT v8", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        table.cell(tbl_au, 1, 0, "AUD/USD Apr20-24", text_color=color.rgb(230,160,60), text_size=size.small, bgcolor=color.rgb(50,30,10))
+        table.cell(tbl_au, 0, 1, "Chain", text_color=color.gray, text_size=size.small)
+        table.cell(tbl_au, 1, 1, array.get(au_sCh,0) + " " + str.tostring(array.get(au_sCf,0), "#") + "%", text_color=color.white, text_size=size.small)
+        table.cell(tbl_au, 0, 2, "Alt", text_color=color.gray, text_size=size.small)
+        table.cell(tbl_au, 1, 2, array.get(au_sAlt,0) + " " + str.tostring(array.get(au_sAc,0), "#") + "%", text_color=color.gray, text_size=size.small)
+        table.cell(tbl_au, 0, 3, "Days", text_color=color.gray, text_size=size.small)
+        table.cell(tbl_au, 1, 3, "M:SS/H T:SS-BS W:BS-R Th:R-SS F:SS-WL", text_color=color.white, text_size=size.small)
+        table.cell(tbl_au, 0, 4, "ZONES", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        table.cell(tbl_au, 1, 4, "", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        for i = 0 to nZ - 1
+            string c = array.get(au_zCat, i)
+            string tag = c == "RES" ? "RES" : c == "MID" ? "EQ" : "SUP"
+            color bg = c == "RES" ? color.rgb(60,12,8) : c == "MID" ? color.rgb(50,38,8) : color.rgb(0,40,40)
+            string pr = str.tostring(array.get(au_zTp,i), pFmt) + "-" + str.tostring(array.get(au_zBt,i), pFmt)
+            string prs = pressureLbl(array.get(au_zDeg, i))
+            int zfp = calcZFP(array.get(au_zTp, i), array.get(au_zBt, i), "AUD/USD")
+            table.cell(tbl_au, 0, i+5, tag, text_color=color.white, text_size=size.small, bgcolor=bg)
+            table.cell(tbl_au, 1, i+5, pr + " " + prs + " " + str.tostring(zfp) + "%ZFP " + array.get(au_zTir,i), text_color=color.white, text_size=size.small, bgcolor=bg)
+        table.cell(tbl_au, 0, 10, "TRADES", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        table.cell(tbl_au, 1, 10, "", text_color=color.gray, text_size=size.small, bgcolor=color.rgb(8,8,12))
+        color sBg = color.rgb(60,12,8)
+        table.cell(tbl_au, 0, 11, "S " + array.get(au_tTir,0), text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl_au, 1, 11, "Entry: " + str.tostring(array.get(au_tEn1,0), pFmt) + " - " + str.tostring(array.get(au_tEn3,0), pFmt), text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl_au, 0, 12, "", text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl_au, 1, 12, "SL: " + str.tostring(array.get(au_tSl,0), pFmt) + "  |  TP: " + str.tostring(array.get(au_tTp,0), pFmt), text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl_au, 0, 13, "", text_color=color.white, text_size=size.small, bgcolor=sBg)
+        table.cell(tbl_au, 1, 13, array.get(au_tDE,0) + " > " + array.get(au_tDT,0) + "  |  R:R " + str.tostring(array.get(au_tRr,0), "#.#"), text_color=color.white, text_size=size.small, bgcolor=sBg)
+        color lBg = color.rgb(0,40,40)
+        table.cell(tbl_au, 0, 14, "L " + array.get(au_tTir,1), text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl_au, 1, 14, "Entry: " + str.tostring(array.get(au_tEn1,1), pFmt) + " - " + str.tostring(array.get(au_tEn3,1), pFmt), text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl_au, 0, 15, "", text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl_au, 1, 15, "SL: " + str.tostring(array.get(au_tSl,1), pFmt) + "  |  TP: " + str.tostring(array.get(au_tTp,1), pFmt), text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl_au, 0, 16, "", text_color=color.white, text_size=size.small, bgcolor=lBg)
+        table.cell(tbl_au, 1, 16, array.get(au_tDE,1) + " > " + array.get(au_tDT,1) + "  |  R:R " + str.tostring(array.get(au_tRr,1), "#.#"), text_color=color.white, text_size=size.small, bgcolor=lBg)

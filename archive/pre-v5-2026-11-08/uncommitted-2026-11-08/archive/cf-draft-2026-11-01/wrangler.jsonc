@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "plutus-vision",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "ai": { "binding": "AI" },
+  "browser": { "binding": "BROWSER" },
+  "r2_buckets": [{ "binding": "R2", "bucket_name": "plutus-vision" }],
+  "d1_databases": [
+    { "binding": "D1", "database_name": "plutus-vision", "database_id": "REPLACE_AT_CREATE" }
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "WEEK_SEAL", "class_name": "WeekSeal" },
+      { "name": "LEDGER", "class_name": "Ledger" }
+    ]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["WeekSeal", "Ledger"] }],
+  "workflows": [{ "name": "pv-week", "binding": "PV_WEEK", "class_name": "PvWeek" }]
+}

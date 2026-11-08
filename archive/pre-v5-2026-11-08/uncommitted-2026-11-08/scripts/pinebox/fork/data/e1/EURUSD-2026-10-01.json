@@ -1,0 +1,21 @@
+{
+ "schema": "trident-e1/1",
+ "pair": "EURUSD",
+ "target_week": "2026-10-01",
+ "chart_week": "",
+ "anchor": {},
+ "spot": null,
+ "data_as_of": null,
+ "sources": {
+  "EXTRACT_ohlc": {
+   "status": "[NO DATA]",
+   "reason": "no OHLC from any source. network: skipped (default is the chart's fixture; pass --live); fixture: the fixture has no EURUSD 1H cell"
+  }
+ },
+ "levels": [],
+ "zones": [],
+ "shapes": {},
+ "notes": [
+  "no OHLC series: every pillar is [NO DATA], so nothing is drawn"
+ ]
+}

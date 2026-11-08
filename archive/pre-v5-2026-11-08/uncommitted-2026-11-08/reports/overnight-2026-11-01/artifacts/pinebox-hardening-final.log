@@ -1,0 +1,83 @@
+── H-CLAIM ──
+  PASS  a recycled pid (unrelated python) on the own-list is PORT_TAKEN
+  PASS  CONTROL: the pre-fix ports.sh (579312c) ACCEPTS that pid (the instrument can say defective)
+  PASS  a real service (argv0 pv-server.py) on the own-list claims
+  PASS  the same service NOT on the own-list is PORT_TAKEN
+  PASS  a failing ss FAILS CLOSED (PORT_PROBE_FAILED), never 'free'
+  PASS  all ports free -> claim succeeds (the refusals are not blanket)
+
+── H-ID ──
+  PASS  pb_ports_json refuses 08 09 010 10 -1 x '' ../x 1;2
+  PASS  pb_claim refuses 08 ../x '' before it names a lock file
+  PASS  pb_rec refuses a traversal id (it would have written /state.json)
+  PASS  no PINEBOX_ROOT and no XDG_RUNTIME_DIR -> PB_ROOT_UNAVAILABLE (no /tmp default)
+  PASS  the default root is $XDG_RUNTIME_DIR/pinebox, mode 700
+
+── H-SCOPE ──
+  PASS  a SYMLINKED root is refused SCOPE_VIOLATION
+  PASS  ...and the victim file SURVIVED
+  PASS  a symlinked PARENT of the root is refused and the victim survives
+
+── H-ROW / H-ARGS ──
+  PASS  '1D' does not match inside '21D'
+  PASS  'BTC' does not match inside 'BTCX'
+  PASS  an EMPTY field never matches (no vacuous '**')
+  PASS  real rows still match (DXY, EUR/USD)
+  PASS  pair/tf: shell metacharacters, empties and a 1-char pair are BAD_ARGS
+  PASS  legitimate pair/tf (EUR/USD 15m, DXY 1H) pass
+  PASS  dx='1));evil();//' is BAD_ARGS
+  PASS  speed 0 (a spin loop) is BAD_ARGS
+  PASS  a widget name with quote/bracket/paren is BAD_ARGS
+
+── H-PIXELS ──
+  PASS  pane colours: blank=1 < floor 747 <= drawn=3987
+  PASS  CONTROL: the blank chart's WHOLE-frame count is 543 (> 1), so the old check would have said WORKS
+  PASS  the same file is 'unchanged' (rc 1)
+  PASS  a drawn vs blank pane is 'changed' (rc 0)
+  PASS  an unreadable PNG is the INSTRUMENT failing (rc 2), never 'unchanged'
+
+── H-INJECT ──
+  PASS  a nested object and a '}' in a string: the block is replaced WHOLE
+  PASS  no authToken -> AUTH_TOKEN_UNAVAILABLE
+  PASS  the real page is served with the instance's token and without the shared dev token
+  PASS  invalid UTF-8 -> PAGE_NOT_UTF8 (no lossy re-encode)
+  PASS  a missing file is a NAMED refusal, not a traceback
+  PASS  an unterminated block -> CONFIG_BLOCK_MALFORMED
+  PASS  a page defining the block twice -> CONFIG_BLOCK_AMBIGUOUS
+
+── H-MCP ──
+  PASS  PINEBOX_MCP_TIMEOUT_MS foo '' -5 0 99 3600001 1e999 -> startup failure rc=2
+  PASS  5 non-object frames -> 5 errors; a 3 MiB line -> exactly ONE error; ping and tools/list still answered; server exit 0
+
+── H-DRIVE ──
+  PASS  drive refuses view shell_down shell_up terminal_send state_put app_install bogus
+  PASS  drive refuses --id=N, --action=V and repeated --id/--action
+── H-BATCH2 the final-scan defects ──
+  PASS  pb_port 0 'station,.server' (a second jq path) is BAD_ARGS rc=2
+  PASS  pb_port 0 'station // "x"' is BAD_ARGS rc=2
+  PASS  CONTROL: the pre-batch pb_port returns TWO values for a comma filter (the instrument can say defective)
+  PASS  pb_port 0 station still answers the block's own station port (9741)
+  PASS  pb_claim with fd 6 already open is CLAIM_REENTRANT (the outer lock is not clobbered)
+  PASS  stage_room on a directory that is not $PB_ROOT/i<id> is SCOPE_VIOLATION and nothing was deleted
+  PASS  CONTROL: the pre-batch stage_room DELETES inside that unscoped directory (the instrument can say defective)
+  PASS  drive screenshot --out /etc/evil.png is BAD_ARGS
+  PASS  drive screenshot --out through ../ into another instance is BAD_ARGS
+  PASS  drive click --i 5 (an abbreviated --id) is BAD_ARGS
+  PASS  drive type --out (a flag type does not take) is BAD_ARGS
+  PASS  CONTROL: a .png inside the instance directory passes the allowlist
+  PASS  inject.config_for rejects server="abc" with BAD_PORTS
+  PASS  inject.config_for rejects server=None with BAD_PORTS
+  PASS  inject.config_for rejects server=70000 with BAD_PORTS
+  PASS  inject.config_for rejects server=80 with BAD_PORTS
+  PASS  inject.config_for rejects server=True with BAD_PORTS
+  PASS  CONTROL: the pre-batch inject served 'http://127.0.0.1:None' (the instrument can say defective)
+── H-CANDLES verify must see candles, not just colours ──
+  PASS  a chart with NO candles (empty-preload) measures 0 candle pixels, below the floor 707
+  PASS  CONTROL: the OLD colour test reads that empty chart (empty-preload) as populated (1489 colours >= 747) - the instrument it replaced was blind
+  PASS  a chart with NO candles (empty-after-fit) measures 352 candle pixels, below the floor 707
+  PASS  CONTROL: the OLD colour test reads that empty chart (empty-after-fit) as populated (1617 colours >= 747) - the instrument it replaced was blind
+  PASS  a chart WITH candles (sliver-after-zoom) measures 1062 candle pixels, at or above the floor 707
+  PASS  a chart WITH candles (good-week) measures 4371 candle pixels, at or above the floor 707
+  PASS  an unreadable frame is rc=2 (the instrument failed), never a count
+
+ HARDENING: PASS 64 · FAIL 0

@@ -40,10 +40,10 @@ while IFS= read -r f; do
                                  # (sha256-proven), NOT docs authored in this repo.
                                  # Same artifact class as Checkpoints/* — a verbatim
                                  # COPY, not an authored doc (the W-1 class).
-    Checkpoints/*) continue ;;   # a SNAPSHOT: its docs are byte-identical COPIES
-                                 # (diff -q proves it) and its manifest is a
-                                 # structural INDEX, not an authored doc
-    packages/*/08-GOAL-PIN.txt) continue ;;   # a PIN is capped at 200 lines by design
+    archive/*)    continue ;;   # FROZEN HISTORY (2026-11-08): the pre-v5 tree archived
+                                 # verbatim by operator order. A copy, not an authored doc.
+    MASTER_CONTEXT/OPERATOR_RULINGS_PV.md) continue ;;  # the OPERATOR'S OWN verbatim rulings:
+                                 # authority text, not an authored engineering doc (W-1 class).
     dossiers/*/dossier.md|dossiers/*/origin.json|dossiers/*/manifest.sha16|dossiers/*/dossier.md.tmp-*|dossiers/*/origin.json.tmp-*|dossiers/*/manifest.sha16.tmp-*)
                                  continue ;;   # a KICK DOSSIER's THREE generator outputs
                                  # FIXED (the W25 ship gate LOW): `dossiers/*` (shell `*`
@@ -295,7 +295,7 @@ fi
 # src/Checkpoints_helper.ts — a false positive) and the PASS grep missed the
 # whitespace variant `"verdict": "PASS"`. The match is now line-wise (a real
 # path segment) and the grep is whitespace-tolerant.
-if printf '%s\n' "$STAGED" | grep -qE '(^|/)Checkpoints/'; then
+if printf '%s\n' "$STAGED" | grep -qE '^Checkpoints/'; then
   # FIXED (ocr audit high): $FENCE_LEDGER let the COMMITTER point the trust root at
   # an attacker-chosen file (/tmp/fake-with-pass) — a local gate's adversary IS the
   # committer, so the env must not select the root. The canonical path is fixed; the

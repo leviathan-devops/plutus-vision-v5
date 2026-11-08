@@ -1,0 +1,53 @@
+<!doctype html>
+<!-- ============================================================================
+     backtest-room/room.html — THE STANDALONE ROOM PAGE
+     ----------------------------------------------------------------------------
+     The room OUTSIDE the Electron shell, served by the room's own control surface:
+         http://127.0.0.1:9443/room
+     It loads the SHIPPED tab module (tabs/backtest.js) and the SHIPPED helper
+     (tabs/_shell.js) — the exact same code the in-app tab runs, so what an operator
+     (or the agent's browser) sees here is what the dashboard tab renders. No fork,
+     no second implementation.
+       · /tabs/* is served by the control surface from the dashboard's renderer/tabs
+         (post-integration the dashboard's own :9430 serves the same bytes)
+       · the module self-mounts into #page-backtest-room (PlutusShell.registerTab's
+         container scan) — the same container id it uses inside the shell
+       · styles: tabs/backtest.css (self-injected) + the dashboard's tokens.css
+     ============================================================================ -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PLUTUS · THE BACKTESTING ROOM</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0B0B0C; color: #E8E4DC; overflow: hidden; }
+    #page-backtest-room { height: 100vh; display: flex; flex-direction: column; }
+    #bt-boot { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font: 11px/1.6 monospace; letter-spacing: .14em; text-transform: uppercase; color: #6A675F; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <div id="page-backtest-room"></div>
+  <div id="bt-boot">mounting the backtest room…</div>
+
+  <script>
+    // the boot line disappears the moment the room paints (it is not a decoration: if it
+    // is still visible the module or the control surface is down — a LOUD, named state)
+    (function () {
+      var tries = 0;
+      (function wait() {
+        tries++;
+        var b = document.getElementById('bt-boot');
+        if (b && document.querySelector('#page-backtest-room .bt-room')) { b.remove(); return; }
+        if (tries > 60) {   // 30s: the room never painted → the line STAYS (a loud, named state)
+          if (b) b.textContent = 'the room did not paint — check :9443 (POST /create) and the module load';
+          return;
+        }
+        setTimeout(wait, 500);
+      })();
+    })();
+  </script>
+  <script src="/tabs/_shell.js"></script>
+  <script src="/tabs/backtest.js"></script>
+</body>
+</html>

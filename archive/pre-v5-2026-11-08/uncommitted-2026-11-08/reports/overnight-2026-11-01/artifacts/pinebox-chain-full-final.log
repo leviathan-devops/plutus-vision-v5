@@ -1,0 +1,18 @@
+══ PINEBOX · the gate chain ══
+strings        (B1 B2 B4 B12 B13)  PASS
+mutate         (detectors bite)    PASS
+inject         (P0 P1 B3 B10)      PASS
+mcp            (P11 P12)           PASS
+hardening       (display-free)     PASS
+ext forwarder  (repo A)            PASS
+room           (ST-2 ST-3)         PASS
+multi N=2      (P8 P10 B5-B7)      PASS
+multi N=7      (P9)                PASS
+leak-check     (nothing left)      PASS
+deploy verify  (seal/helpers/mcp/probe) PASS
+blueprint-gate (A18 A19)           PASS
+══ 12 gates · 0 failed ══
+
+real	2m52.673s
+user	0m29.312s
+sys	0m31.795s

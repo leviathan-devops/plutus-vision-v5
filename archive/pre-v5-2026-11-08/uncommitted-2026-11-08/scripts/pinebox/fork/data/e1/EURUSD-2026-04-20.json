@@ -1,0 +1,272 @@
+{
+ "schema": "trident-e1/1",
+ "pair": "EURUSD",
+ "target_week": "2026-04-20",
+ "chart_week": "2026-04-20",
+ "spot": 1.163,
+ "data_as_of": "2026-04-20",
+ "sources": {
+  "EXTRACT_ohlc": {
+   "status": "OK",
+   "source": "canon",
+   "detail": "the v8's example window"
+  }
+ },
+ "levels": [
+  {
+   "price": 1.17,
+   "label": "P3_OPTION_STRIKE_1.17",
+   "level_type": "P3",
+   "style": "line",
+   "use_box": false,
+   "notional_bn": "1.9",
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 1.1625,
+   "label": "P3_OPTION_STRIKE_1.1625",
+   "level_type": "P3",
+   "style": "line",
+   "use_box": false,
+   "notional_bn": "2.6",
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 1.16,
+   "label": "P3_OPTION_STRIKE_1.16",
+   "level_type": "P3",
+   "style": "line",
+   "use_box": false,
+   "notional_bn": "1.1",
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 1.15,
+   "label": "P3_OPTION_STRIKE_1.15",
+   "level_type": "P3",
+   "style": "line",
+   "use_box": false,
+   "notional_bn": "1.0",
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 1.165,
+   "label": "P3_OPTION_STRIKE_1.165",
+   "level_type": "P3",
+   "style": "line",
+   "use_box": false,
+   "notional_bn": "1.8",
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 1.161,
+   "label": "P3_OPTION_STRIKE_1.161",
+   "level_type": "P3",
+   "style": "line",
+   "use_box": false,
+   "notional_bn": "1.1",
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  },
+  {
+   "price": 1.1595,
+   "label": "P3_OPTION_STRIKE_1.1595",
+   "level_type": "P3",
+   "style": "line",
+   "use_box": false,
+   "notional_bn": "1.8",
+   "technical": 0.0,
+   "structural": 0.0,
+   "psychological": 0.0,
+   "regime": 0.0,
+   "bonus": 0.0,
+   "recapture": false,
+   "extended": false
+  }
+ ],
+ "zones": [
+  {
+   "name": "Key IP Resistance Band",
+   "top": 1.172,
+   "bottom": 1.17,
+   "zCat": "RES",
+   "degree_v8": "HEAVY",
+   "pressure_degree": "HEAVY",
+   "zTir": "T2",
+   "confluence": 12,
+   "zfp": 10,
+   "zfp_label": 10,
+   "zone_type": "STANDARD_WALL",
+   "levels": [],
+   "regime": "consolidation",
+   "structural_extreme": false,
+   "poi_tier": 1,
+   "bom_fresh_flag": null,
+   "timeframe": "1H",
+   "measured_move_target": null
+  },
+  {
+   "name": "Upper IP Resistance",
+   "top": 1.1685,
+   "bottom": 1.166,
+   "zCat": "RES",
+   "degree_v8": "MODERATE-HEAVY",
+   "pressure_degree": "MODERATE_HEAVY",
+   "zTir": "T1",
+   "confluence": 10,
+   "zfp": 13,
+   "zfp_label": 13,
+   "zone_type": "STANDARD_WALL",
+   "levels": [],
+   "regime": "consolidation",
+   "structural_extreme": false,
+   "poi_tier": 1,
+   "bom_fresh_flag": null,
+   "timeframe": "1H",
+   "measured_move_target": null
+  },
+  {
+   "name": "Equilibrium Zone",
+   "top": 1.1635,
+   "bottom": 1.161,
+   "zCat": "MID",
+   "degree_v8": "MODERATE-HEAVY",
+   "pressure_degree": "MODERATE_HEAVY",
+   "zTir": "T2",
+   "confluence": 10,
+   "zfp": 12,
+   "zfp_label": 12,
+   "zone_type": "STANDARD_WALL",
+   "levels": [],
+   "regime": "consolidation",
+   "structural_extreme": false,
+   "poi_tier": 1,
+   "bom_fresh_flag": null,
+   "timeframe": "1H",
+   "measured_move_target": null
+  },
+  {
+   "name": "Mid-Range Support",
+   "top": 1.1595,
+   "bottom": 1.157,
+   "zCat": "SUP",
+   "degree_v8": "MODERATE",
+   "pressure_degree": "MODERATE",
+   "zTir": "T2",
+   "confluence": 7,
+   "zfp": 12,
+   "zfp_label": 12,
+   "zone_type": "STANDARD_WALL",
+   "levels": [],
+   "regime": "consolidation",
+   "structural_extreme": false,
+   "poi_tier": 1,
+   "bom_fresh_flag": null,
+   "timeframe": "1H",
+   "measured_move_target": null
+  },
+  {
+   "name": "IP Support Floor",
+   "top": 1.1555,
+   "bottom": 1.152,
+   "zCat": "SUP",
+   "degree_v8": "HEAVY",
+   "pressure_degree": "HEAVY",
+   "zTir": "T1",
+   "confluence": 12,
+   "zfp": 18,
+   "zfp_label": 18,
+   "zone_type": "STANDARD_WALL",
+   "levels": [],
+   "regime": "consolidation",
+   "structural_extreme": false,
+   "poi_tier": 1,
+   "bom_fresh_flag": null,
+   "timeframe": "1H",
+   "measured_move_target": null
+  }
+ ],
+ "lsz": [
+  {
+   "range": [
+    1.148,
+    1.15
+   ],
+   "type": "ACTIVE"
+  },
+  {
+   "range": [
+    1.1545,
+    1.156
+   ],
+   "type": "STANDARD"
+  },
+  {
+   "range": [
+    1.159,
+    1.1605
+   ],
+   "type": "STANDARD"
+  },
+  {
+   "range": [
+    1.1675,
+    1.169
+   ],
+   "type": "STANDARD"
+  },
+  {
+   "range": [
+    1.1645,
+    1.166
+   ],
+   "type": "STANDARD"
+  },
+  {
+   "range": [
+    1.17,
+    1.1715
+   ],
+   "type": "STANDARD"
+  }
+ ],
+ "shapes": {},
+ "notes": [
+  "CANON \u2014 the v8's exact EU example (transcribed)"
+ ]
+}

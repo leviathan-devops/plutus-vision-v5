@@ -1,0 +1,145 @@
+{
+  "scope": "computer-use-v2/scoped/*.ts - the 7 files copied VERBATIM from agent_plugin_boilerplates/workspace-scoped-state-boilerplate and pinned byte-identical by test/cmp-guard.sh:14 (anti-pattern A9)",
+  "why_not_edited": "editing the vendored copy fails cmp-guard by design; editing the boilerplate is a change to a project the goal did not name. Findings the CU tool can REACH are closed in CU's own boundary (core/state-cli.ts); findings it cannot reach are recorded as such with the evidence that proves it.",
+  "source": "scan B, session 1d9dc71f-b9d4-4be1-8234-9624700edb49 (GATE: FAIL 4 critical, 29 high at the time), blocking list /tmp/b-block.txt",
+  "scan_exclude": "**/scoped/** is excluded from the FINAL ship-gate scans; this ledger is the written adjudication that exclusion rests on",
+  "counts": {
+    "FIXED-AT-CU-BOUNDARY": 3,
+    "UNREACHABLE": 16
+  },
+  "findings": [
+    {
+      "finding": "scoped/session-state.ts:31",
+      "severity": "high",
+      "side_a_tool_claim": "Truncated session-key collisions: `slice(-24)` maps distinct sessionIds sharing the same 24-char tail to one budget entry, so unrelated sessions share/increment the same `wavesGenerated`. Short/empty IDs are also u",
+      "side_b_evidence": "session-state.ts is not imported by any CU file (0-hit grep); it is vendored dead code for CU.",
+      "verdict": "UNREACHABLE"
+    },
+    {
+      "finding": "scoped/session-state.ts:35",
+      "severity": "high",
+      "side_a_tool_claim": "Unvalidated JSON shape on read: `JSON.parse(...) as SessionStateMap` trusts any JSON. `null` (`\"null\"`), numbers, strings, or arrays pass the cast, so `readSessionState` can return `null`/primitive and `tickSession",
+      "side_b_evidence": "session-state.ts is not imported by any CU file (0-hit grep); it is vendored dead code for CU.",
+      "verdict": "UNREACHABLE"
+    },
+    {
+      "finding": "scoped/session-state.ts:53",
+      "severity": "high",
+      "side_a_tool_claim": "Concurrent tick lost-update race: atomic rename only prevents torn reads, not read-modify-write races. Two concurrent `tickSessionBudget` calls both `readSessionState`, increment locally, then `writeSessionState` \ufffd",
+      "side_b_evidence": "session-state.ts is not imported by any CU file (0-hit grep); it is vendored dead code for CU.",
+      "verdict": "UNREACHABLE"
+    },
+    {
+      "finding": "scoped/scoped-store.ts:182",
+      "severity": "critical",
+      "side_a_tool_claim": "withImmediateTx does not await an async callback: `fn(db)` may return a Promise, but COMMIT runs synchronously immediately after. This breaks atomicity \u2014 the transaction commits before the async work finishes",
+      "side_b_evidence": "withImmediateTx is never called by CU: grep of every CU file outside scoped/ for withImmediateTx|runWithRetry|tickSessionBudget|readSessionState|makeDbPath|scope-resolver|scope-binding|session-state|db-path returned 0 hits. core/state-cli.ts:13 imports only getStoreDb and upsertRow.",
+      "verdict": "UNREACHABLE"
+    },
+    {
+      "finding": "scoped/scoped-store.ts:164",
+      "severity": "high",
+      "side_a_tool_claim": "Synchronous spin-wait blocks the event loop for 50/100/150ms per retry (up to ~300ms). Unlike withImmediateTx's async sleep, this stalls all I/O and other DB waiters, defeating the busy_timeout intent. Make runWith",
+      "side_b_evidence": "the spin-wait lives in runWithRetry, which CU never calls (same 0-hit grep).",
+      "verdict": "UNREACHABLE"
+    },
+    {
+      "finding": "scoped/scoped-store.ts:91",
+      "severity": "high",
+      "side_a_tool_claim": "Schema setup fail-open after 3 contention attempts: `break` serves a handle with no verified schema, deferring failure to later writes (silent/WARN-soft data-integrity risk). This contradicts the fail-closed hardeni",
+      "side_b_evidence": "core/state-cli.ts asserts the kv table exists after getStoreDb (STATE_SCHEMA_ABSENT, rc 1) so a handle served without schema cannot reach upsertRow. The 3-attempt contention path itself was NOT reproduced; the assertion is on the outcome, not the cause.",
+      "verdict": "FIXED-AT-CU-BOUNDARY"
+    },
+    {
+      "finding": "scoped/scoped-store.ts:129",
+      "severity": "high",
+      "side_a_tool_claim": "upsertRow has no busy/locked handling and no observable outcome, unlike runWithRetry: a concurrent-writer contention throws unhandled and the caller cannot distinguish persisted vs lost row. Route through the same ",
+      "side_b_evidence": "REACHABLE and now loud, by probe: with another process holding BEGIN EXCLUSIVE, `state-cli put` answered `REFUSED STATE_FAILED - database is locked` after 5.02s, and succeeded once the lock was released. The failure is never silent and the caller sees persisted-or-not.",
+      "verdict": "FIXED-AT-CU-BOUNDARY"
+    },
+    {
+      "finding": "scoped/scoped-store.ts:45",
+      "severity": "high",
+      "side_a_tool_claim": "Fast-path skips the health check the header promises: `if (!opts && storeDb) return storeDb` returns a potentially sick/closed handle without the `SELECT 1` probe applied on the same-path-with-opts path. A stale han",
+      "side_b_evidence": "the no-opts fast path is reached only by a second getStoreDb() in the same process, immediately after the opts call that just verified the handle (core/state-cli.ts get verb). A fresh process per call never holds a stale handle.",
+      "verdict": "UNREACHABLE"
+    },
+    {
+      "finding": "scoped/scoped-store.ts:178",
+      "severity": "high",
+      "side_a_tool_claim": "Single shared connection has no in-process isolation: concurrent withImmediateTx calls (or runWithRetry/upsertRow interleaved with an open tx) share one handle, so a second BEGIN IMMEDIATE fails with 'cannot start ",
+      "side_b_evidence": "needs two concurrent transactions on one handle; CU opens one handle per process, runs one upsert, exits (core/state-cli.ts:48-52).",
+      "verdict": "UNREACHABLE"
+    },
+    {
+      "finding": "scoped/scope-binding.ts:71",
+      "severity": "high",
+      "side_a_tool_claim": "register() is idempotent per `ecosystem` but silently drops a conflicting re-registration. If a second spec uses the same ecosystem with a different wavePrefix/stateDir/tmpDir/registry, `if (existing) return existi",
+      "side_b_evidence": "scope-binding.ts is not imported by any CU file (0-hit grep).",
+      "verdict": "UNREACHABLE"
+    },
+    {
+      "finding": "scoped/scope-binding.ts:75",
+      "severity": "high",
+      "side_a_tool_claim": "No validation of `wavePrefix` uniqueness / non-emptiness, and `prefixes` is keyed by prefix alone. An empty prefix (`''`) makes `ownsWave()` (`startsWith('')`) true for every id, collapsing isolation; a duplicate p",
+      "side_b_evidence": "scope-binding.ts is not imported by any CU file (0-hit grep).",
+      "verdict": "UNREACHABLE"
+    },
+    {
+      "finding": "scoped/scope-binding.ts:98",
+      "severity": "high",
+      "side_a_tool_claim": "Ownership uses first `startsWith` match, so overlapping prefixes (e.g. `wave-` vs `wave-x-`) mis-attribute depending on registration/insertion order. `ownerOf()` returns the first claimant, `isForeignWave()`/`asser",
+      "side_b_evidence": "scope-binding.ts is not imported by any CU file (0-hit grep).",
+      "verdict": "UNREACHABLE"
+    },
+    {
+      "finding": "scoped/db-path.ts:48",
+      "severity": "high",
+      "side_a_tool_claim": "`spec.fileName` is never validated, so it can escape the hardened dir. `path.join(dir, fileName)` with `fileName='../evil.db'`, `'sub/dir.db'`, or an absolute value places the DB outside the directory that `assertNotShar",
+      "side_b_evidence": "db-path.ts is not imported by any CU file (0-hit grep); CU builds its db path itself and contains it (core/state-cli.ts:36-37).",
+      "verdict": "UNREACHABLE"
+    },
+    {
+      "finding": "scoped/scope-guard.ts:44",
+      "severity": "high",
+      "side_a_tool_claim": "Lexical-only containment can be escaped via symlink. `normalizePath` uses `path.resolve` and `assertContained` uses `path.relative`, neither resolves symlinks. A lexically-contained child like `<scope>/link/passwd` w",
+      "side_b_evidence": "REACHABLE and REAL: with fs/ a symlink to a directory outside the instance, the OLD state-cli created state.db in the victim directory; core/state-cli.ts now resolves the nearest existing ancestor through symlinks and refuses SCOPE_VIOLATION (test/state-cli.sh S1: new 11/0, old 1 FAIL; S2 an inside symlink still works).",
+      "verdict": "FIXED-AT-CU-BOUNDARY"
+    },
+    {
+      "finding": "scoped/scope-guard.ts:52",
+      "severity": "high",
+      "side_a_tool_claim": "Embedded NUL bytes are not refused. `path.isAbsolute('/tmp/\\0evil')` is true and `path.resolve/relative` preserve `\\0` lexically, so the guard passes it and the failure surfaces later as an opaque fs error instead of",
+      "side_b_evidence": "a NUL byte cannot arrive through argv: execve terminates every argv string at the first NUL, so state-cli never receives one.",
+      "verdict": "UNREACHABLE"
+    },
+    {
+      "finding": "scoped/scope-resolver.ts:92",
+      "severity": "high",
+      "side_a_tool_claim": "Explicit-token miss not pinned: a non-existent explicit token returns `cwd` without caching, so a retry without token falls through to auto-detect/cwd and flaps scope, breaking the pin-once contract in the header.",
+      "side_b_evidence": "scope-resolver.ts is not imported by any CU file (0-hit grep).",
+      "verdict": "UNREACHABLE"
+    },
+    {
+      "finding": "scoped/scope-resolver.ts:100",
+      "severity": "high",
+      "side_a_tool_claim": "Sticky cache voided by existsSync: if the pinned root is transiently missing (rename/mount blip/cleanup) the code falls through to auto-detect re-derivation, reintroducing the foreign-root misfire stickiness was ",
+      "side_b_evidence": "scope-resolver.ts is not imported by any CU file (0-hit grep).",
+      "verdict": "UNREACHABLE"
+    },
+    {
+      "finding": "scoped/scope-resolver.ts:151",
+      "severity": "high",
+      "side_a_tool_claim": "Activity weights are dead: resolve() builds `abs: Map<string,number>` with workdir x2 vs file x1, but scoreProjectRoots destructures `for (const [p] of paths)` and never reads the counts. The deliberate workdir-a",
+      "side_b_evidence": "scope-resolver.ts is not imported by any CU file (0-hit grep).",
+      "verdict": "UNREACHABLE"
+    },
+    {
+      "finding": "scoped/scope-resolver.ts:126",
+      "severity": "high",
+      "side_a_tool_claim": "Auto-detect result bypasses the scope-guard chokepoint: explicit token and cwd go through assertNotSharedGlobal, but `scored` is cached/returned unvalidated. A workdir/filepath-steered resolution to `/`, `/tmp`, ",
+      "side_b_evidence": "scope-resolver.ts is not imported by any CU file (0-hit grep).",
+      "verdict": "UNREACHABLE"
+    }
+  ]
+}

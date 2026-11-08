@@ -1,0 +1,88 @@
+GOAL
+Bring computer-use v2 and PINEBOX to 100 percent functional runtime grade, with their original-target behavior observed and visually verified, then resume the Plutus trading build on that rig; stop only when every planned gate and seal passes or a named hard blocker has its evidence and unblock condition.
+
+BASELINE
+Repos: /home/leviathan/.omp/agent at 83ce4a4; /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION at a91da51.
+CU v2: /home/leviathan/.omp/agent/extensions/computer-use-v2, 47 files, MANIFEST.sha256 63 rows.
+PINEBOX: PLUTUS_VISION/scripts/pinebox, 16 files; OMP forwarder /home/leviathan/.omp/agent/extensions/pinebox/index.ts 5740 B.
+nofocus: 32c2b48566689b699298a6db37d5fcf7b7b38dd2f25cdb458392b8b378c59930.
+hostwin: 7b0e9fc8b5b7540d1a39c89c7d1b93cabb3bf3038beb7d44b098d93b95d77647.
+Seal: 30cc9611481a484875c9e944d1917e8560ef67f97f0d90575039ac13e62f5383.
+Current desktop: GNOME Shell, Wayland, X11 client list empty, active=0x0.
+Observed failures: computer shell_up and pinebox up refuse FOCUS_STOLEN; deploy.sh verify refuses DEPLOY_DRIFT; audit scan is BLOCKED on path resolution.
+Authority build package: design/DESIGN_BLUEPRINT_CU_v2.md, design/DESIGN_BLUEPRINT_PINEBOX.md, design/DESIGN_BLUEPRINT_PINEBOX_v3_EXPANSION.md, and the WAVE PLAN below.
+Resume board: PLUTUS_VISION/reports/overnight-2026-11-01/ plus the todo board.
+Named scenario identifiers ST-1 through ST-21 are binding per-wave test ids, executed as shell scenario functions or host-live scenarios, never as a unit-suite substitute.
+Inherited numbers are stale until re-run this turn; first reply re-verifies baseline and fires W1.
+
+Blueprint package: the three authority blueprints above are the fixed requirements; every wave below names its own exits and ST- scenario ids.
+WAVES
+W1 — C3 and CU v2 runtime.
+  files: core/govern.sh, core/drive.sh, test/c3-no-raise.sh, test/mutate.sh.
+  deliverable: a display with zero pre-existing X clients works; a genuine raising click still refuses.
+  tests: ST-1 empty_stack_up, ST-2 focus_identity_held, ST-3 raising_mutant_refused, ST-4 scoped_teardown.
+  host-live passToken: "ok":true plus a screenshot artifact with colours>1; failToken FOCUS_STOLEN for a legal up.
+W2 — seal and audit.
+  files: deploy.sh, both test/run.sh, code-review/index.js.
+  deliverable: deploy verify runs in both chains; a changed sealed byte fails; the audit returns a verdict with session id and file scope.
+  tests: ST-5 seal_drift_refused, ST-6 relative_scan_enumerates, ST-7 audit_verdict_present.
+  passToken DEPLOY: OK and GATE: PASS or a named real FAIL; failToken DEPLOY_DRIFT.
+W3 — Pinebox original target.
+  files: scripts/pinebox/**, pine-ide/pine-station/run.mjs, the renderer draw path.
+  deliverable: up, services, frozen page, week, verify, seven instances, teardown, E2 geometry, correct fixture pairing.
+  tests: ST-8 instance_ports_isolated, ST-9 station_emits_polyline_geometry, ST-10 renderer_consumes_geometry, ST-11 week_matches_fixture.
+  host-live passToken "verdict":"WORKS"; failToken CONFIG_BLOCK_ABSENT, PORTS_MISMATCH, WEEK_MISMATCH, NO_DRAWINGS.
+W4 — v3 user intents.
+  files: actions.json, the CLI and new stage modules.
+  deliverable: P1 run/insert/editor/look, P2 tab/chart/asset/tf/widget, P3 backtest, each with a must-fail and a legitimate case.
+  tests: ST-12 run_pastes_and_runs, ST-13 tab_switches, ST-14 zoom_changes_view, ST-15 backtest_requires_tab, ST-16 fresh_frame_attached.
+  passToken each verb's structured JSON plus opened frame sha; failToken NO_FRESH_FRAME, ZOOM_NO_EFFECT, BACKTEST_TAB_INACTIVE.
+W5 — guest runtime and secrets.
+  files: core/guest/**, OCR key resolver and config through the sanctioned verb.
+  deliverable: a real guest boot with served pixels if the host can build the manifest image; plaintext provider key removed from config.
+  tests: ST-17 guest_boot_serves, ST-18 provider_uses_key_cmd.
+  passToken GUEST_READY and provider resolver ok; any missing image prerequisite is a named hard block, never a substituted PASS.
+W6 — trading build and independent audit.
+  files: newest design/BUILD_WORKFLOW and the build's own W0 turn set.
+  deliverable: re-measured authority and the first unblocked trading turns executed on the proven rig.
+  tests: ST-19 baseline_remeasured, ST-20 rig_gate_corruption_refused, ST-21 zero_trust_reverify.
+  independent audit: re-run every prior gate, diff blast radius, compare claims table to tool results.
+
+LAWS
+Builder under audit: ripwire map/for/pack-task/callers/impact before every structural edit, quality-delta after.
+Blueprint package: design/DESIGN_BLUEPRINT_CU_v2.md, DESIGN_BLUEPRINT_PINEBOX.md, DESIGN_BLUEPRINT_PINEBOX_v3_EXPANSION.md is the fixed build package.
+Named test design: bun test -t ST-1_empty_stack_up, bun test -t ST-2_focus_identity_held, bun test -t ST-3_raising_mutant_refused, bun test -t ST-4_scoped_teardown, bun test -t ST-5_seal_drift_refused, bun test -t ST-6_relative_scan_enumerates, bun test -t ST-7_audit_verdict_present, bun test -t ST-8_instance_ports_isolated, bun test -t ST-9_station_emits_polyline_geometry, bun test -t ST-10_renderer_consumes_geometry, bun test -t ST-11_week_matches_fixture, bun test -t ST-12_run_pastes_and_runs, bun test -t ST-13_tab_switches, bun test -t ST-14_zoom_changes_view, bun test -t ST-15_backtest_requires_tab, bun test -t ST-16_fresh_frame_attached, bun test -t ST-17_guest_boot_serves, bun test -t ST-18_provider_uses_key_cmd, bun test -t ST-19_baseline_remeasured, bun test -t ST-20_rig_gate_corruption_refused, bun test -t ST-21_zero_trust_reverify. These ids name live scenarios, not unit-suite proof.
+One semantic commit per change; each body carries commands, counts, hashes and verdicts.
+Append-only BUILD_REPORT.md, DEBUG_LOG.md, FULL_BUILD_CONTEXT.md in the resume board; no overwritten history.
+No secrets in repo, chat, logs, pins or memory; resolvers only.
+The deployed artifact is what runs: every change carries sha256sum and a symbol grep on the deployed file.
+Adversarial and mutation cases first, happy path last. A violation or theatrical substitution automatically fails the wave.
+Async only for disjoint work; settle all, collect per-unit errors, reconcile before returning.
+No source-only completion claim, no suite-as-runtime-proof, no unopened screenshot.
+If a tool fails, check its documented arguments first, correct them, retry the same path; do not invent a bypass.
+
+HARD STOPS
+Do not edit or delete outside this goal's named trees except the ripwire wrapper already repaired and the OCR resolver work.
+Do not touch the operator's display :0/:1/:2 for input; instance adapters own their own surfaces.
+Do not stop at a phase boundary or ask permission for required work.
+A missing guest image, an unavailable provider, a dead service or a needed operator ruling is a hard block only after corrected inputs and at least three distinct routes are recorded.
+Secrets rotation that requires an external account is operator-owned; remove the plaintext and record the rotation need without stalling other waves.
+No destructive cleanup of another agent's processes, displays, files, sessions or docs.
+No weakening C3, the scope guard, the frozen-page invariant or a failing gate to obtain green.
+Test design: ST-1..ST-21 are binding scenario ids executed through host-live shell scenarios and tool results, never a unit-suite proxy; the independent audit re-verifies every gate against the claims table.
+
+PROOF CONTRACT
+Every pass token must occur in a tool result or artifact, never in agent prose.
+Results artifact: PLUTUS_VISION/reports/overnight-2026-11-01/runtime-results.json with per-scenario passTokenMatch, failTokenAbsent, artifact path, sha256 and verdict.
+Visual artifact: every runtime phase writes a fresh PNG under visual/; the primary opens it the same turn, writes the expected render before capture, and records named deltas or PASS.
+Circuit breaker before green: deployed sha matches, auth probe passes, all planned scenarios ran, no circular tokens, adversarial cases behaved, teardown left nothing, results artifact exists.
+Independent zero-trust pass: re-ran every gate myself, not inherited; one broken old PASS invalidates a new PASS.
+Any OCR FAIL is fixed or adjudicated with probe evidence; any BLOCKED remains BLOCKED.
+Zero-broken-windows reruns after every fix; the exact failing input is re-run before broadening scope.
+
+STOP
+Blueprint exit receipts and ST- scenario artifacts are mandatory per wave.
+Legal stop: W1 through W6 have all-gate-green artifacts, deploy seals match, the independent audit is complete, all captures were opened, and the handover names every residual block.
+A legal stop never means merely W1 green, a fixture hunt, sub-inner success, a count of tests, or memory of an earlier run.
+First reply: re-verify the measured baseline, then fire W1 immediately; no approval round.
+Anything less is OPEN and the run continues on all unblocked fronts until the operator returns.
