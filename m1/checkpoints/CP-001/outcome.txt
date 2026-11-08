@@ -1,0 +1,10 @@
+{"path":"m1/out/plutus-vision-v5-e1-DXY-2026-07-06.pine","sha":"c9261fb3f5a0fb9b480aa08b3f870d0dddf54746b30b342bd75788545a1c3684","cardSha":"07bce57fe2a937ffb19bb81256bff0ffe542a5bb5eb27c3dc0d6f1fad3a23af1","drawn":16,"cardZones":43,"lsz":1,"opts":5,"sd":5,"band":{"lo":99.869,"hi":102.143}}
+week 2026-07-06 range 100.598-101.275 | zones in range 8 | tested 7 | correct 3 (42.9%)
+Z13  101.236-101.309 resistance  MODERATE-HEAVY 8.5  ZFP 60   pred BREAK -> HELD     MISS
+Z14  101.16-101.223 resistance  MODERATE-HEAVY 8.5  ZFP 60   pred BREAK -> HELD     MISS
+Z15  100.997-101.129 equilibrium MODERATE-HEAVY 9    ZFP 42.5 pred HOLD  -> HELD     OK
+Z16  100.911-100.985 support     MODERATE-HEAVY 9    ZFP 60   pred BREAK -> BROKE    OK
+Z17  100.85-100.893 support     MODERATE       7    ZFP 22.5 pred HOLD  -> BROKE    MISS
+Z18  100.746-100.842 support     MODERATE-HEAVY 8    ZFP 60   pred BREAK -> HELD     MISS
+Z19  100.593-100.695 support     MODERATE-HEAVY 8.5  ZFP 42.5 pred HOLD  -> HELD     OK
+Z20  100.5-100.584 support     MODERATE-HEAVY 8.5  ZFP 40   pred HOLD  -> UNTESTED 

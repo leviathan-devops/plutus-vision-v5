@@ -1,0 +1,267 @@
+{
+  "schema": 1,
+  "protocol": "A",
+  "source_url": "https://investinglive.com/Orders/fx-option-expiries-for-6-july-10am-new-york-cut-20260706/",
+  "page_title": "FX option expiries for 6 July 10am New York cut",
+  "published_at": "2026-07-06T05:47:00Z",
+  "published_text": "06/07/2026 | 05:47 GMT",
+  "cutoff_utc": "2026-07-06T08:00:00Z",
+  "cutoff_status": "BEFORE_CUTOFF",
+  "retrieved_via": "plutus-browser instance 13 (headed) + original image bytes",
+  "image": {
+    "path": "m1/evidence/protocol-a/investinglive-fxo-2026-07-06.jpg",
+    "sha256": "10d594f6491d5b127ee798531281e6abcf7da624a95ab0c83b894a8ea90f4c6c",
+    "src": "https://investinglive.com/cms/media/migrated/images/FXO%2006-07_id_bf9081e7-3f40-4af4-a5f1-8bbe23206fd7_size900.jpg"
+  },
+  "passes": [
+    {
+      "pass": 1,
+      "kind": "full table",
+      "reader": "builder vision read of the original 900x288 image",
+      "input": "m1/evidence/protocol-a/investinglive-fxo-2026-07-06.jpg"
+    },
+    {
+      "pass": 2,
+      "kind": "targeted magnified Monday EUR/USD + USD/JPY",
+      "reader": "builder vision read",
+      "input": "m1/evidence/protocol-a/pass2-eurusd-usdjpy-monday.png",
+      "sha256": "71769468798e7f07377b23141dcd6d654493045321317ea791a566e7d4a588b8"
+    },
+    {
+      "pass": 3,
+      "kind": "cross-check magnified Tuesday EUR/USD + USD/JPY",
+      "reader": "builder vision read",
+      "input": "m1/evidence/protocol-a/pass3-eurusd-usdjpy-tuesday.png",
+      "sha256": "57c2a80bec2fac2bf8f7dffb1d9e2ebc791545b5c378696522d9985475a6d46a"
+    }
+  ],
+  "reconciliation": "Monday EUR/USD and USD/JPY: pass1 == pass2 on every strike and notional (2 of 2). Tuesday columns: pass1 == pass3 (2 of 2). No [UNCLEAR] fields.",
+  "spot_at_publication": {
+    "EURUSD": 1.1431,
+    "USDJPY": 161.92,
+    "GBPUSD": 1.334,
+    "USDCHF": 0.8042,
+    "USDCAD": 1.4204,
+    "AUDUSD": 0.6934,
+    "NZDUSD": 0.5687,
+    "EURGBP": 0.8565
+  },
+  "expiries": [
+    {
+      "date": "2026-07-06",
+      "cut": "10am NY",
+      "pair": "EURUSD",
+      "notional_ccy": "EUR",
+      "strikes": [
+        [
+          1.13,
+          830000000.0
+        ],
+        [
+          1.14,
+          2200000000.0
+        ],
+        [
+          1.145,
+          1400000000.0
+        ],
+        [
+          1.15,
+          2400000000.0
+        ],
+        [
+          1.16,
+          1000000000.0
+        ]
+      ]
+    },
+    {
+      "date": "2026-07-06",
+      "cut": "10am NY",
+      "pair": "USDJPY",
+      "notional_ccy": "USD",
+      "strikes": [
+        [
+          160.0,
+          2500000000.0
+        ],
+        [
+          160.5,
+          2600000000.0
+        ],
+        [
+          161.0,
+          1100000000.0
+        ],
+        [
+          161.5,
+          970000000.0
+        ],
+        [
+          161.75,
+          3100000000.0
+        ],
+        [
+          162.0,
+          1300000000.0
+        ],
+        [
+          163.0,
+          835000000.0
+        ]
+      ]
+    },
+    {
+      "date": "2026-07-06",
+      "cut": "10am NY",
+      "pair": "USDCHF",
+      "notional_ccy": "USD",
+      "strikes": [
+        [
+          0.81,
+          591000000.0
+        ]
+      ]
+    },
+    {
+      "date": "2026-07-06",
+      "cut": "10am NY",
+      "pair": "AUDUSD",
+      "notional_ccy": "AUD",
+      "strikes": [
+        [
+          0.6885,
+          718000000.0
+        ],
+        [
+          0.7,
+          754000000.0
+        ],
+        [
+          0.7025,
+          599000000.0
+        ]
+      ]
+    },
+    {
+      "date": "2026-07-07",
+      "cut": "10am NY",
+      "pair": "EURUSD",
+      "notional_ccy": "EUR",
+      "strikes": [
+        [
+          1.13,
+          701000000.0
+        ],
+        [
+          1.135,
+          1500000000.0
+        ],
+        [
+          1.14,
+          1000000000.0
+        ],
+        [
+          1.1425,
+          600000000.0
+        ],
+        [
+          1.144,
+          525000000.0
+        ],
+        [
+          1.15,
+          2800000000.0
+        ],
+        [
+          1.159,
+          721000000.0
+        ],
+        [
+          1.16,
+          734000000.0
+        ]
+      ]
+    },
+    {
+      "date": "2026-07-07",
+      "cut": "10am NY",
+      "pair": "USDJPY",
+      "notional_ccy": "USD",
+      "strikes": [
+        [
+          160.0,
+          851000000.0
+        ],
+        [
+          161.0,
+          702000000.0
+        ],
+        [
+          161.5,
+          718000000.0
+        ],
+        [
+          162.0,
+          2500000000.0
+        ],
+        [
+          162.5,
+          778000000.0
+        ],
+        [
+          163.0,
+          741000000.0
+        ]
+      ]
+    },
+    {
+      "date": "2026-07-07",
+      "cut": "10am NY",
+      "pair": "USDCHF",
+      "notional_ccy": "USD",
+      "strikes": [
+        [
+          0.8115,
+          601000000.0
+        ]
+      ]
+    },
+    {
+      "date": "2026-07-07",
+      "cut": "10am NY",
+      "pair": "USDCAD",
+      "notional_ccy": "USD",
+      "strikes": [
+        [
+          1.41,
+          739000000.0
+        ]
+      ]
+    },
+    {
+      "date": "2026-07-07",
+      "cut": "10am NY",
+      "pair": "AUDUSD",
+      "notional_ccy": "AUD",
+      "strikes": [
+        [
+          0.693,
+          594000000.0
+        ]
+      ]
+    }
+  ],
+  "absent_pairs": {
+    "2026-07-06": [
+      "GBPUSD",
+      "USDCAD",
+      "USDSEK"
+    ],
+    "2026-07-07": [
+      "GBPUSD",
+      "USDSEK"
+    ]
+  },
+  "narrative_excerpt": "The first ones are for EUR/USD at the 1.1400 and 1.1450 levels. The expiries are likely to act as bookends for price action ... the 200-hour moving average in particular seen at 1.1397 currently."
+}

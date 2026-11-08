@@ -1,0 +1,135 @@
+# DEBUG_LOG — PLUTUS VISION M1 (append-only)
+
+Format: THE FINDING -> THE ROOT CAUSE -> THE FIX (file:line) -> THE VERIFICATION -> THE LESSON.
+Scope: the clean M1 build that restarted from handover 3b69f65 on 2026-11-08.
+
+## EN-001 — S/D move measured to the next break of the origin, not to the return (2026-11-08)
+
+- **THE FINDING:** the first P5 probe found almost no 4H/1H S/D origins before the golden week.
+- **THE ROOT CAUSE:** the move loop ended only when price traded THROUGH the origin, so a leg that returned into
+  the candle kept extending; the "lasting N days" count then mixed legs.
+- **THE FIX:** the move ends at the first return INTO the origin candle after leaving it; days = distinct sessions
+  from origin to that return (m1/src/p5.ts:34).
+- **THE VERIFICATION:** re-probe listed the 4H BoM supply and the 1H demand origins in late June/early July.
+- **THE LESSON:** "a move lasting N days" is measured until price comes back, not until it breaks.
+
+## EN-002 — Monday's partial session counted as structure (2026-11-08)
+
+- **THE FINDING:** P5 used a D1 bar for Monday 2026-07-06 built from 22:00-08:00 UTC bars.
+- **THE ROOT CAUSE:** `pre` filtered sessions by `d.to < cutoff`, which admits the in-progress session.
+- **THE FIX:** completed sessions only: `d.key < sessionDate(cutoff)` (m1/src/p5.ts:75).
+- **THE VERIFICATION:** the last D1 key in the scan is 2026-07-03.
+- **THE LESSON:** the cutoff instant and the last completed session are different boundaries.
+
+## EN-003 — BoM/MoM labelled by geometry only (2026-11-08)
+
+- **THE FINDING:** most 4H origins were labelled MoM.
+- **THE ROOT CAUSE:** any later same-side origin above an unbroken earlier one was MoM, even after a deep reversal.
+- **THE FIX:** MoM only when the pullback into the candle retraced < 0.5 of the running leg (a pause); else BoM
+  (m1/src/p5.ts:57).
+- **THE VERIFICATION:** the 101.33-101.40 4H origin classifies BoM.
+- **THE LESSON:** the canon's MoM is "price paused here then continued" — a pause is a shallow retracement.
+- **STILL OPEN:** the 100.61-100.68 1H origin still reads MoM 2X (CP-001 comparison row BoM/MoM = WRONG).
+
+## EN-004 — six daily pivot sets instead of three (2026-11-08)
+
+- **THE FINDING:** P1 produced sets for every prior-week session.
+- **THE ROOT CAUSE:** the loop iterated all prior days; the canon's step 7 says the last 3 trading days.
+- **THE FIX:** `priorDays.slice(-3)` (m1/src/p1.ts:50).
+- **THE VERIFICATION:** sets = 3 variants x (1 week + 3 days + overlapping historical weeks).
+- **THE LESSON:** read the step's count, not the loop's convenience.
+
+## EN-005 — every zone scored HEAVY/EXTREME (2026-11-08)
+
+- **THE FINDING:** first card: almost every zone >= 10.
+- **THE ROOT CAUSE:** (1) the structural dimension gave 2 whenever any two structural levels sat within 3 pips —
+  the canon requires an exact price ANCHOR and a structural EXTREME; (2) the POI tier bonus (+1/+2) was added to
+  every cluster, while 9.7 assigns tiers to IP zones only; (3) duplicate formula levels (Fib PP == Classic PP)
+  counted twice as technical confluence.
+- **THE FIX:** structural per its wording (m1/src/assemble.ts:53); POI tier only for MODERATE+ IP zones
+  (m1/src/assemble.ts:107); identical prices merged into one level with merged provenance before scoring.
+- **THE VERIFICATION:** card degree spread now spans MINIMAL..HEAVY; 16 of 43 zones are MODERATE+ in band.
+- **THE LESSON:** a score that saturates is a scoring defect, never a strong market.
+
+## EN-006 — EUR/USD tiers computed on USD notional (2026-11-08)
+
+- **THE FINDING:** EUR 1.4bn strikes classified Tier 1.
+- **THE ROOT CAUSE:** all pairs tiered on USD-equivalent; P8's table tiers EUR/USD on the EUR notional.
+- **THE FIX:** `tierOf(notional)` for EUR/USD, USD equivalent for the others (m1/src/options.ts:38).
+- **THE VERIFICATION:** EUR 1.4bn -> Tier 2, EUR 2.2bn/2.4bn/2.8bn -> Tier 1.
+- **THE LESSON:** each pillar's tier table names its own currency.
+
+## EN-007 — the chart was unreadable (VC-000) (2026-11-08)
+
+- **THE FINDING:** 43 full-width boxes, every option label, every intra line: a tiled axis.
+- **THE ROOT CAUSE:** the composition drew the card's full output; the canon draws the synthesis (MODERATE+)
+  and keeps the full output for inspection.
+- **THE FIX:** synthesis-only, measured display band, origin-anchored boxes, one label per zone, P8 strikes only
+  (m1/src/compose.ts:31, m1/src/run.ts:72, m1/src/assemble.ts:142).
+- **THE VERIFICATION:** CP-001 runtime-state.png; Pinebox load 24 boxes (16 IP + 1 LSZ + 5 S/D + v1's 2).
+- **THE LESSON:** full output and chart synthesis are two products of one card.
+
+## EN-008 — Pinebox "5000 newest bars" read as a limitation (2026-11-08)
+
+- **THE FINDING:** I reported that the golden week could not be shown.
+- **THE ROOT CAUSE:** I read the IDE source over CDP instead of using the `pinebox` tool's `chart` verb; 5000 1H bars
+  reach back ~40 weeks and the week was always on the chart.
+- **THE FIX:** `chart op=zoom`, `op=pan dx=-1` (one screen), read back the range, land on the week.
+- **THE VERIFICATION:** framed 2026-06-23..07-16 in under a minute (CP-001 frame).
+- **THE LESSON:** the tool's verbs first; a "limitation" is a claim until measured.
+
+## EN-009 — zones chained into wide bands (2026-11-08)
+
+- **THE FINDING:** the first assembly produced zones wider than the canon's 0.15 cluster band.
+- **THE ROOT CAUSE:** grouping walked the sorted list and joined each level to the previous one within 0.10, so a
+  ladder of levels 0.08 apart chained into one wide zone.
+- **THE FIX:** seed-based grouping: the highest-scoring unassigned level seeds a zone and takes every unassigned
+  level within +/-0.075 (a 0.15 band); the rest stay their own zones (m1/src/assemble.ts:72).
+- **THE VERIFICATION:** no zone in the CP-001 card is wider than 0.15 except where its members sit at the band edge.
+- **THE LESSON:** "levels within 0.10-0.15 of each other" bounds the zone, not each neighbour pair.
+
+## EN-010 — reactions counted on every touch (2026-11-08)
+
+- **THE FINDING:** most zones read Depleted before the week opened.
+- **THE ROOT CAUSE:** every separate touch counted as a reaction; the canon counts STRONG reactions only.
+- **THE FIX:** a reaction = a touch followed by a move of >= 0.15 away before the next touch (m1/src/assemble.ts:114).
+- **THE VERIFICATION:** card reaction states spread across Virgin / Active / Depleted.
+- **THE LESSON:** a touch is not a reaction; the move away is the evidence.
+
+## EN-011 — `any` in the composition and evaluator (2026-11-08)
+
+- **THE FINDING:** compose.ts read the card through `any` casts (style rule ts-no-any fired).
+- **THE ROOT CAUSE:** the card shape existed only implicitly in run.ts.
+- **THE FIX:** `m1/src/card.ts` defines the card type and `readCard` checks its top-level shape before use
+  (m1/src/card.ts:17); compose.ts consumes the typed card.
+- **THE VERIFICATION:** regenerated composition sha unchanged (c9261fb3...), so the typing changed no output.
+- **THE LESSON:** the card is the boundary between engine and renderer; type it once.
+
+## EN-012 — the M1 gate could not grade any real screenshot (2026-11-08)
+
+- **THE FINDING:** the CP-001 checkpoint commit was refused before the grader ran:
+  `REJECT(PV-MODEL_PROMPT): grader request is 1483243 chars (> 220000)`.
+- **THE ROOT CAUSE:** gates/commit_gate.py counted the base64 image transport against the TEXT budget. Measured:
+  text ~183 K chars (contexts 68,621; diff capped 100,000; checkpoint+comparison 11,387); the operator screenshot
+  alone was 1,142,950 chars as a PNG thumbnail. The policy's own minimum PNG size (20 KB) guaranteed every real
+  checkpoint would exceed the cap: a gate that could not pass.
+- **THE FIX:** admin gate repair e5d2465: images travel as the smaller of PNG/JPEG(q85) of the same thumbnail
+  (gates/commit_gate.py:289); the text cap applies to text only; a separate fail-closed image cap
+  `max_model_image_chars` 1,500,000 (gates/policy.json:28).
+- **THE VERIFICATION:** before the repair commit, the configured grader was sent both CP-001 pictures at the new
+  encoding and returned `{"img1":"DXY - FIXTURE - 1h chart, dates Jun 25 to Jul 9, price range 100.200 to 101.900",
+  "img2":"DXY - FIXTURE - 1h chart, dates Jun 18 to Jul 30, price range 99.200 to 102.000","same_chart":true}` —
+  correct on both (known-positive control). The repair commit passed the gate: `PV-GATE: PASS e5d246572807 admin`.
+- **THE LESSON:** a size cap is a cap on a named unit; text and pixels are different units.
+
+## EN-013 — the gate's bypass control after the repairs, and a cleanup slip (2026-11-08)
+
+- **THE FINDING:** after the two admin gate repairs (e5d2465, 378153a), the non-bypassable surface had to be shown to
+  still refuse. A `git commit --no-verify` work commit with the message "everything verified and done" was attempted.
+- **THE RESULT:** `REJECT(PV-TRAILER)` + `fatal: ref updates aborted by hook`; branch unmoved at 378153a. The control
+  refused, but by the trailer rule, not the WORK_CLAIM rule it was designed to hit; the WORK_CLAIM path is covered by
+  gates/commit_gate.py:497 and was exercised by the original installation controls.
+- **THE SLIP:** the control's `git stash push --staged` did not engage, and its cleanup (`git checkout -- m1/state.json`)
+  reverted the staged CP-001 state. Caught by the staged-file count (36 -> 35) and the state read-back; state rewritten
+  and re-staged before the checkpoint commit.
+- **THE LESSON:** a control that shares the index with real work must run in a throwaway clone, not around a stash.

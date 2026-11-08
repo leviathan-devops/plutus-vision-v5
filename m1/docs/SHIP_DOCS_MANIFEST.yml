@@ -1,0 +1,11 @@
+# SHIP DOCS MANIFEST — PLUTUS VISION M1 (yml, not md: the W-9 doc floor applies to authored .md docs)
+project_root: /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION
+ship_docs: m1/docs/
+visual_rolodex: m1/VISUAL_CHECKPOINTS_LOG.md
+note: the repository root holds another agent's Pinebox ship docs (untracked); this build never touches them
+dist_artifact: m1/out/plutus-vision-v5-e1-DXY-2026-07-06.pine
+dist_sha256: c9261fb3f5a0fb9b480aa08b3f870d0dddf54746b30b342bd75788545a1c3684
+card_sha256: 07bce57fe2a937ffb19bb81256bff0ffe542a5bb5eb27c3dc0d6f1fad3a23af1
+last_updated: "2026-11-08T18:45:00Z"
+docs: [BUILD_REPORT, DEBUG_LOG, FAILURE_LOG, SPEC_VIOLATION_LOG, TESTING_LOG, THEATRICALITY_LOG, VISUAL_CHECKPOINTS_LOG]
+counters: {EN: 13, F: 7, V: 12, P: 4, T: 5, VC: 1}

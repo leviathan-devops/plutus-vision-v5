@@ -1,0 +1,86 @@
+{
+ "schema": 1,
+ "checkpoint": "CP-001",
+ "asset": "DXY",
+ "week": "2026-07-06",
+ "rows": [
+  {
+   "family": "IP resistance zones",
+   "status": "WRONG",
+   "evidence": "m1/checkpoints/CP-001/outcome.txt: Z13 101.236-101.309 and Z14 101.16-101.223 predicted BREAK (ZFP 60) but HELD the Jul 8 and Jul 10 highs (week high 101.275); runtime-state.png shows 7 resistance bands above 101.16, 4 of them above the week high"
+  },
+  {
+   "family": "IP equilibrium zone",
+   "status": "MATCHED",
+   "evidence": "m1/checkpoints/CP-001/outcome.txt: Z15 100.997-101.129 EQUILIBRIUM ZONE predicted HOLD -> HELD; drawn as the amber band at 101.0-101.13 in runtime-state.png"
+  },
+  {
+   "family": "IP support zones",
+   "status": "WRONG",
+   "evidence": "m1/checkpoints/CP-001/outcome.txt: Z17 100.85-100.893 HOLD->BROKE, Z18 100.746-100.842 BREAK->HELD; Z19 100.593-100.695 HOLD->HELD matches the oracle 100.61 support"
+  },
+  {
+   "family": "Liquidity Sweep Zones",
+   "status": "WRONG",
+   "evidence": "runtime-state.png: one ACTIVE LSZ (demand 2026-06-26) drawn at ~100.88; the oracle Jul 10 sweep to 100.598 under the 100.61 shelf has no LSZ"
+  },
+  {
+   "family": "canonical 4H/D1 supply/demand zones beyond the v1 baseline",
+   "status": "WRONG",
+   "evidence": "runtime-state.png: 4H BoM supply boxes drawn at 101.6-101.85 (above the week); the oracle 4H BoM supply 101.33-101.40 is present only as a 1H BoM red box from Jul 2; the oracle 1H BoM demand 100.61-100.68 is labelled 1H MoM 2X"
+  },
+  {
+   "family": "option-strike targets",
+   "status": "WRONG",
+   "evidence": "runtime-state.png: EUR/USD strikes converted and drawn (1.135 -> 101.385, 1.14 -> 101.129, 1.145 -> 100.874, 1.15 -> 100.622) but the right-edge labels run off the chart and the 1.14 label overlaps the equilibrium label"
+  },
+  {
+   "family": "POI tier and pressure-degree data",
+   "status": "MATCHED",
+   "evidence": "runtime-state.png: every drawn zone label carries degree, score and T1/T2 (e.g. RESISTANCE CEILING | HEAVY 10.5 | 60% ZFP | T1 | 4H BoM 0X)"
+  },
+  {
+   "family": "strength-based ZFP data",
+   "status": "WRONG",
+   "evidence": "m1/checkpoints/CP-001/outcome.txt: ZFP prediction correct on 3 of 7 tested zones (42.9%); target is 95%+"
+  },
+  {
+   "family": "BoM/MoM classification",
+   "status": "WRONG",
+   "evidence": "runtime-state.png: the oracle 1H BoM demand at 100.61-100.68 is labelled 1H MoM 2X; oracle 1H MoM at 100.84 (Jul 3-6) is not drawn as MoM"
+  },
+  {
+   "family": "mitigation and reaction counts",
+   "status": "MISSING",
+   "evidence": "m1/src/compose.ts:31 label carries mitigation (nX) but the reaction state/count was dropped from the label in the legibility pass; not visible in runtime-state.png"
+  },
+  {
+   "family": "intra-zone precision levels",
+   "status": "MISSING",
+   "evidence": "m1/src/compose.ts: e1ShowIntra defaults to false in the legibility pass; no intra-zone lines in runtime-state.png"
+  },
+  {
+   "family": "core/spike boundaries where applicable",
+   "status": "MISSING",
+   "evidence": "not drawn: core/spike lines ride the intra toggle (default off); none visible in runtime-state.png"
+  },
+  {
+   "family": "card/run identity and missing-data status",
+   "status": "UNOBSERVABLE",
+   "evidence": "the E1 table (position.bottom_right) is not visible in the chart-section capture runtime-state.png; operator-orca-2026-11-08-2137.png shows no table either"
+  }
+ ],
+ "summary": {
+  "matched": 2,
+  "wrong": 7,
+  "missing": 3,
+  "extra": 0,
+  "unobservable": 1
+ },
+ "visual_sha256": {
+  "m1/checkpoints/CP-001/visual/runtime-state.png": "3ae1a18d0983329edae6b40db936724b446e97f193d811782a5d505fb1e19287",
+  "m1/checkpoints/CP-001/visual/operator-orca-2026-11-08-2137.png": "e618b512908794b54dd20f0cb314a83eab9ff96384aa76261f4de9ef40da7b3f"
+ },
+ "oracle": "/home/leviathan/Pictures/Jul_6-10_DXY_Gold_Standard (4H BoM supply 101.33-101.40, resistance 101.19-101.275 with the Jul 8 rejection, 1H BoM demand 100.61-100.68 with the Jul 10 reversal from 100.598, 1H MoM 100.84)",
+ "outcome_table": "m1/checkpoints/CP-001/outcome.txt"
+}
