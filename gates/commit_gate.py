@@ -288,17 +288,21 @@ def diff_material(rev: str) -> str:
 
 def image_data_url(png: bytes) -> str:
     # Transport thumbnail only; the evidence hash is computed from the original committed bytes.
+    # The smaller of an optimized PNG and a q85 JPEG of the same <=1600x1200 thumbnail is sent: a full
+    # desktop screenshot is ~3 MB as PNG and ~0.3 MB as JPEG, and the grader reads both equally well.
     try:
         from PIL import Image
         im = Image.open(io.BytesIO(png)).convert("RGB")
         im.thumbnail((1600, 1200))
-        buf = io.BytesIO()
-        im.save(buf, format="PNG", optimize=True)
-        if buf.tell() and buf.tell() < len(png):
-            png = buf.getvalue()
+        best, mime = png, "image/png"
+        for fmt, kw, m in (("PNG", {"optimize": True}, "image/png"), ("JPEG", {"quality": 85}, "image/jpeg")):
+            buf = io.BytesIO()
+            im.save(buf, format=fmt, **kw)
+            if buf.tell() and buf.tell() < len(best):
+                best, mime = buf.getvalue(), m
+        return f"data:{mime};base64," + base64.b64encode(best).decode()
     except Exception:
-        pass
-    return "data:image/png;base64," + base64.b64encode(png).decode()
+        return "data:image/png;base64," + base64.b64encode(png).decode()
 
 
 def model_key(policy: dict) -> str:
@@ -359,9 +363,16 @@ def call_external_grader(policy: dict, source: str, rev: str, kind: str, checkpo
     content = [*contexts, materials, *images, prompt]
     body = {"model": policy["model"]["model"], "input": [{"role": "user", "content": content}]}
     serialized = json.dumps(body)
-    max_prompt = policy.get("limits", {}).get("max_model_prompt_chars", 160000)
-    if len(serialized) > max_prompt:
-        reject("MODEL_PROMPT", f"grader request is {len(serialized)} chars (> {max_prompt})")
+    # Two budgets, both fail-closed: the TEXT the grader must read (contexts, diff, checkpoint, prompt) and the
+    # IMAGE transport. Counting base64 image bytes against the text budget made every real screenshot checkpoint
+    # unpassable (2026-11-08: a 142 KB runtime capture alone is ~190 K chars).
+    limits = policy.get("limits", {})
+    image_chars = sum(len(i["image_url"]) for i in images)
+    text_chars = len(serialized) - image_chars
+    if text_chars > limits.get("max_model_prompt_chars", 160000):
+        reject("MODEL_PROMPT", f"grader text is {text_chars} chars (> {limits.get('max_model_prompt_chars', 160000)})")
+    if image_chars > limits.get("max_model_image_chars", 0):
+        reject("MODEL_PROMPT", f"grader images are {image_chars} chars (> {limits.get('max_model_image_chars', 0)})")
     key = model_key(policy)
     p = subprocess.run(
         ["curl", "-sS", "-m", str(policy["model"]["timeout_seconds"]),
