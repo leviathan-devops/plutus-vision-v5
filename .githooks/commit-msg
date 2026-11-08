@@ -60,4 +60,7 @@ if grep -qiE '\btickets?\b[^0-9a-f]{0,40}[0-9a-f]{12,64}' "$MSG_FILE"; then
   "$TC" "$MSG_FILE" || exit 1
 fi
 
+ if [ -x gates/commit_gate.py ]; then
+  gates/commit_gate.py --surface commit-msg "$MSG_FILE" || exit 1
+fi
 exit 0

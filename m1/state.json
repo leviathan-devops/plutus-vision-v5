@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "phase": "M1",
+  "m1_status": "IN_PROGRESS",
+  "checkpoint_seq": 0,
+  "work_commits_since_checkpoint": 0,
+  "last_checkpoint": null,
+  "complete_commit": null,
+  "operator_review": "PENDING",
+  "updated_at": "2026-11-08T10:26:59.479562+00:00"
+}

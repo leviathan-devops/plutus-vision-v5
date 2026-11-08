@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# reference-transaction — the NON-BYPASSABLE PLUTUS VISION M1 gate.
+#
+# pre-commit and commit-msg are bypassable with --no-verify; this hook is not. Git invokes it for
+# every created ref update, after the commit object exists and before the branch points at it.
+# It validates the actual commit tree and obtains the external Mimo sanity verdict; a rejection
+# leaves the branch where it was. There is no fallback grader.
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+exec python3 "$ROOT/gates/commit_gate.py" --surface reference

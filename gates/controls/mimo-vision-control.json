@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "purpose": "known-positive external-vision control for the commit grader",
+  "endpoint": "http://127.0.0.1:4097/zen/go/v1/responses",
+  "model": "mimo-v2.6-flash",
+  "prompt": "What is the dominant color of the large rectangle: RED, BLUE, or GREEN? Answer with exactly one word.",
+  "expected": "RED",
+  "observed": "RED",
+  "status": "completed",
+  "verdict": "PASS",
+  "image": "gates/controls/mimo-vision-control.png",
+  "image_sha256": "e042c61e84e4c8bc20a0f6a704a20ce4d3bb7120d44494511b5e3290b84d4170",
+  "tested_at": "2026-11-08T10:26:59.479424+00:00"
+}

@@ -320,4 +320,5 @@ if printf '%s\n' "$STAGED" | grep -qE '^Checkpoints/'; then
   fi
 fi
 
+[ "$FAIL" -eq 0 ] && [ -x gates/commit_gate.py ] && { gates/commit_gate.py --surface pre-commit || FAIL=1; }
 [ "$FAIL" -eq 0 ] && echo 'PRE-COMMIT: PASS' || exit 1
