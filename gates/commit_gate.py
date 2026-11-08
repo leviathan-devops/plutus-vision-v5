@@ -393,13 +393,23 @@ def call_external_grader(policy: dict, source: str, rev: str, kind: str, checkpo
         if item.get("type") in ("message", "output_message")
         for c in item.get("content", []) if c.get("type") in ("output_text", "text")
     ).strip()
-    match = re.search(r"\{.*\}", text, re.S)
-    if not match:
-        reject("MODEL_VERDICT", f"no JSON object in model answer: {text[:300]}")
-    try:
-        verdict = json.loads(match.group(0))
-    except Exception:
-        reject("MODEL_VERDICT", f"malformed JSON model answer: {text[:300]}")
+    # The first complete JSON object in the answer is the verdict (raw_decode stops at its closing brace instead of
+    # a greedy {.*} regex that runs to the LAST brace in the text). On 2026-11-08 a PASS score 8 answer failed the old
+    # parse and its full text was not kept, so the cause (trailing text vs truncation) is unknown. An unparseable
+    # answer still fails closed, and from now on its full text is kept for diagnosis.
+    verdict = None
+    start = text.find("{")
+    if start >= 0:
+        try:
+            verdict, _ = json.JSONDecoder().raw_decode(text[start:])
+        except Exception:
+            verdict = None
+    if verdict is None:
+        raw_dir = pathlib.Path(os.environ.get("XDG_STATE_HOME", pathlib.Path.home() / ".local/state")) / "plutus-vision-gate" / "raw"
+        raw_dir.mkdir(parents=True, exist_ok=True)
+        raw_path = raw_dir / f"{rev[:12]}-{dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%S')}.txt"
+        raw_path.write_text(text)
+        reject("MODEL_VERDICT", f"no parseable JSON object in model answer ({len(text)} chars, kept at {raw_path}): {text[:300]}")
     if not isinstance(verdict, dict) or verdict.get("verdict") not in {"PASS", "REJECT"}:
         reject("MODEL_VERDICT", f"verdict must be PASS or REJECT: {verdict}")
     try:
@@ -544,6 +554,7 @@ def main() -> int:
     lines = sys.stdin.read().splitlines()
     if not lines:
         reject("REF_INPUT", "reference-transaction supplied no ref updates")
+    graded: set[str] = set()
     for line in lines:
         parts = line.split()
         if len(parts) != 3:
@@ -554,7 +565,12 @@ def main() -> int:
             typ = run_git("cat-file", "-t", new).strip()
             if typ != "commit":
                 new = run_git("rev-parse", new + "^{commit}").strip()
+        # One transaction moving HEAD and its branch to the same commit grades that commit once.
+        if new in graded:
+            print(f"PV-GATE: PASS {new[:12]} (graded in this transaction) {ref}")
+            continue
         reference(load_json_source(new, "gates/policy.json"), old, new, ref)
+        graded.add(new)
     return 0
 
 

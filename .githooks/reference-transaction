@@ -6,5 +6,8 @@
 # It validates the actual commit tree and obtains the external Mimo sanity verdict; a rejection
 # leaves the branch where it was. There is no fallback grader.
 set -uo pipefail
+# Git calls this hook three times per transaction: prepared, committed, aborted. Only "prepared" can stop the
+# update; grading again on committed/aborted re-ran the external grader for a decision already taken (2026-11-08).
+[ "${1:-prepared}" = "prepared" ] || exit 0
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 exec python3 "$ROOT/gates/commit_gate.py" --surface reference
