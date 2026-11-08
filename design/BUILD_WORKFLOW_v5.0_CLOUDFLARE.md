@@ -311,7 +311,7 @@ After chart acceptance:
 | W6 | golden 95%+, then 15 random weeks × 3 assets at uniform 95%+ | unit tests or model assertions |
 | W7 | audited package of the accepted deployed system | packaging the unbuilt design |
 
-**End of workflow.**
+- **Interim end; the M1 gate amendment below controls the first execution phase.**
 
 ## AUTHORITY INDEX
 
@@ -321,3 +321,65 @@ After chart acceptance:
 - Original_Canon_Data/Trident_System_Prompt_v5.3.3_DOWNLOAD_ME.md:348 — Engine 1’s nine-pillar definition.
 - Original_Canon_Data/TRIDENT_v5.3.3_CORRECTED_E3_ENGINE.md:1 — deferred E3 authority, outside M1.
 - MASTER_CONTEXT/OPERATOR_RULINGS_PV.md:132 — R-30, the full-E1-on-the-baseline order this workflow gates.
+
+## M1 GIT-GATE AMENDMENT — THE FIRST EXECUTION PHASE (2026-11-08)
+
+This amendment narrows the workflow's first execution phase to **M1: DXY, trading week
+`2026-07-06`, golden week only**. The random-week matrix in W6 and every later wave wait for the
+operator's post-M1 review. The enforcement is mechanical, in git:
+
+- `gates/policy.json:1` — immutable paths, commit limits, model threshold, required E1 families.
+- `.githooks/reference-transaction:1` — the non-bypassable commit surface; `--no-verify` cannot skip it.
+- `gates/commit_gate.py:316` — context, diff, checkpoint, image, hash, state, and model validation.
+- `gates/commit_gate.py:454` — the reference-transaction state machine for every created commit.
+- `m1/EXECUTION_CONTRACT.md:128` — the commit protocol shown to the builder and the grader.
+- `m1/state.json:1` — the live M1 state: checkpoint sequence, work budget, and operator review.
+
+### Commit classes
+
+| Trailer | Meaning | Mechanical requirement |
+|---|---|---|
+| `PV-Gate: work` | implementation progress | substantive M1 path, no completion claim, state work counter +1 |
+| `PV-Gate: checkpoint` | visual checkpoint | checkpoint object, comparison object, committed PNG, matching hashes |
+| `PV-Gate: m1-complete` | M1 result | two captures, all required E1 families `MATCHED`, stop state |
+| `PV-Gate: admin` | gate repair only | operator token in `PV_GATE_ADMIN_TOKEN`, no authority/history edits |
+
+The default work budget is **two work commits** between visual checkpoints. A work commit may not
+use a completion or success claim; a claim requires a checkpoint image.
+
+### External commit grader
+
+Every created commit is sanity-graded by `mimo-v2.6-flash` through the local OpenCode Go Responses
+endpoint. The grader receives:
+
+1. the design blueprint;
+2. this workflow;
+3. `m1/EXECUTION_CONTRACT.md`;
+4. the commit message and diff;
+5. checkpoint and comparison JSON when present;
+6. every required PNG image.
+
+It returns strict JSON. The commit is accepted only on `verdict: PASS` and `score >= 7`. A missing
+model, malformed answer, blank image, unrelated page, obvious fabrication, premature success claim,
+or score below threshold rejects the ref update. The verdict ledger is
+`~/.local/state/plutus-vision-gate/verdicts.jsonl`.
+
+### The M1 loop and stop
+
+The builder repairs and rerenders until every required E1 family in
+`m1/EXECUTION_CONTRACT.md:138` is `MATCHED`. One compile, one card, or one rough screenshot is not
+a stopping point. The M1-complete commit sets:
+
+```json
+{
+  "m1_status": "COMPLETE_AWAITING_OPERATOR_REVIEW",
+  "operator_review": "PENDING",
+  "complete_commit": "SELF"
+}
+```
+
+After that commit, every further ref update is rejected until the operator supplies the unlock
+token from `~/.config/plutus-vision-gate/operator-unlock.token`. The builder does not start W6,
+multi-asset work, E2, E3, or packaging.
+
+**End of workflow.**

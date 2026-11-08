@@ -108,8 +108,9 @@ def protected_change(paths: list[str], policy: dict, admin: bool) -> str | None:
     frozen_m1 = ["m1/EXECUTION_CONTRACT.md"]
     for p in paths:
         if any(p == q or p.startswith(q) for q in protected):
-            # Admin may install/repair the gate itself, never the authority corpus or archive.
-            if admin and (p.startswith(".githooks/") or p == "gates/policy.json" or p.startswith("gates/controls/")):
+            # Admin (operator token) may install/repair the gate and amend the execution workflow;
+            # never the authority corpus, archive, or baseline.
+            if admin and (p.startswith(".githooks/") or p.startswith("gates/") or p.startswith("design/")):
                 continue
             return p
         if not admin and any(p == q or p.startswith(q) for q in frozen_m1):
