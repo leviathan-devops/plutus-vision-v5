@@ -33,7 +33,7 @@
   "limits": {
     "max_work_commits_between_checkpoints": 2,
     "max_changed_files_work_commit": 80,
-    "max_model_prompt_chars": 160000,
+    "max_model_prompt_chars": 220000,
     "max_diff_chars": 100000
   },
   "protected_paths": [
