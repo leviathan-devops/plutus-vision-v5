@@ -1,12 +1,15 @@
 # EVIDENCE_STATE — clean v5/M1
 
-**PROJECT FINGERPRINT:** `7301cec3e57aacb06b4af22faa2383897567f8fb2f5cd2b2e4ad20355667cea2`
+**PROJECT FINGERPRINT:** `1b26afc522a26531421b5398e020671ddd8cc6697b09e9457582fd8c234f9a4e`
 **Fingerprint subject:** `gates/policy.json` — the mechanically enforced M1 gate policy.
 **Git HEAD when generated:** `cf5da640586a22e044978c148981f7bfb67b038f`
 **Generated:** `2026-11-08T13:36:43.905831+00:00`
 
 
 ## 0. Summary
+
+**Updated 2026-11-08T19:00:28+00:00:** M1 engine + CP-001 rows appended (E-M1-01..08). Fingerprint now 1b26afc522a26531421b5398e020671ddd8cc6697b09e9457582fd8c234f9a4e (gates/policy.json after e5d2465).
+
 Current evidence proves the clean substrate, git enforcement, external grader, and fresh knowledge graph. It does not prove any E1 trading result.
 
 ## 1. Evidence rows
@@ -361,3 +364,16 @@ branch before == branch after
 - This appendix is measured from the live clean tree and fresh graph; it is not historical narrative.
 - A `NOT STARTED` family state is the current truth, not a defect in the substrate.
 - External Pinebox and graph paths are dependencies, not editable project files.
+
+## 2026-11-08 — evidence rows added (fingerprint 1b26afc522a26531421b5398e020671ddd8cc6697b09e9457582fd8c234f9a4e)
+
+| Row | Claim | Evidence | Verdict |
+|---|---|---|---|
+| E-M1-01 | Protocol A 2026-07-06 extracted before the cutoff | m1/evidence/protocol-a/extraction.json:1 (05:47 GMT, 3 passes) | PROVEN |
+| E-M1-02 | composition regenerates byte-identically from vc/CP-001 | restore run, sha c9261fb3... twice | PROVEN |
+| E-M1-03 | CP-001 picture is the real Pinebox runtime | `pinebox shot` sha 3ae1a18d..., gate hash check | PROVEN |
+| E-M1-04 | golden-week accuracy | outcome 3/7 = 42.9% (m1/checkpoints/CP-001/outcome.txt) | BELOW TARGET |
+| E-M1-05 | 13 families on the chart | 2 MATCHED (m1/checkpoints/CP-001/comparison.json:1) | BELOW TARGET |
+| E-M1-06 | gate still refuses a --no-verify claiming commit after repairs | REJECT(PV-TRAILER), branch unmoved | PROVEN |
+| E-M1-07 | grader reads real screenshots | positive control: symbol/tf/dates/prices named correctly | PROVEN |
+| E-M1-08 | no hardcoded week values | grep, only CLI defaults (m1/docs/TESTING_LOG.md:1) | PROVEN |

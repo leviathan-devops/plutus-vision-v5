@@ -359,3 +359,21 @@ No E1 implementation exists yet. The clean build has substrate, contract, enforc
 - This appendix is measured from the live clean tree and fresh graph; it is not historical narrative.
 - A `NOT STARTED` family state is the current truth, not a defect in the substrate.
 - External Pinebox and graph paths are dependencies, not editable project files.
+
+## 2026-11-08 — M1 engine and the first visual checkpoint
+
+### Accomplished
+- E1 engine m1/src (12 modules); Protocol A 2026-07-06; card + composition; CP-001 (8ae7388, vc/CP-001); rolodex
+  m1/VISUAL_CHECKPOINTS_LOG.md with VC-000 (not restorable) and VC-001 (restore proven); M1 ship docs m1/docs/;
+  gate repairs e5d2465, 378153a; ship-docs-update skill now defines the picture+commit+restore rolodex.
+### Evidence
+- composition c9261fb3...; outcome 42.9% (3/7); families 2/13 MATCHED; grader PASS 8 on CP-001.
+### Decisions
+- legibility rules (synthesis only, measured band, origin-anchored boxes); ship docs under m1/docs because the root
+  docs belong to the Pinebox agent; tag vc/<id> per checkpoint.
+### Failures and root causes
+- F-02/F-03 (operator-caught): fabricated limitation, CDP detour. F-06: VC-000 code not committed. F-04: two skills
+  deleted by time window.
+### Honest disclosure
+- M1 target not met. P4 and P7 supplementary evidence missing (recorded on the card).
+- Anchors: m1/src/compose.ts:31, m1/src/run.ts:72, gates/commit_gate.py:366.

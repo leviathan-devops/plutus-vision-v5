@@ -161,3 +161,16 @@
 - This appendix is measured from the live clean tree and fresh graph; it is not historical narrative.
 - A `NOT STARTED` family state is the current truth, not a defect in the substrate.
 - External Pinebox and graph paths are dependencies, not editable project files.
+
+## [2026-11-08T19:00:28+00:00] — M1 engine, legibility pass CP-001, gate repairs, visual rolodex
+
+- WHAT: the full E1 engine in m1/src (window, bars, P1, P2, P3/P8, P5, P6/P7, assembly + P9, run, compose, evaluate,
+  card); Protocol A for 2026-07-06 via plutus-browser; CP-001 checkpoint (8ae7388, tag vc/CP-001); two admin gate
+  repairs (e5d2465 image budget, 378153a parse + prepared-only); rolodex hash back-fill (a76e450).
+- WHY: the operator's restart order (previous attempt deleted), the M1 contract, and the operator's rulings of
+  2026-11-08 (legibility; every picture committed with its code; drive Pinebox with the tool).
+- HOW: one canon stage per module (m1/src/assemble.ts:72 assembles), synthesis-only composition
+  (m1/src/compose.ts:31), measured display band (m1/src/run.ts:72), origin-anchored boxes (m1/src/assemble.ts:142).
+- EVIDENCE: composition c9261fb3...; restore from vc/CP-001 identical; outcome 3/7 (42.9%); families 2/13 MATCHED;
+  operator: "This is already an improvement ... not fully approved yet".
+- NEXT: CP-002 — ZFP strength, BoM/MoM at 100.61-100.68, LSZ for the Jul 10 sweep (NEXT_STEPS §1).

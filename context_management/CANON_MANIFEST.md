@@ -1,9 +1,9 @@
 # CANON_MANIFEST — clean PLUTUS_VISION v5/M1
 
-**PROJECT FINGERPRINT:** `7301cec3e57aacb06b4af22faa2383897567f8fb2f5cd2b2e4ad20355667cea2`
+**PROJECT FINGERPRINT:** `1b26afc522a26531421b5398e020671ddd8cc6697b09e9457582fd8c234f9a4e`
 **Fingerprint subject:** `gates/policy.json` — the mechanically enforced M1 gate policy.
-**Git HEAD when generated:** `cf5da640586a22e044978c148981f7bfb67b038f`
-**Generated:** `2026-11-08T13:36:43.905831+00:00`
+**Git HEAD when generated:** `a76e450325212875353fdb04b5577b7f14e2cef8`
+**Generated:** `2026-11-08T13:36:43.905831+00:00` · **Updated:** `2026-11-08T19:00:28+00:00` (M1 engine + CP-001)
 
 
 ## Contract
@@ -12,7 +12,7 @@
 | Project root | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION |
 | Current phase | M1 golden week |
 | Authority precedence | operator rulings > v5 design > M1 contract > gate policy > graph > archive history |
-| Fingerprint | `7301cec3e57aacb06b4af22faa2383897567f8fb2f5cd2b2e4ad20355667cea2` (gates/policy.json) |
+| Fingerprint | `1b26afc522a26531421b5398e020671ddd8cc6697b09e9457582fd8c234f9a4e` (gates/policy.json) |
 | Branch | step_agent |
 | Push policy | never without explicit operator order |
 
@@ -32,7 +32,11 @@
 | RUNNING_DEBUG_LOG | append every debug event | 200 |
 
 ## Substance rule
-Every standard document carries at least three live authority anchors. Because this clean project has no TypeScript source yet, accepted anchor classes are `.md`, `.py`, `.json`, `.pine`, and the verified external Pinebox `.ts` runtime contract at `/home/leviathan/JARVIS_WORKSPACE/SHIP_PACKAGES/pinebox/src/pinebox-cloud/src/worker.ts:210`.
+Every standard document carries at least three live authority anchors. The M1 engine source now exists (m1/src/*.ts, e.g. m1/src/run.ts:18); accepted anchor classes are `.ts` and `.md`, `.py`, `.json`, `.pine`, and the verified external Pinebox `.ts` runtime contract at `/home/leviathan/JARVIS_WORKSPACE/SHIP_PACKAGES/pinebox/src/pinebox-cloud/src/worker.ts:210`.
+
+## Companion records (outside context_management)
+- m1/VISUAL_CHECKPOINTS_LOG.md — the picture + commit + restore rolodex (operator ruling 2026-11-08).
+- m1/docs/ — the M1 ship docs (BUILD_REPORT, DEBUG_LOG, FAILURE_LOG, SPEC_VIOLATION_LOG, TESTING_LOG, THEATRICALITY_LOG).
 
 ## Update triggers
 - every M1 work/checkpoint commit
@@ -175,7 +179,7 @@ The five read-first docs must name this exact SHA-256 before any dist artifact e
 | Is there an E1 card now? | No. |
 | Is there a composition now? | No. |
 | Is there an M1 chart now? | No. |
-| What is clean build fingerprint? | 7301cec3e57aacb06b4af22faa2383897567f8fb2f5cd2b2e4ad20355667cea2 |
+| What is clean build fingerprint? | 1b26afc522a26531421b5398e020671ddd8cc6697b09e9457582fd8c234f9a4e |
 | What graph is current? | PLUTUS_VISION_M1 central graph. |
 | What graph is obsolete? | The archived pre-v5 in-project graph. |
 | Where is old history? | archive/pre-v5-2026-11-08. |

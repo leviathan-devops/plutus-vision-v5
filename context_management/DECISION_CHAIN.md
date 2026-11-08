@@ -352,3 +352,29 @@ Operator asked whether knowledge graphs and canon docs were current for a clean 
 - This appendix is measured from the live clean tree and fresh graph; it is not historical narrative.
 - A `NOT STARTED` family state is the current truth, not a defect in the substrate.
 - External Pinebox and graph paths are dependencies, not editable project files.
+
+## 2026-11-08 — operator rulings of the M1 build session (verbatim)
+
+- **Restart:** "Everything from the previous M one build attempt delete. It was complete fucking garbage ... Don't even
+  fucking look at it."
+- **The tool:** "Use the fucking tool and drive the fucking chart. directly. No Python script. Use the tool directly."
+  "The tool has everything built in. Do not ever fabricate any bullshit limitations. There are no limitations ...
+  If there's any issues, you are the issue." "There are no issues with the tool at all. If there's a problem, you are
+  the problem. Period."
+- **Surface:** "Start a fresh pine box cloud ... Linux box cloud visible in Orca."
+- **Legibility:** "this obviously needs to optimize because the entire screen is covered" -> CP-001: "This is already
+  an improvement. Much less clutter, much more legible. Still some optimization to be done."
+- **The rolodex:** "every single one of these screenshots is being saved and added to the visual checkpoint log. The
+  code files that are producing them are properly saved as commits on every single visual checkpoint ... a Rollodex of
+  checkpoints that I can visually navigate, pick out this specific screenshot, restore it".
+- **Alignment:** "Make note of what you are doing that is moving this in the right direction. Update the docs so that
+  we can keep this train of thought."
+- Consequences: m1/VISUAL_CHECKPOINTS_LOG.md:1, ~/.omp/agent/skills/ship-docs-update/SKILL.md:74,
+  context_management/CURRENT_STATE.md:1 §4.
+
+## 2026-11-08 — builder decisions with evidence
+
+- Gate repairs through admin, each with the measured refusal in the commit message (e5d2465, 378153a) and a
+  bypass control after them (branch unmoved).
+- Display band = spot +/- max(prior-week range, mean 4-week range): measured per asset/week, no constant (m1/src/run.ts:72).
+- P4 recorded MISSING after a bounded search; no invented analyst levels.

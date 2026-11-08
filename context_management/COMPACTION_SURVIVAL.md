@@ -1,249 +1,204 @@
-# COMPACTION SURVIVAL — PLUTUS_VISION clean v5/M1 rebuild
+# COMPACTION_SURVIVAL — PLUTUS VISION v5 / M1
 
-**PROJECT FINGERPRINT:** `7301cec3e57aacb06b4af22faa2383897567f8fb2f5cd2b2e4ad20355667cea2`
-**Fingerprint subject:** `gates/policy.json` — the mechanically enforced M1 gate policy.
-**Git HEAD when generated:** `cf5da640586a22e044978c148981f7bfb67b038f`
-**Generated:** `2026-11-08T13:36:43.905831+00:00`
-
+**PROJECT FINGERPRINT:** `1b26afc522a26531421b5398e020671ddd8cc6697b09e9457582fd8c234f9a4e`
+**Fingerprint subject:** `gates/policy.json` (the M1 gate policy; changed by admin repair e5d2465)
+**Git HEAD when generated:** `a76e450325212875353fdb04b5577b7f14e2cef8`
+**Generated:** `2026-11-08T19:00:28+00:00` · semantics per context_management/CANON_MANIFEST.md:1
 
 ## 0. Position in one paragraph
-PLUTUS_VISION has been reduced to a clean-room v5/M1 build. The entire pre-v5 tree beyond the operator-approved v1 baseline checkpoint is frozen under `archive/pre-v5-2026-11-08/`. The first execution phase is M1: render the full Engine 1 zone data for DXY, trading week 2026-07-06, on top of the preserved v1 baseline in the deployed Pinebox Cloud runtime. Every created git commit passes a non-bypassable reference-transaction gate, a checkpoint/state machine, and an external Mimo v2.6-flash sanity verdict. No random-week, multi-asset, E2, E3, packaging, or post-M1 work may start before the operator unlock.
 
-## 1. Read-first order
-| Order | Artifact | Why |
-|---|---|---|
-| 1 | `m1/EXECUTION_CONTRACT.md:17` | the one M1 outcome and exact commit protocol |
-| 2 | `design/BUILD_WORKFLOW_v5.0_CLOUDFLARE.md:325` | the M1 git-gate amendment and execution order |
-| 3 | `design/DESIGN_BLUEPRINT_v5.0_CLOUDFLARE.md:151` | the nine E1 pillars and baseline boundary |
-| 4 | `gates/policy.json:1` | immutable paths, limits, families, and grader threshold |
-| 5 | `gates/commit_gate.py:454` | the non-bypassable reference state machine |
-| 6 | `MASTER_CONTEXT/OPERATOR_RULINGS_PV.md:132` | R-30 full-E1-on-baseline order |
-| 7 | `/home/leviathan/JARVIS_WORKSPACE/SHIP_PACKAGES/pinebox/src/pinebox-cloud/src/worker.ts:210` | the verified Pinebox Cloud runtime contract |
+You are building M1: the full E1 (5.3.3 prompt, every token) for DXY on the golden week 2026-07-06, drawn on top of
+the untouched v1 baseline, tested ONLY on Pinebox by looking at the chart. The engine is m1/src (TypeScript). The
+latest visual checkpoint is CP-001 (8ae7388, tag vc/CP-001): legible, 2/13 families MATCHED, 42.9% ZFP outcome. Keep
+looping: fix the named defect, regenerate, load, frame, capture, open, compare, checkpoint, until 13/13 and >= 95%;
+then spawn a fresh unbiased worker to verify; then stop for the operator.
+
+## 1. Read-first order after a compaction
+
+1. context_management/CURRENT_STATE.md:1 (this build's position and open defects)
+2. m1/VISUAL_CHECKPOINTS_LOG.md:1 (the pictures, the commits, what moved the build forward)
+3. m1/docs/DEBUG_LOG.md:1 and m1/docs/FAILURE_LOG.md:1 (what broke and why; operator words verbatim)
+4. m1/EXECUTION_CONTRACT.md:1 and gates/policy.json:1 (what the gate refuses)
+5. the 5.3.3 prompt sections for the pillar you are fixing (read first-hand, never delegated — ruling R-32)
 
 ## 2. Non-negotiable operating laws
-- The v1 checkpoint baseline is the preserved floor: `Checkpoints/v1-ship-approved-working-baseline/dist/plutus-vision-v1.pine:1`.
-- The pre-v5 archive is frozen history, not build input: `archive/pre-v5-2026-11-08/ARCHIVE_INDEX.md:1`.
-- Pinebox is the verified runtime IDE. Use it as designed; do not fork or modify it. Authority: `MASTER_CONTEXT/OPERATOR_RULINGS_PV.md:145`.
-- plutus-browser remains the separate headed acquisition tool for investinglive. Authority: `MASTER_CONTEXT/OPERATOR_RULINGS_PV.md:122`.
-- M1 is exactly DXY and week 2026-07-06. No random weeks, EUR/USD, GBP/USD, E2, E3, packaging, or push before operator review.
-- A work commit may not claim success. A checkpoint requires committed PNG evidence. M1-complete requires every required family `MATCHED`.
-- The external grader is Mimo v2.6 flash, threshold 7/10, strict JSON, fail closed: `gates/policy.json:9`.
-- No fallback model, fallback renderer, or fabricated evidence exists. A missing substrate rejects by token.
-- No push without an explicit operator order. The current branch is `step_agent`.
 
-## 3. Current clean-root map
-| Path | Role | State |
-|---|---|---|
-| `Checkpoints/v1-ship-approved-working-baseline/` | operator-approved price-structure floor | 4 files, immutable |
-| `Original_Canon_Data/Trident_System_Prompt_v5.3.3_DOWNLOAD_ME.md` | E1/E2/E3 canon authority | live, immutable |
-| `Original_Canon_Data/TRIDENT_v5.3.3_CORRECTED_E3_ENGINE.md` | deferred E3 authority | live, immutable |
-| `MASTER_CONTEXT/OPERATOR_RULINGS_PV.md` | operator rulings R-12..R-33 | live authority |
-| `design/DESIGN_BLUEPRINT_v5.0_CLOUDFLARE.md` | v5 architecture | reviewed design authority |
-| `design/BUILD_WORKFLOW_v5.0_CLOUDFLARE.md` | v5 execution workflow + M1 gate amendment | execution authority |
-| `m1/EXECUTION_CONTRACT.md` | builder-facing M1 contract | live authority |
-| `m1/state.json` | checkpoint/work/review state | M1 in progress |
-| `gates/policy.json` | gate policy and token hashes | immutable except admin token |
-| `gates/commit_gate.py` | pre-commit/commit-msg/reference validation | immutable except admin token |
-| `.githooks/reference-transaction` | non-bypassable git surface | installed and executable |
-| `archive/pre-v5-2026-11-08/` | frozen pre-v5 history | out of scope |
+- Pinebox is driven with the `pinebox` tool only; it is verified and unchanged. "If there's a problem, you are the problem."
+- No unit tests, no code review tool. The opened chart capture against the oracle images
+  (/home/leviathan/Pictures/Jul_6-10_DXY_Gold_Standard) is the verdict.
+- No hardcoded week values anywhere in m1/src.
+- Every picture is committed with its code (rolodex); every operator screenshot is stored with the commit.
+- Obey the hooks: PV-Gate trailer on every commit; at most 2 work commits between checkpoints; only m1/ for work.
+- Never stage the root DEBUG_LOG/FAILURE_LOG/TESTING_LOG (the Pinebox agent's).
+- Do not stop at a failed test; repair and re-render until the target or a proven hard block.
 
-## 4. Commit protocol survival card
-| PV-Gate | Use | Required artifact |
-|---|---|---|
-| `work` | implementation progress | substantive `m1/` change; no completion claim; state work counter +1 |
-| `checkpoint` | visual checkpoint | checkpoint JSON + comparison JSON + PNG + state reset |
-| `m1-complete` | M1 result | two captures; all required families MATCHED; stop state |
-| `admin` | gate repair/operator workflow amendment | `PV_GATE_ADMIN_TOKEN` environment value |
-The work budget is two commits between visual checkpoints. `--no-verify` does not bypass the reference surface.
+## 3. The loop
 
-## 5. Fresh knowledge graph
-| Layer | Measured state | Path |
-|---|---|---|
-| L1 semantica | 30 entities · 78 relationships | `KNOWLEDGE_GRAPHS/PLUTUS_VISION_M1/.omp/graph-intelligence/layers/semantica/kg.json` |
-| L2 arsumbris | 35 nodes · 78 edges · 7 components · own diagnostics 0 | daemon socket `~/.arsumbris/au-engine/run/cec220b170d5c057.sock` |
-| Cards | 19 anchored law cards · 9 source hubs | `KNOWLEDGE_GRAPHS/PLUTUS_VISION_M1/cards/` |
-| Review | anchor sweep PASS · MAP/RECORD PASS | `KNOWLEDGE_GRAPHS/PLUTUS_VISION_M1/RECORD.md:1` |
-
-## 6. Recovery commands
-```bash
-cd /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION
-git status --short                 # expected empty
-python3 -m py_compile gates/commit_gate.py
-bash -n .githooks/pre-commit .githooks/commit-msg .githooks/reference-transaction
-python3 - <<'PY'
-import json
-p="/home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/KNOWLEDGE_GRAPHS/PLUTUS_VISION_M1/.omp/graph-intelligence/layers/semantica/kg.json"
-d=json.load(open(p)); print(len(d["entities"]),len(d["relationships"]))
-PY
+```text
+bun m1/src/run.ts DXY 2026-07-06        -> m1/out/e1-card-DXY-2026-07-06.json (sealed sha inside)
+bun m1/src/compose.ts DXY 2026-07-06    -> m1/out/plutus-vision-v5-e1-DXY-2026-07-06.pine
+pinebox tool: verb=load id=3 pine=<that file> pair=DXY tf=1H
+pinebox tool: verb=chart id=3 op=view | op=zoom dir=IN (x n) | op=pan dx=<fraction, -1 = one screen back>
+pinebox tool: verb=shot id=3 section=chart out=/tmp/<name>.png   -> OPEN it, compare to the oracle
+bun m1/src/evaluate.ts DXY 2026-07-06   -> hold/break table (instrument, not the verdict)
+checkpoint commit (code + card + composition + PNGs + checkpoint.json + comparison.json + state) -> tag vc/CP-<n>
 ```
 
-## 7. If a gate rejects a commit
-| Token | Recovery |
-|---|---|
-| `PV-TRAILER` | add the correct `PV-Gate` trailer |
-| `PV-WORK_CLAIM` | remove the success claim or create a visual checkpoint |
-| `PV-CHECKPOINT_REQUIRED` | commit a visual checkpoint |
-| `PV-PROTECTED_PATH` | undo the immutable-path edit |
-| `PV-VISUAL` | add a real committed PNG |
-| `PV-VISUAL_HASH` | recompute comparison hashes |
-| `PV-M1_COMPLETE` | repair every required family before final claim |
-| `PV-M1_STOP` | operator unlock token required |
-| `PV-MODEL_REJECT` | repair the named quality problem; never retry blindly |
+## 4. What is moving the build in the right direction
 
-## 8. End of survival card
-This document describes the clean build only. Historical pre-v5 state lives in the frozen archive and is not authority for M1 implementation.
+1. **Drive Pinebox only with the `pinebox` tool** (load / chart view|zoom|pan / shot). It frames any week in seconds.
+   Never CDP scripts, never the IDE source. Operator ruling: "There are no issues with the tool at all. If there's a
+   problem, you are the problem. Period."
+2. **Every chart number comes from the card; the card comes from disk bars + Protocol A evidence.** Nothing about the
+   golden week is typed in m1/src (grep record in m1/docs/TESTING_LOG.md:1).
+3. **Legibility rules (CP-001, operator: "Much less clutter, much more legible"):** draw only MODERATE+ zones, only
+   inside the measured weekly band (spot +/- max(prior-week range, mean 4-week range)), each box from its origin
+   candle, one label per zone, P8 EUR/USD strike lines only. Full output stays in the card.
+4. **Measure every change twice:** the opened capture against the oracle (the verdict) and evaluate.ts (the numbers).
+5. **Every picture is committed with its code** — the rolodex m1/VISUAL_CHECKPOINTS_LOG.md:1, tag vc/<id>, restore
+   proven by archive + regenerate (CP-001: identical sha).
 
-## MEASURED APPENDIX — COMPACTION_SURVIVAL.md
-| Authority anchor | Meaning |
-|---|---|
-| M1 outcome | m1/EXECUTION_CONTRACT.md:17 |
-| source laws | m1/EXECUTION_CONTRACT.md:35 |
-| commit protocol | m1/EXECUTION_CONTRACT.md:75 |
-| loop law | m1/EXECUTION_CONTRACT.md:241 |
-| stop condition | m1/EXECUTION_CONTRACT.md:301 |
-| M1 gate amendment | design/BUILD_WORKFLOW_v5.0_CLOUDFLARE.md:325 |
-| nine pillars | design/DESIGN_BLUEPRINT_v5.0_CLOUDFLARE.md:151 |
-| E1 scoring | design/DESIGN_BLUEPRINT_v5.0_CLOUDFLARE.md:165 |
-| pair law | design/DESIGN_BLUEPRINT_v5.0_CLOUDFLARE.md:347 |
-| gate parser | gates/commit_gate.py:137 |
-| external grader | gates/commit_gate.py:316 |
-| reference machine | gates/commit_gate.py:454 |
-| R-30 | MASTER_CONTEXT/OPERATOR_RULINGS_PV.md:132 |
-| R-32 | MASTER_CONTEXT/OPERATOR_RULINGS_PV.md:140 |
-| R-33 | MASTER_CONTEXT/OPERATOR_RULINGS_PV.md:145 |
-| Engine 1 canon | Original_Canon_Data/Trident_System_Prompt_v5.3.3_DOWNLOAD_ME.md:347 |
-| Protocol A | Original_Canon_Data/Trident_System_Prompt_v5.3.3_DOWNLOAD_ME.md:808 |
-| confluence scoring | Original_Canon_Data/Trident_System_Prompt_v5.3.3_DOWNLOAD_ME.md:1465 |
-| v1 floor | Checkpoints/v1-ship-approved-working-baseline/dist/plutus-vision-v1.pine:1 |
-| Pinebox router | /home/leviathan/JARVIS_WORKSPACE/SHIP_PACKAGES/pinebox/src/pinebox-cloud/src/worker.ts:210 |
+## 5. Commit protocol survival card
 
-## Live file inventory (excluding archive and this canon set)
-| Path | Bytes | SHA-16 |
+- Work commit: only m1/ paths, message without claim words, `PV-Gate: work`, state.json work counter +1.
+- Checkpoint commit: m1/checkpoints/CP-<n>/{checkpoint.json, comparison.json, visual/*.png} + state (seq +1,
+  work 0, last_checkpoint) + `PV-Gate: checkpoint` + `PV-Checkpoint: m1/checkpoints/CP-<n>/checkpoint.json`.
+  Then `git tag vc/CP-<n>` and back-fill the hash in the rolodex in the next commit.
+- Admin (gate repair / operator-ordered canon update): `PV_GATE_ADMIN_TOKEN=$(cat ~/.config/plutus-vision-gate/admin.token)`,
+  `PV-Gate: admin`, paths limited (`git commit -- <paths>`).
+- The grader (mimo-v2.6-flash) reads blueprint + workflow + contract + diff + pictures; pass = PASS and score >= 7.
+
+## 6. If a gate rejects
+
+Read the token. PV-MODEL_PROMPT -> text or image budget (gates/commit_gate.py:366). PV-MODEL_VERDICT -> the raw
+answer is kept under ~/.local/state/plutus-vision-gate/raw/. PV-CHECKPOINT_REQUIRED -> make a visual checkpoint.
+A gate defect is repaired through admin with the measured evidence in the message (precedent: e5d2465, 378153a).
+
+## Quality bar for the next checkpoint (written before rendering, from the oracle)
+
+| Oracle object | Expected E1 representation | Where it is checked |
 |---|---|---|
-| .githooks/commit-msg | 3361 | 49aa8c536a31ac94 |
-| .githooks/lib/pattern-header.sh | 4193 | ae0cc586df3aec09 |
-| .githooks/lib/scan-phantom.sh | 5872 | 9b4e80cbfd2ba24d |
-| .githooks/lib/scan-silent.sh | 11285 | 5aef733ca08de9bd |
-| .githooks/lib/scan-stub.sh | 6407 | 4cb5d4afec6d6709 |
-| .githooks/pre-commit | 16862 | 970464c489aa1d93 |
-| .githooks/pre-push | 8076 | eac81eec9c447500 |
-| .githooks/prepare-commit-msg | 5470 | 3d784b510c45f8cd |
-| .githooks/reference-transaction | 564 | 5c48829c3246f4c7 |
-| .gitignore | 121 | 28e1f221a223e65f |
-| Checkpoints/v1-ship-approved-working-baseline/dist/lqz-luxalgo.pine | 44743 | db06b60574125039 |
-| Checkpoints/v1-ship-approved-working-baseline/dist/lqz-plutus.pine | 19238 | 68881deaca0c66a1 |
-| Checkpoints/v1-ship-approved-working-baseline/dist/plutus-vision-v0.pine | 83089 | 605bff82d3539e9e |
-| Checkpoints/v1-ship-approved-working-baseline/dist/plutus-vision-v1.pine | 69520 | 82da437af969a315 |
-| MASTER_CONTEXT/OPERATOR_RULINGS_PV.md | 17405 | c9725e52a4196fd2 |
-| Original_Canon_Data/TRIDENT_v5.3.3_CORRECTED_E3_ENGINE.md | 79739 | d3fc65e406023c2e |
-| Original_Canon_Data/Trident_System_Prompt_v5.3.3_DOWNLOAD_ME.md | 328319 | db9f3bdd3717080d |
-| design/BUILD_WORKFLOW_v5.0_CLOUDFLARE.md | 17833 | 92020269cb45e451 |
-| design/DESIGN_BLUEPRINT_v5.0_CLOUDFLARE.md | 42558 | ec6c6dd9a38dce60 |
-| gates/__pycache__/commit_gate.cpython-312.pyc | 39697 | 0a0f9276b9c5fe0c |
-| gates/commit_gate.py | 27436 | a4ba37e911ef69a2 |
-| gates/controls/mimo-vision-control.json | 579 | ebc85f2af93c8cb3 |
-| gates/controls/mimo-vision-control.png | 804 | e042c61e84e4c8bc |
-| gates/policy.json | 2631 | 7301cec3e57aacb0 |
-| m1/EXECUTION_CONTRACT.md | 10289 | a496716880f8fe6f |
+| 4H BoM supply 101.33-101.40 (formed Jul 2) | 4H BoM supply box from its origin candle, unmitigated | comparison row S/D |
+| resistance 101.19-101.275, Jul 8 and Jul 10 rejections | MODERATE+ resistance zone, ZFP <= 50 (HOLD) | outcome table + picture |
+| 1H BoM demand 100.61-100.68 | 1H BoM demand box, KEY SUPPORT BAND label | comparison rows S/D, BoM/MoM |
+| Jul 10 sweep to 100.598 and reversal | LSZ under the 100.61 shelf (ACTIVE SL TRIGGER), core/spike | comparison rows LSZ, core/spike |
+| 1H MoM 100.84 (Jul 3-6) | 1H MoM box | comparison row BoM/MoM |
+| option walls (EUR/USD 1.14/1.145/1.15 on Jul 6-7) | dashed strike lines inside the week with labels | comparison row options |
+
+## 7. Open defects
+
+| # | Open defect (CP-001) | Evidence | Next move |
+|---|---|---|---|
+| 1 | ZFP predicts BREAK at zones the week rejected (Z13, Z14 ZFP 60 -> HELD); 3/7 correct | m1/checkpoints/CP-001/outcome.txt | B.2 modifiers fire on regime direction alone; weigh strength (zone type, POI tier, reactions) per App. B |
+| 2 | 100.61-100.68 1H origin labelled MoM 2X; oracle: 1H BoM | comparison row BoM/MoM | the leg it starts must classify BoM (m1/src/p5.ts:57) |
+| 3 | no LSZ for the Jul 10 sweep to 100.598 | comparison row LSZ | LSZ from 1H/4H swing lows near spot, not only D1 swings |
+| 4 | 4 resistance bands above the week high (101.275) | runtime-state.png | thin the ladder by pressure; the band keeps them |
+| 5 | reaction counts, intra-zone, core/spike not on the chart | comparison rows MISSING | show them without re-cluttering (in-week ticks near the zone) |
+| 6 | E1 identity table not visible | comparison row UNOBSERVABLE | position/size so the chart capture shows it |
+| 7 | 4H BoM supply 101.33-101.40 drawn only as a 1H box | comparison row S/D | 4H scan coverage of the Jul 2 origin |
+
+## MEASURED APPENDIX (generated 2026-11-08T19:00:28+00:00 from the live tree; HEAD a76e45032521)
+
+### Tracked M1 + gate inventory (path | lines or bytes | sha256[:16])
+| Path | Lines | sha16 |
+|---|---|---|
+| .githooks/commit-msg | 66 | 49aa8c536a31ac94 |
+| .githooks/lib/pattern-header.sh | 84 | ae0cc586df3aec09 |
+| .githooks/lib/scan-phantom.sh | 113 | 9b4e80cbfd2ba24d |
+| .githooks/lib/scan-silent.sh | 225 | 5aef733ca08de9bd |
+| .githooks/lib/scan-stub.sh | 126 | 4cb5d4afec6d6709 |
+| .githooks/pre-commit | 324 | 970464c489aa1d93 |
+| .githooks/pre-push | 176 | eac81eec9c447500 |
+| .githooks/prepare-commit-msg | 101 | 3d784b510c45f8cd |
+| .githooks/reference-transaction | 13 | b3f645711daca411 |
+| gates/commit_gate.py | 578 | a4114015faed9fc4 |
+| gates/controls/mimo-vision-control.json | 14 | ebc85f2af93c8cb3 |
+| gates/controls/mimo-vision-control.png | binary 804 B | e042c61e84e4c8bc |
+| gates/policy.json | 98 | 1b26afc522a26531 |
+| m1/EXECUTION_CONTRACT.md | 311 | a496716880f8fe6f |
+| m1/VISUAL_CHECKPOINTS_LOG.md | 117 | a7581bb594c1e8d2 |
+| m1/checkpoints/CP-001/checkpoint.json | 109 | 74854757cb555d55 |
+| m1/checkpoints/CP-001/comparison.json | 86 | bc519c86f0a7e328 |
+| m1/checkpoints/CP-001/outcome.txt | 10 | 1d7539c56f91aedc |
+| m1/checkpoints/CP-001/visual/operator-orca-2026-11-08-2137.png | binary 3083126 B | e618b512908794b5 |
+| m1/checkpoints/CP-001/visual/runtime-state.png | binary 142712 B | 3ae1a18d0983329e |
+| m1/docs/BUILD_REPORT.md | 106 | c3c4352f474d5a5d |
+| m1/docs/DEBUG_LOG.md | 135 | 756cfc25772015b8 |
+| m1/docs/FAILURE_LOG.md | 102 | a00b451dbf3a8336 |
+| m1/docs/SHIP_DOCS_MANIFEST.yml | 11 | 0b3b6bf848086c3b |
+| m1/docs/SPEC_VIOLATION_LOG.md | 105 | 49610df1755f82db |
+| m1/docs/TESTING_LOG.md | 122 | fe8cf08b9d16afcf |
+| m1/docs/THEATRICALITY_LOG.md | 107 | 9ca17f533cc9a999 |
 | m1/evidence/.gitkeep | 0 | e3b0c44298fc1c14 |
+| m1/evidence/protocol-a/extraction.json | 267 | 6a19ef94732bd44b |
+| m1/evidence/protocol-a/investinglive-fxo-2026-07-06.jpg | binary 102419 B | 10d594f6491d5b12 |
+| m1/evidence/protocol-a/pass2-eurusd-usdjpy-monday.png | binary 296761 B | 71769468798e7f07 |
+| m1/evidence/protocol-a/pass3-eurusd-usdjpy-tuesday.png | binary 246309 B | 57c2a80bec2fac2b |
 | m1/out/.gitkeep | 0 | e3b0c44298fc1c14 |
+| m1/out/e1-card-DXY-2026-07-06.json | 6174 | 2cf424d6a2e1966e |
+| m1/out/plutus-vision-v5-e1-DXY-2026-07-06.pine | 1245 | c9261fb3f5a0fb9b |
 | m1/src/.gitkeep | 0 | e3b0c44298fc1c14 |
-| m1/state.json | 264 | ead5db53cca681be |
+| m1/src/assemble.ts | 191 | fbcbc582fc64acf4 |
+| m1/src/bars.ts | 52 | b655f8c47196969e |
+| m1/src/card.ts | 23 | 3d8801eff9a8adfb |
+| m1/src/compose.ts | 103 | 6f466652b455737b |
+| m1/src/evaluate.ts | 35 | e3daba958f9fd739 |
+| m1/src/fs-source.ts | 11 | 379c5cae8b7d31ac |
+| m1/src/levels.ts | 14 | eb309c81846da757 |
+| m1/src/options.ts | 53 | d1f498cc69698b1f |
+| m1/src/p1.ts | 65 | b9b3bad105f92c53 |
+| m1/src/p2.ts | 42 | cbac0b3935daa870 |
+| m1/src/p5.ts | 180 | c4fe66c7a504a317 |
+| m1/src/p6p7.ts | 45 | 50d13af5862ed943 |
+| m1/src/run.ts | 95 | d8acc8d895dd11a6 |
+| m1/src/window.ts | 56 | 62a00b76fbae91f4 |
+| m1/state.json | 11 | 833e3f90e4421866 |
+| m1/visual-log/VC-000/operator-orca-2026-11-08-2132.png | binary 2747685 B | 974c30a8c1816b83 |
+| m1/visual-log/VC-000/runtime-r1.png | binary 110840 B | d35dbb34cb419bae |
 
-## Fresh graph card index
-| Card | Claim | Anchor |
-|---|---|---|
-| archive-freeze | The pre-v5 tree is frozen history | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/MASTER_CONTEXT/OPERATOR_RULINGS_PV.md:145 |
-| baseline-floor | The v1 checkpoint is the preserved floor | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/Checkpoints/v1-ship-approved-working-baseline/dist/plutus-vision-v1.pine:2 |
-| bom-mom-reactions | BoM/MoM and reaction state are required E1 metadata | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/design/DESIGN_BLUEPRINT_v5.0_CLOUDFLARE.md:151 |
-| checkpoint-evidence | Every checkpoint carries committed visual evidence | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/m1/EXECUTION_CONTRACT.md:75 |
-| e1-scoring | Six dimensions plus structural bonus score every level | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/Original_Canon_Data/Trident_System_Prompt_v5.3.3_DOWNLOAD_ME.md:1461 |
-| e3-deferred | Corrected E3 is authority but deferred | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/Original_Canon_Data/TRIDENT_v5.3.3_CORRECTED_E3_ENGINE.md:1 |
-| evidence-cutoff | Golden-week evidence stops at the Monday cutoff | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/m1/EXECUTION_CONTRACT.md:35 |
-| external-commit-grader | Mimo v2.6 flash sanity-grades every commit | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/gates/commit_gate.py:317 |
-| full-e1-required | Full E1 means every canonical family | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/design/DESIGN_BLUEPRINT_v5.0_CLOUDFLARE.md:151 |
-| git-gate-surfaces | Created commits pass the non-bypassable reference gate | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/gates/commit_gate.py:455 |
-| m1-scope | M1 is the golden week only | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/m1/EXECUTION_CONTRACT.md:17 |
-| m1-stop-unlock | M1 complete stops for operator review | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/m1/EXECUTION_CONTRACT.md:301 |
-| nine-pillars | Engine 1 is the nine-pillar 6D hybrid system | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/Original_Canon_Data/Trident_System_Prompt_v5.3.3_DOWNLOAD_ME.md:347 |
-| no-width-zfp | ZFP is strength-based, never width-based | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/design/DESIGN_BLUEPRINT_v5.0_CLOUDFLARE.md:165 |
-| operator-responsibility | Operator remains the acceptance authority | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/MASTER_CONTEXT/OPERATOR_RULINGS_PV.md:140 |
-| pair-translation-law | DXY gives direction and each pair gives its own prices | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/design/DESIGN_BLUEPRINT_v5.0_CLOUDFLARE.md:347 |
-| pinebox-runtime-authority | Pinebox is used exactly as designed | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/MASTER_CONTEXT/OPERATOR_RULINGS_PV.md:145 |
-| plutus-browser-headed-source | plutus-browser is the headed acquisition tool | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/MASTER_CONTEXT/OPERATOR_RULINGS_PV.md:132 |
-| protocol-a-image | investinglive evidence is the headed image path | /home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION/Original_Canon_Data/Trident_System_Prompt_v5.3.3_DOWNLOAD_ME.md:808 |
-
-## Required family state
-| # | Family | Current state |
-|---|---|---|
-| 1 | IP resistance zones | NOT STARTED |
-| 2 | IP equilibrium zone | NOT STARTED |
-| 3 | IP support zones | NOT STARTED |
-| 4 | Liquidity Sweep Zones | NOT STARTED |
-| 5 | canonical 4H/D1 S/D beyond v1 | NOT STARTED |
-| 6 | option-strike targets | NOT STARTED |
-| 7 | POI tier and pressure data | NOT STARTED |
-| 8 | strength-based ZFP | NOT STARTED |
-| 9 | BoM/MoM classification | NOT STARTED |
-| 10 | mitigation and reactions | NOT STARTED |
-| 11 | intra-zone precision | NOT STARTED |
-| 12 | core/spike boundaries | NOT STARTED |
-| 13 | card identity and missing data | NOT STARTED |
-
-## Operating question matrix
-| Question | Answer |
+### Commit chain (newest first)
+| Commit | Subject |
 |---|---|
-| What phase is active? | M1 only: DXY, week 2026-07-06. |
-| What is the build floor? | The preserved v1 checkpoint baseline. |
-| What is full E1? | All nine pillars, six scoring dimensions, and every required family. |
-| Can a work commit claim done? | No; use a visual checkpoint. |
-| How many work commits between checkpoints? | Two. |
-| What image count does M1-complete need? | Two. |
-| What score accepts a commit? | Mimo PASS and score at least 7. |
-| What happens if Mimo is down? | Commit rejects; no fallback. |
-| Can Pinebox be edited? | No; use it unchanged. |
-| Can plutus-browser merge into Pinebox? | No; it remains separate acquisition. |
-| Can archive content be build input? | No. |
-| Can current pages replace golden-week evidence? | No. |
-| What is the information cutoff? | Monday 2026-07-06 09:00 London. |
-| What bars are authoritative? | TradingView through Pinebox. |
-| What source needs a headed browser? | investinglive Protocol A. |
-| Is ZFP width-based? | No; strength/type/modifier based. |
-| Can DXY arithmetic make pair prices? | No. |
-| What follows M1-complete? | Operator review only. |
-| What unlocks post-M1? | Operator unlock token. |
-| Can a builder supply admin token? | No; operator only. |
-| Is remote GitHub enforcement armed? | No; local reference gate is armed. |
-| Is there an E1 card now? | No. |
-| Is there a composition now? | No. |
-| Is there an M1 chart now? | No. |
-| What is clean build fingerprint? | 7301cec3e57aacb06b4af22faa2383897567f8fb2f5cd2b2e4ad20355667cea2 |
-| What graph is current? | PLUTUS_VISION_M1 central graph. |
-| What graph is obsolete? | The archived pre-v5 in-project graph. |
-| Where is old history? | archive/pre-v5-2026-11-08. |
-| What is the branch? | step_agent. |
-| What is push policy? | Explicit operator order only. |
+| a76e450 | docs(m1): back-fill the CP-001 commit in the visual rolodex and record its restore run |
+| 8ae7388 | feat(m1): CP-001 legible E1 pressure map on the golden week (visual checkpoint) |
+| 378153a | fix(gates): grade once per transaction on the prepared state; keep unparseable grader answers |
+| e5d2465 | fix(gates): grade real screenshots - separate text and image budgets |
+| 3b69f65 | docs(handover): package the self-contained M1 build context |
+| 3db3666 | docs(canon): seed the clean v5 M1 context |
+| cf5da64 | fix(gates): stream the grader body over stdin |
+| 1ebeaf4 | build(gates): size the grader prompt to the canon set |
+| 62e2e9f | docs(workflow): bind M1 execution to the git gate |
+| aa35d7e | fix(gates): name an absent PV trailer refusal |
+| 3b28cca | build(gates): install the M1 mechanical commit gate |
+| 9b061e0 | chore(archive): freeze the pre-v5 tree beyond the v1 baseline floor |
 
-## Risk-to-refusal matrix
-| Risk | Named refusal |
+### Required family state at the latest checkpoint (m1/checkpoints/CP-001/comparison.json:1)
+| Family | Status |
 |---|---|
-| archive edit | PV-PROTECTED_PATH |
-| baseline edit | PV-PROTECTED_PATH |
-| canon edit | PV-PROTECTED_PATH |
-| gate tampering | PV-ADMIN |
-| E2/E3 early | PV-M1_SCOPE |
-| multi-asset early | PV-M1_SCOPE |
-| random week early | PV-M1_SCOPE |
-| missing image | PV-VISUAL |
-| hash mismatch | PV-VISUAL_HASH |
-| model malformed | PV-MODEL_VERDICT |
-| model low score | PV-MODEL_REJECT |
-| model down | PV-MODEL_UNAVAILABLE |
-| empty work | PV-EMPTY_WORK |
-| too many work commits | PV-CHECKPOINT_REQUIRED |
-| post-M1 without unlock | PV-M1_STOP |
+| IP resistance zones | WRONG |
+| IP equilibrium zone | MATCHED |
+| IP support zones | WRONG |
+| Liquidity Sweep Zones | WRONG |
+| canonical 4H/D1 supply/demand zones beyond the v1 baseline | WRONG |
+| option-strike targets | WRONG |
+| POI tier and pressure-degree data | MATCHED |
+| strength-based ZFP data | WRONG |
+| BoM/MoM classification | WRONG |
+| mitigation and reaction counts | MISSING |
+| intra-zone precision levels | MISSING |
+| core/spike boundaries where applicable | MISSING |
+| card/run identity and missing-data status | UNOBSERVABLE |
 
-## Appendix interpretation
-- This appendix is measured from the live clean tree and fresh graph; it is not historical narrative.
-- A `NOT STARTED` family state is the current truth, not a defect in the substrate.
-- External Pinebox and graph paths are dependencies, not editable project files.
+### Golden-week outcome at the latest checkpoint (m1/checkpoints/CP-001/outcome.txt)
+```
+{"path":"m1/out/plutus-vision-v5-e1-DXY-2026-07-06.pine","sha":"c9261fb3f5a0fb9b480aa08b3f870d0dddf54746b30b342bd75788545a1c3684","cardSha":"07bce57fe2a937ffb19bb81256bff0ffe542a5bb5eb27c3dc0d6f1fad3a23af1","drawn":16,"cardZones":43,"lsz":1,"opts":5,"sd":5,"band":{"lo":99.869,"hi":102.143}}
+week 2026-07-06 range 100.598-101.275 | zones in range 8 | tested 7 | correct 3 (42.9%)
+Z13  101.236-101.309 resistance  MODERATE-HEAVY 8.5  ZFP 60   pred BREAK -> HELD     MISS
+Z14  101.16-101.223 resistance  MODERATE-HEAVY 8.5  ZFP 60   pred BREAK -> HELD     MISS
+Z15  100.997-101.129 equilibrium MODERATE-HEAVY 9    ZFP 42.5 pred HOLD  -> HELD     OK
+Z16  100.911-100.985 support     MODERATE-HEAVY 9    ZFP 60   pred BREAK -> BROKE    OK
+Z17  100.85-100.893 support     MODERATE       7    ZFP 22.5 pred HOLD  -> BROKE    MISS
+Z18  100.746-100.842 support     MODERATE-HEAVY 8    ZFP 60   pred BREAK -> HELD     MISS
+Z19  100.593-100.695 support     MODERATE-HEAVY 8.5  ZFP 42.5 pred HOLD  -> HELD     OK
+Z20  100.5-100.584 support     MODERATE-HEAVY 8.5  ZFP 40   pred HOLD  -> UNTESTED
+```

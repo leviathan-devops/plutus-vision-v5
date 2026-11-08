@@ -173,3 +173,33 @@
 - This appendix is measured from the live clean tree and fresh graph; it is not historical narrative.
 - A `NOT STARTED` family state is the current truth, not a defect in the substrate.
 - External Pinebox and graph paths are dependencies, not editable project files.
+
+## [2026-11-08T19:00:28+00:00] — S/D move duration, Monday partial, BoM/MoM, pivots count (EN-001..EN-004)
+
+- SYMPTOM: few 4H/1H origins; Monday counted as structure; most origins MoM; 6 daily pivot sets.
+- ROOT CAUSE: move ended at the break not the return; `d.to < cutoff` admitted the live session; geometry-only MoM;
+  loop over every prior day.
+- FIX: m1/src/p5.ts:34, m1/src/p5.ts:75, m1/src/p5.ts:57, m1/src/p1.ts:50.
+- LESSON: read the canon's unit (the return, the completed session, the pause, the count).
+
+## [2026-11-08T19:00:28+00:00] — every zone HEAVY; EUR tiers; zone chaining; reaction count (EN-005, EN-006, EN-009, EN-010)
+
+- ROOT CAUSE: structural dim too loose, POI on every cluster, duplicate formula levels; USD notional for EUR/USD;
+  pairwise chaining; every touch counted.
+- FIX: m1/src/assemble.ts:53, :107, :72, :114; m1/src/options.ts:38.
+- LESSON: a saturated score is a scoring defect.
+
+## [2026-11-08T19:00:28+00:00] — the fabricated Pinebox limitation and the CDP detour (EN-008; FAILURE F-02, F-03)
+
+- SYMPTOM: "Pinebox loads only newest 5000 bars" reported; chart driven over CDP from Python.
+- ROOT CAUSE: the IDE source and a script stood in for the chart and the tool; 5000 1H bars reach ~40 weeks.
+- FIX: `pinebox` tool chart zoom/pan; operator ruling recorded (DECISION_CHAIN).
+- LESSON: the tool's verbs first; a limitation is a claim until measured on the artifact.
+
+## [2026-11-08T19:00:28+00:00] — the gate could not grade a real screenshot; unparseable verdict (EN-012, EN-013)
+
+- SYMPTOM: `REJECT(PV-MODEL_PROMPT): grader request is 1483243 chars (> 220000)`; then
+  `REJECT(PV-MODEL_VERDICT): malformed JSON model answer: {"verdict":"PASS","score":8,...`.
+- ROOT CAUSE: base64 images counted against the text budget; greedy JSON parse and 3 hook invocations per transaction.
+- FIX: gates/commit_gate.py:289, :366, :396, :557; .githooks/reference-transaction:11.
+- LESSON: budgets are per unit; a control that shares the index with real work must run in a clone (state.json slip).
