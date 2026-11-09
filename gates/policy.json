@@ -63,7 +63,6 @@
   "validation[-_]?weeks?/"
  ],
  "forbidden_m1_expansion_assets": [
-  "EURUSD",
   "GBPUSD",
   "AUDUSD"
  ],
@@ -98,5 +97,8 @@
   "admin_sha256": "732f6423962cb7e4adb4c1932abd533b6a436f4c3b04c2210f67fcc35d690b7a",
   "operator_unlock_sha256": "3a27dd41726368229c816f89e48320279e518a77e31fc5c98399f68640e4712b"
  },
- "failure_mode": "FAIL_CLOSED"
+ "failure_mode": "FAIL_CLOSED",
+ "operator_orders": [
+  "2026-11-09: EURUSD golden-week checkpoints and artifacts are in scope - operator: \"use EURUSD to test the golden week\" / \"choose between either euro usd or dxy whichever works for you\""
+ ]
 }
