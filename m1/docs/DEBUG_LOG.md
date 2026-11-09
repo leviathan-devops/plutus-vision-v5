@@ -177,3 +177,19 @@ Scope: the clean M1 build that restarted from handover 3b69f65 on 2026-11-08.
   replay; nothing after the week exists); (2) the E1 layer detects the active trading week from the last candle and
   draws the card for THAT week (cards keyed by week Monday; a week with no card is a named on-chart refusal).
 - **THE LESSON:** scrolling moves the view, not the data; the indicator's week is the last candle's week.
+
+## EN-018 — the room renders tables/labels on the CANVAS, not the DOM (2026-11-09)
+
+- **THE FINDING:** the verifier refused `E1_RENDER_ABSENT` while the picture plainly showed the E1 card table and the zone bands.
+- **THE ROOT CAUSE:** the room's engine (StationPineEngine → vela) draws Pine tables/labels into the chart canvas; the verifier searched DOM text (`/^E1$/`, `E1 card \|`) — the wrong substrate, so a rendered table could never match. A second wrong instrument read `PlutusBacktestChart.e1Ids` (empty `[]` while the render was live — it tracks something else, not the render).
+- **THE FIX:** `m1/tools/pv-verify-room.sh` now judges the CAPTURE PNG: the session gate (the DOM header, which IS DOM) plus a canvas-pixel count of the zone-band colors (rgb(255,152,0)-family, >=300 samples in the chart area).
+- **THE VERIFICATION (proof pair, pasted):** dependency absent → `E1_ZONE_BANDS_ABSENT ... only 27 zone-band pixels (<300)` exit 1; dependency present → `E1_RENDER_VERIFIED ... zone_band_pixels=1726` exit 0.
+- **THE LESSON:** name the substrate before writing the check — a table drawn by a canvas engine is not in the DOM, and an empty id-list is not an empty chart.
+
+## EN-019 — a non-ASCII label string was suspected and disproved (2026-11-09)
+
+- **THE FINDING:** the first golden-week render attempts produced nothing while the DXY sessions rendered.
+- **THE ROOT CAUSE (suspected):** the `€` glyph in the option labels (the only non-ASCII runtime string in the E1 layer).
+- **THE FIX:** `m1/src/options.ts` now writes `EUR` (the E1 layer proven pure ASCII by a full scan).
+- **THE VERIFICATION:** the regenerated composition (f1dc82e9) renders the golden week with native labels; BUT the earlier render failure was actually the missing re-import/re-run trigger (the room does not re-run the script on session attach — the operator's documented refresh flow), not the glyph: the pre-fix script also rendered once re-imported. The ASCII change stands (it removes the suspicion permanently); the trigger lesson is EN-020.
+- **THE LESSON:** remove the suspicious variable AND identify the real trigger; do not credit the fix you cannot isolate.

@@ -7,7 +7,7 @@ export type CardZone = Omit<Zone, 'members'> & { members: CardMember[] };
 export interface Card {
   schema_version: string; asset: string; week_monday: string;
   window: { open: string; cutoff: string; end: string; render_from: string; render_to: string };
-  spot_at_cutoff: number; regime: Regime;
+  spot_at_cutoff: number; regime: Regime; unit: number; pip: number;
   source_manifest: { prior_week: { key: string; high: number; low: number; close: number } };
   pillars: { P3P8: { K: number; audit: string[] }; P5: { sd: SdZone[]; lsz: Lsz[] } };
   zones: CardZone[]; missing_data: { protocol: string; reason: string; impact: string }[];

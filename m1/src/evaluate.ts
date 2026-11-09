@@ -17,6 +17,8 @@ const { card } = readCard(readFileSync(`${ROOT}m1/out/e1-card-${asset}-${monday}
 const wk = await loadBars(fsSource(), asset, '1H', Date.parse(card.window.cutoff), Date.parse(card.window.end));
 const hi = Math.max(...wk.map(b => b.high)), lo = Math.min(...wk.map(b => b.low));
 const spot = card.spot_at_cutoff;
+if (typeof card.unit !== 'number') throw new Error('CARD_UNIT_MISSING: this card predates the unit field - regenerate it with m1/src/run.ts');
+const unit = card.unit;
 interface Row { z: CardZone; t0: number | null; outcome: string; brokeAt: number | null; zfpInForce: number; why: string[]; predicted: string; correct: boolean | null }
 const inRange = card.zones.filter(z => !(z.hi < lo - 0.05 || z.lo > hi + 0.05));
 // nearest to spot first, so a cascade source is resolved before the zone that depends on it
@@ -30,7 +32,7 @@ for (const z of inRange) {
     outcome = 'TOUCHED';
     for (const b of wk.slice(i0)) {
       if (fromAbove ? b.close < z.lo : b.close > z.hi) { outcome = 'BROKE'; brokeAt = b.time; break; }
-      if (fromAbove ? b.high - z.hi >= 0.15 : z.lo - b.low >= 0.15) { outcome = 'HELD'; break; }
+      if (fromAbove ? b.high - z.hi >= 0.15 * unit : z.lo - b.low >= 0.15 * unit) { outcome = 'HELD'; break; }
     }
   }
   let zfp = z.zfp; const why = [`card ${z.zfp}`];

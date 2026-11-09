@@ -112,3 +112,17 @@ evaluate.ts applies time-dependent rules at the first touch; compose.ts labels c
 **The evidence:** composition sha256 5f1c4641a4777780243c02d4fe0bcbca17896fa7990a6ab5e1cc7253015d54e6; card sha256 7f143c2a25e3b58bf65aa59c07df93f85f7c4ed34164651aeaefa890c992ea26; outcome 5/6 (83.3%);
 the 4H BoM supply box equals the oracle box (101.316-101.430, Jul 1 23:00 4H candle).
 **The honest notes:** the operator caught the week split (F-08): v1 on Nov, E1 on Jul 6. CP-002 records it as a WRONG row.
+
+## 2026-11-09 — CP-003: the first full-chain E1 render on the golden week
+
+**The built:** a fresh cloud instance (id 4) driven by the pinebox tool; the composition exported to the room
+store through the export endpoint (`PUT /api/v1/i/<inst>/room/indicators` — the same call the EXPORT button
+makes); the operator's golden-week session (`backtest EUR/USD 1H`, cursor 2026-07-10T15:00Z) attached; the
+E1 card table and the zone bands rendered on the chart.
+**The evidence:** m1/checkpoints/CP-003/visual/runtime-state.png (the table reads `EURUSD 2026-07-06 (detected
+from the last candle)`, 20 zones drawn, band 1.12839-1.15691, K n/a native, the three MISSING rows); composition
+sha f1dc82e9; card sha 93d922396afa18bd; the canvas-pixel verifier proof pair (absent exit 1 / present exit 0).
+**The honest notes:** 6 of 10 comparison families MATCHED; the zone-by-zone accuracy against the operator's
+documented zones is UNOBSERVABLE at the current zoom (the next measurement); intra-zone/core-spikes still off;
+the render is flapping in my second-client window (the reconnect loop) — the pictures are the record of the
+live states.

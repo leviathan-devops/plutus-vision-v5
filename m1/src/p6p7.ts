@@ -14,7 +14,7 @@ function fibLegs(id: string, hi: number, lo: number, label: string, src: string,
 
 /** P6: retracements of the prior-week range and of the latest completed D1 swing leg ("extended swing points"),
  *  plus every round number (.00/.50 major, .25/.75 quarter) inside the 90-day scanned range. No spot filter. */
-export function pillar6(priorWeek: Ohlc, swings: Swing[], d1Range: { lo: number; hi: number }): Level[] {
+export function pillar6(priorWeek: Ohlc, swings: Swing[], d1Range: { lo: number; hi: number }, pip: number): Level[] {
   const out: Level[] = [];
   const upWeek = priorWeek.close >= priorWeek.open;
   out.push(...fibLegs(`W:${priorWeek.key}`, priorWeek.high, priorWeek.low, `fib prior week ${priorWeek.key}`, `tv-bars W ${priorWeek.key}`, upWeek));
@@ -24,9 +24,10 @@ export function pillar6(priorWeek: Ohlc, swings: Swing[], d1Range: { lo: number;
     const up = lastHi.t > lastLo.t;
     out.push(...fibLegs(`swing:${lastLo.date}-${lastHi.date}`, lastHi.price, lastLo.price, `fib swing ${up ? lastLo.date + '->' + lastHi.date : lastHi.date + '->' + lastLo.date}`, `tv-bars D1 swings`, up));
   }
-  for (let q = Math.ceil(d1Range.lo * 4) / 4; q <= d1Range.hi + 1e-9; q += 0.25) {
-    const major = Math.abs((q * 2) - Math.round(q * 2)) < 1e-9;
-    out.push({ id: `P6|round|${q.toFixed(2)}`, pillar: 'P6', kind: 'round', price: q, label: `${major ? 'big figure' : 'quarter'} ${q.toFixed(2)}`, source: ['arithmetic'], tags: [major ? 'MAJOR' : 'QUARTER'] });
+  const quarter = 25 * pip, dec = pip === 0.01 ? 2 : 4;                    // 25-pip quarters / 50-pip big figures on every asset
+  for (let q = Math.ceil(d1Range.lo / quarter - 1e-9) * quarter; q <= d1Range.hi + 1e-9; q += quarter) {
+    const major = Math.abs(q / (2 * quarter) - Math.round(q / (2 * quarter))) < 1e-9;
+    out.push({ id: `P6|round|${q.toFixed(dec)}`, pillar: 'P6', kind: 'round', price: q, label: `${major ? 'big figure' : 'quarter'} ${q.toFixed(dec)}`, source: ['arithmetic'], tags: [major ? 'MAJOR' : 'QUARTER'] });
   }
   return out;
 }
@@ -37,7 +38,7 @@ export interface Arena { lo: number; hi: number; basis: string; ice: 'MISSING'; 
 export function pillar7(conv: Conversion[]): { arena: Arena | null; levels: Level[] } {
   const inc = conv.filter(c => c.tier <= 2 && c.pair === 'EURUSD');
   if (!inc.length) return { arena: null, levels: [] };
-  const lo = Math.min(...inc.map(c => c.dxy)), hi = Math.max(...inc.map(c => c.dxy));
+  const lo = Math.min(...inc.map(c => c.level)), hi = Math.max(...inc.map(c => c.level));
   const arena: Arena = { lo, hi, basis: 'fallback: outermost Tier 1-2 EUR/USD option walls (9-pillar primary mapping)', ice: 'MISSING', cme: 'MISSING' };
   return { arena, levels: [
     { id: 'P7|arena|lo', pillar: 'P7', kind: 'arena', price: lo, label: 'pressure arena floor', source: [arena.basis] },

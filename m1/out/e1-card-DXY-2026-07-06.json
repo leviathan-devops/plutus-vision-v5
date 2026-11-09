@@ -1,5 +1,5 @@
 {
- "sha256": "7f143c2a25e3b58bf65aa59c07df93f85f7c4ed34164651aeaefa890c992ea26",
+ "sha256": "08c073d9856deee6e4a3c6abc9054ce621d9e8523d61bd63a567df4a75b68e67",
  "card": {
   "schema_version": "pv-e1-card/1",
   "asset": "DXY",
@@ -18,6 +18,8 @@
    "ema200Cross": false,
    "basis": "spot 101.006 vs prior week [100.558, 101.595], 5-session change -0.488 vs half-range 0.518"
   },
+  "unit": 1,
+  "pip": 0.01,
   "source_manifest": {
    "bars": "TradingView store DXY 1H/4H/15m",
    "prior_week": {
@@ -1503,7 +1505,7 @@
       "total": 7.5,
       "why": [
        "technical 2 (8 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)",
        "legacy +0.5"
@@ -1518,7 +1520,7 @@
       "total": 7,
       "why": [
        "technical 2 (7 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -1602,7 +1604,7 @@
       "total": 7.5,
       "why": [
        "technical 2 (8 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)",
        "legacy +0.5"
@@ -1617,7 +1619,7 @@
       "total": 7,
       "why": [
        "technical 2 (6 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -1631,7 +1633,7 @@
       "total": 7,
       "why": [
        "technical 2 (7 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -1645,7 +1647,7 @@
       "total": 8,
       "why": [
        "technical 2 (8 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 2",
        "regime 2 (consolidation)"
       ]
@@ -1659,7 +1661,7 @@
       "total": 8,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 2",
        "regime 2 (consolidation)"
       ]
@@ -1673,7 +1675,7 @@
       "total": 8,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 2",
        "regime 2 (consolidation)"
       ]
@@ -1687,7 +1689,7 @@
       "total": 8,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 2",
        "regime 2 (consolidation)"
       ]
@@ -1701,7 +1703,7 @@
       "total": 8,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 2",
        "regime 2 (consolidation)"
       ]
@@ -1715,7 +1717,7 @@
       "total": 8,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 2",
        "regime 2 (consolidation)"
       ]
@@ -1729,7 +1731,7 @@
       "total": 8,
       "why": [
        "technical 2 (4 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 2",
        "regime 2 (consolidation)"
       ]
@@ -1743,7 +1745,7 @@
       "total": 8.5,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 2",
        "regime 2 (consolidation)",
        "legacy +0.5"
@@ -1754,11 +1756,11 @@
       "pillar": "P8",
       "kind": "option",
       "price": 101.38543168705291,
-      "label": "EURUSD 1.135 €1.5bn 07-07",
+      "label": "EURUSD 1.135 EUR1.5bn 07-07",
       "total": 8,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 2",
        "regime 2 (consolidation)"
       ]
@@ -1772,7 +1774,7 @@
       "total": 8,
       "why": [
        "technical 2 (4 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 2",
        "regime 2 (consolidation)"
       ]
@@ -1786,7 +1788,7 @@
       "total": 8,
       "why": [
        "technical 2 (4 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 2",
        "regime 2 (consolidation)"
       ]
@@ -1800,7 +1802,7 @@
       "total": 8,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 2",
        "regime 2 (consolidation)"
       ]
@@ -1814,7 +1816,7 @@
       "total": 8,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 2",
        "regime 2 (consolidation)"
       ]
@@ -1828,7 +1830,7 @@
       "total": 8,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 2",
        "regime 2 (consolidation)"
       ]
@@ -1842,7 +1844,7 @@
       "total": 7,
       "why": [
        "technical 2 (4 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -1856,7 +1858,7 @@
       "total": 7,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -1870,7 +1872,7 @@
       "total": 7,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -1884,7 +1886,7 @@
       "total": 7,
       "why": [
        "technical 2 (6 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -1941,7 +1943,7 @@
       "type": "Intra-Zone Precision Ceiling"
      }
     ],
-    "optionDriver": "EURUSD 1.135 €1.5bn 07-07",
+    "optionDriver": "EURUSD 1.135 EUR1.5bn 07-07",
     "highDensity": true,
     "tight": true,
     "postConsolidation": true,
@@ -1978,7 +1980,7 @@
       "total": 7.5,
       "why": [
        "technical 2 (7 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)",
        "legacy +0.5"
@@ -2062,7 +2064,7 @@
       "total": 7,
       "why": [
        "technical 2 (4 technical within 0.03)",
-       "options 2 (EURUSD 1.135 €1.5bn 07-07)",
+       "options 2 (EURUSD 1.135 EUR1.5bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -2147,7 +2149,7 @@
       "total": 8,
       "why": [
        "technical 2 (6 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "psychological 1 (101.25)",
        "regime 2 (consolidation)"
@@ -2162,7 +2164,7 @@
       "total": 8,
       "why": [
        "technical 2 (7 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "psychological 1 (101.25)",
        "regime 2 (consolidation)"
@@ -2177,7 +2179,7 @@
       "total": 6,
       "why": [
        "technical 2 (7 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "regime 2 (consolidation)"
       ]
      },
@@ -2190,7 +2192,7 @@
       "total": 6,
       "why": [
        "technical 2 (7 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "regime 2 (consolidation)"
       ]
      },
@@ -2203,7 +2205,7 @@
       "total": 6,
       "why": [
        "technical 2 (6 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "regime 2 (consolidation)"
       ]
      },
@@ -2216,7 +2218,7 @@
       "total": 7,
       "why": [
        "technical 2 (4 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -2230,7 +2232,7 @@
       "total": 7.5,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)",
        "legacy +0.5"
@@ -2245,7 +2247,7 @@
       "total": 7,
       "why": [
        "technical 2 (3 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -2259,7 +2261,7 @@
       "total": 7,
       "why": [
        "technical 2 (4 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -2273,7 +2275,7 @@
       "total": 7,
       "why": [
        "technical 2 (4 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -2357,11 +2359,11 @@
       "pillar": "P8",
       "kind": "option",
       "price": 101.12906141555597,
-      "label": "EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07",
+      "label": "EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07",
       "total": 6,
       "why": [
        "technical 1 (1 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -2375,7 +2377,7 @@
       "total": 7,
       "why": [
        "technical 2 (4 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -2389,7 +2391,7 @@
       "total": 7,
       "why": [
        "technical 2 (6 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -2403,7 +2405,7 @@
       "total": 7,
       "why": [
        "technical 2 (8 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -2417,7 +2419,7 @@
       "total": 7,
       "why": [
        "technical 2 (8 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -2431,7 +2433,7 @@
       "total": 7.5,
       "why": [
        "technical 2 (8 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)",
        "legacy +0.5"
@@ -2446,7 +2448,7 @@
       "total": 7.5,
       "why": [
        "technical 2 (8 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)",
        "legacy +0.5"
@@ -2461,7 +2463,7 @@
       "total": 7.5,
       "why": [
        "technical 2 (7 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)",
        "legacy +0.5"
@@ -2476,7 +2478,7 @@
       "total": 7,
       "why": [
        "technical 2 (8 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -2490,7 +2492,7 @@
       "total": 8,
       "why": [
        "technical 2 (9 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -2504,7 +2506,7 @@
       "total": 8,
       "why": [
        "technical 2 (6 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -2518,7 +2520,7 @@
       "total": 8,
       "why": [
        "technical 2 (3 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -2532,7 +2534,7 @@
       "total": 8,
       "why": [
        "technical 2 (4 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -2546,7 +2548,7 @@
       "total": 8,
       "why": [
        "technical 2 (4 technical within 0.03)",
-       "options 2 (EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07)",
+       "options 2 (EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07)",
        "structural 1",
        "regime 2 (consolidation)"
       ]
@@ -2602,7 +2604,7 @@
       "total": 8,
       "why": [
        "technical 2 (7 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "psychological 2 (101.00)",
        "regime 2 (consolidation, in path)"
@@ -2617,7 +2619,7 @@
       "total": 8,
       "why": [
        "technical 2 (7 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "psychological 2 (101.00)",
        "regime 2 (consolidation, in path)"
@@ -2669,7 +2671,7 @@
       "type": "Intra-Zone Precision Floor"
      }
     ],
-    "optionDriver": "EURUSD 1.14 €2.2bn 07-06 = EURUSD 1.14 €1.0bn 07-07",
+    "optionDriver": "EURUSD 1.14 EUR2.2bn 07-06 = EURUSD 1.14 EUR1.0bn 07-07",
     "highDensity": true,
     "tight": true,
     "postConsolidation": false,
@@ -2697,7 +2699,7 @@
       "total": 8,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "psychological 2 (101.00)",
        "regime 2 (consolidation, in path)"
@@ -2712,7 +2714,7 @@
       "total": 8,
       "why": [
        "technical 2 (7 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "psychological 2 (101.00)",
        "regime 2 (consolidation, in path)"
@@ -2727,7 +2729,7 @@
       "total": 8,
       "why": [
        "technical 2 (8 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "psychological 2 (101.00)",
        "regime 2 (consolidation, in path)"
@@ -2742,7 +2744,7 @@
       "total": 8,
       "why": [
        "technical 2 (6 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "psychological 2 (101.00)",
        "regime 2 (consolidation, in path)"
@@ -2757,7 +2759,7 @@
       "total": 6,
       "why": [
        "technical 2 (8 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -2771,7 +2773,7 @@
       "total": 6,
       "why": [
        "technical 2 (8 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -2785,7 +2787,7 @@
       "total": 6,
       "why": [
        "technical 2 (8 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -2799,7 +2801,7 @@
       "total": 6,
       "why": [
        "technical 2 (8 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -2813,7 +2815,7 @@
       "total": 6,
       "why": [
        "technical 2 (8 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -2827,7 +2829,7 @@
       "total": 5,
       "why": [
        "technical 2 (9 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "regime 2 (consolidation, in path)"
       ]
      },
@@ -2840,7 +2842,7 @@
       "total": 5,
       "why": [
        "technical 2 (8 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "regime 2 (consolidation, in path)"
       ]
      },
@@ -2853,7 +2855,7 @@
       "total": 5.5,
       "why": [
        "technical 2 (9 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "regime 2 (consolidation, in path)",
        "legacy +0.5"
       ]
@@ -2867,7 +2869,7 @@
       "total": 5.5,
       "why": [
        "technical 2 (7 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "regime 2 (consolidation, in path)",
        "legacy +0.5"
       ]
@@ -2881,7 +2883,7 @@
       "total": 5,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "regime 2 (consolidation, in path)"
       ]
      },
@@ -2894,7 +2896,7 @@
       "total": 5.5,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "regime 2 (consolidation, in path)",
        "legacy +0.5"
       ]
@@ -2971,7 +2973,7 @@
       "total": 6,
       "why": [
        "technical 2 (4 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -2985,7 +2987,7 @@
       "total": 5,
       "why": [
        "technical 1 (1 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -2995,11 +2997,11 @@
       "pillar": "P8",
       "kind": "option",
       "price": 100.8744571468777,
-      "label": "EURUSD 1.145 €1.4bn 07-06",
+      "label": "EURUSD 1.145 EUR1.4bn 07-06",
       "total": 5,
       "why": [
        "technical 1 (1 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3013,7 +3015,7 @@
       "total": 5.5,
       "why": [
        "technical 1 (1 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)",
        "legacy +0.5"
@@ -3028,7 +3030,7 @@
       "total": 6,
       "why": [
        "technical 2 (2 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3042,7 +3044,7 @@
       "total": 6,
       "why": [
        "technical 2 (3 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3093,7 +3095,7 @@
       "type": "Intra-Zone Precision Ceiling"
      }
     ],
-    "optionDriver": "EURUSD 1.145 €1.4bn 07-06",
+    "optionDriver": "EURUSD 1.145 EUR1.4bn 07-06",
     "highDensity": true,
     "tight": true,
     "postConsolidation": false,
@@ -3121,7 +3123,7 @@
       "total": 6,
       "why": [
        "technical 2 (2 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3135,7 +3137,7 @@
       "total": 5,
       "why": [
        "technical 2 (3 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "regime 2 (consolidation, in path)"
       ]
      },
@@ -3148,7 +3150,7 @@
       "total": 5.5,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "regime 2 (consolidation, in path)",
        "legacy +0.5"
       ]
@@ -3162,7 +3164,7 @@
       "total": 5,
       "why": [
        "technical 2 (7 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "regime 2 (consolidation, in path)"
       ]
      },
@@ -3175,7 +3177,7 @@
       "total": 5,
       "why": [
        "technical 2 (6 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "regime 2 (consolidation, in path)"
       ]
      },
@@ -3188,7 +3190,7 @@
       "total": 5,
       "why": [
        "technical 2 (8 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "regime 2 (consolidation, in path)"
       ]
      },
@@ -3201,7 +3203,7 @@
       "total": 5.5,
       "why": [
        "technical 2 (7 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "regime 2 (consolidation, in path)",
        "legacy +0.5"
       ]
@@ -3215,7 +3217,7 @@
       "total": 6.5,
       "why": [
        "technical 2 (7 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)",
        "legacy +0.5"
@@ -3230,7 +3232,7 @@
       "total": 6,
       "why": [
        "technical 2 (7 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3244,7 +3246,7 @@
       "total": 7,
       "why": [
        "technical 2 (7 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "psychological 1 (100.75)",
        "regime 2 (consolidation, in path)"
@@ -3259,7 +3261,7 @@
       "total": 7,
       "why": [
        "technical 2 (6 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "psychological 1 (100.75)",
        "regime 2 (consolidation, in path)"
@@ -3274,7 +3276,7 @@
       "total": 7,
       "why": [
        "technical 2 (3 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "psychological 1 (100.75)",
        "regime 2 (consolidation, in path)"
@@ -3289,7 +3291,7 @@
       "total": 7,
       "why": [
        "technical 2 (3 technical within 0.03)",
-       "options 1 (EURUSD 1.145 €1.4bn 07-06)",
+       "options 1 (EURUSD 1.145 EUR1.4bn 07-06)",
        "structural 1",
        "psychological 1 (100.75)",
        "regime 2 (consolidation, in path)"
@@ -3372,7 +3374,7 @@
       "total": 7,
       "why": [
        "technical 2 (4 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3386,7 +3388,7 @@
       "total": 7,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3400,7 +3402,7 @@
       "total": 7,
       "why": [
        "technical 2 (6 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3414,7 +3416,7 @@
       "total": 7,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3428,7 +3430,7 @@
       "total": 7.5,
       "why": [
        "technical 2 (8 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)",
        "legacy +0.5"
@@ -3443,7 +3445,7 @@
       "total": 7,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3457,7 +3459,7 @@
       "total": 7,
       "why": [
        "technical 2 (7 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3471,7 +3473,7 @@
       "total": 7,
       "why": [
        "technical 2 (4 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3485,7 +3487,7 @@
       "total": 7,
       "why": [
        "technical 2 (8 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3495,11 +3497,11 @@
       "pillar": "P8",
       "kind": "option",
       "price": 100.62159908349079,
-      "label": "EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07",
+      "label": "EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07",
       "total": 7,
       "why": [
        "technical 2 (6 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3513,7 +3515,7 @@
       "total": 7,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3527,7 +3529,7 @@
       "total": 7,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3541,7 +3543,7 @@
       "total": 7,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3555,7 +3557,7 @@
       "total": 7.5,
       "why": [
        "technical 2 (6 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)",
        "legacy +0.5"
@@ -3570,7 +3572,7 @@
       "total": 7,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3611,7 +3613,7 @@
       "type": "Intra-Zone Precision Ceiling"
      }
     ],
-    "optionDriver": "EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07",
+    "optionDriver": "EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07",
     "highDensity": true,
     "tight": true,
     "postConsolidation": false,
@@ -3656,7 +3658,7 @@
       "total": 7,
       "why": [
        "technical 2 (5 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -3670,7 +3672,7 @@
       "total": 7.5,
       "why": [
        "technical 2 (2 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)",
        "legacy +0.5"
@@ -3685,7 +3687,7 @@
       "total": 7.5,
       "why": [
        "technical 2 (2 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)",
        "legacy +0.5"
@@ -3700,7 +3702,7 @@
       "total": 7,
       "why": [
        "technical 2 (2 technical within 0.03)",
-       "options 2 (EURUSD 1.15 €2.4bn 07-06 = EURUSD 1.15 €2.8bn 07-07)",
+       "options 2 (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -4161,7 +4163,7 @@
       "total": 7,
       "why": [
        "technical 2 (2 technical within 0.03)",
-       "options 1 (EURUSD 1.16 €1.0bn 07-06)",
+       "options 1 (EURUSD 1.16 EUR1.0bn 07-06)",
        "structural 1",
        "psychological 1 (100.25)",
        "regime 2 (consolidation, in path)"
@@ -4176,7 +4178,7 @@
       "total": 5,
       "why": [
        "technical 1 (0 technical within 0.03)",
-       "options 1 (EURUSD 1.16 €1.0bn 07-06)",
+       "options 1 (EURUSD 1.16 EUR1.0bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -4190,7 +4192,7 @@
       "total": 5,
       "why": [
        "technical 1 (0 technical within 0.03)",
-       "options 1 (EURUSD 1.16 €1.0bn 07-06)",
+       "options 1 (EURUSD 1.16 EUR1.0bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -4278,11 +4280,11 @@
       "pillar": "P8",
       "kind": "option",
       "price": 100.12104391021802,
-      "label": "EURUSD 1.16 €1.0bn 07-06",
+      "label": "EURUSD 1.16 EUR1.0bn 07-06",
       "total": 5,
       "why": [
        "technical 1 (0 technical within 0.03)",
-       "options 1 (EURUSD 1.16 €1.0bn 07-06)",
+       "options 1 (EURUSD 1.16 EUR1.0bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -4296,7 +4298,7 @@
       "total": 5,
       "why": [
        "technical 1 (0 technical within 0.03)",
-       "options 1 (EURUSD 1.16 €1.0bn 07-06)",
+       "options 1 (EURUSD 1.16 EUR1.0bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -4310,7 +4312,7 @@
       "total": 6,
       "why": [
        "technical 2 (2 technical within 0.03)",
-       "options 1 (EURUSD 1.16 €1.0bn 07-06)",
+       "options 1 (EURUSD 1.16 EUR1.0bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)"
       ]
@@ -4324,7 +4326,7 @@
       "total": 6.5,
       "why": [
        "technical 2 (2 technical within 0.03)",
-       "options 1 (EURUSD 1.16 €1.0bn 07-06)",
+       "options 1 (EURUSD 1.16 EUR1.0bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)",
        "legacy +0.5"
@@ -4339,7 +4341,7 @@
       "total": 5.5,
       "why": [
        "technical 1 (1 technical within 0.03)",
-       "options 1 (EURUSD 1.16 €1.0bn 07-06)",
+       "options 1 (EURUSD 1.16 EUR1.0bn 07-06)",
        "structural 1",
        "regime 2 (consolidation, in path)",
        "legacy +0.5"
@@ -4354,7 +4356,7 @@
       "total": 6,
       "why": [
        "technical 1 (1 technical within 0.03)",
-       "options 1 (EURUSD 1.16 €1.0bn 07-06)",
+       "options 1 (EURUSD 1.16 EUR1.0bn 07-06)",
        "psychological 2 (100.00)",
        "regime 2 (consolidation, in path)"
       ]
@@ -4400,7 +4402,7 @@
       "type": "Intra-Zone Precision Floor"
      }
     ],
-    "optionDriver": "EURUSD 1.16 €1.0bn 07-06",
+    "optionDriver": "EURUSD 1.16 EUR1.0bn 07-06",
     "highDensity": true,
     "tight": true,
     "postConsolidation": false,

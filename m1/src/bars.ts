@@ -18,7 +18,7 @@ export async function loadBars(src: BarSource, asset: string, tf: string, fromMs
   const out = new Map<number, Bar>();
   for (let d = new Date(Date.UTC(new Date(fromMs).getUTCFullYear(), new Date(fromMs).getUTCMonth(), 1)); d.getTime() < toMs; d.setUTCMonth(d.getUTCMonth() + 1)) {
     const ym = d.toISOString().slice(0, 7);
-    if (!have.has(ym)) throw new Error(`BARS_MONTH_ABSENT: ${symbol}/${tf}/${ym}`);
+    if (!have.has(ym)) throw new Error(`BARS_MONTH_ABSENT: no ${tf} bars for ${symbol} in ${ym} - the Pinebox TradingView store has no file for that month; fetch it (pinebox data fetch-latest) or run the engine for a week the store covers`);
     for (const b of await src.month(symbol, tf, ym)) if (b.time >= fromMs && b.time < toMs) out.set(b.time, b);
   }
   const bars = [...out.values()].sort((a, b) => a.time - b.time);

@@ -1,0 +1,71 @@
+{
+ "schema": 1,
+ "checkpoint": "CP-003",
+ "asset": "EURUSD",
+ "week": "2026-07-06",
+ "rows": [
+  {
+   "family": "active-week detection from the last candle",
+   "status": "MATCHED",
+   "evidence": "runtime-state.png table row: \"Asset / week: EURUSD 2026-07-06 (detected from the last candle)\" on a session whose last bar is Jul 10 15:00 UTC"
+  },
+  {
+   "family": "card/run identity and missing-data status",
+   "status": "MATCHED",
+   "evidence": "runtime-state.png table: card 93d922396afa18bd pv-e1-card/1, cutoff 2026-07-06T08:00Z spot 1.14265, regime consolidation up, 20 zones drawn, band 1.12839-1.15691, K n/a native, MISSING P3/P8+P4+P7 rows"
+  },
+  {
+   "family": "option-strike targets (P8 native)",
+   "status": "MATCHED",
+   "evidence": "runtime-state.png labels: \"EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07 -> 1.15000\" (native prices, not DXY-converted)"
+  },
+  {
+   "family": "canonical 4H/1H S/D boxes on the chart",
+   "status": "MATCHED",
+   "evidence": "runtime-state.png: \"1H (Unmitigated) | MoM\" box label drawn in the golden-week region"
+  },
+  {
+   "family": "zone rendering (MODERATE+ in band)",
+   "status": "MATCHED",
+   "evidence": "runtime-state.png: red/orange resistance bands 1.150-1.156, teal support bands 1.130-1.145, labels UPPER R / MID-RAN; canvas-pixel instrument = 1726 zone-band samples (absent control = 27)"
+  },
+  {
+   "family": "IP resistance zones vs the operator oracle bands",
+   "status": "UNOBSERVABLE",
+   "evidence": "the chart view spans Apr-Jul and the golden-week labels overlap at this zoom; a zoomed zone-by-zone comparison against Golden_Operator_Trade_Feedback_EU_GU.md is the next measurement (not yet done)"
+  },
+  {
+   "family": "Liquidity Sweep Zones on the chart",
+   "status": "UNOBSERVABLE",
+   "evidence": "LSZ boxes not individually confirmed at this zoom; pending the zoomed comparison"
+  },
+  {
+   "family": "strength-based ZFP accuracy vs the oracle",
+   "status": "UNOBSERVABLE",
+   "evidence": "evaluate.ts outcome table for the EURUSD card not yet run against this render"
+  },
+  {
+   "family": "intra-zone / core-spikes / reaction counts on chart",
+   "status": "MISSING",
+   "evidence": "e1ShowIntra defaults false; reaction state absent from the current labels"
+  },
+  {
+   "family": "v1 LuxAlgo structure labels removed",
+   "status": "MATCHED",
+   "evidence": "runtime-state.png: no BOS/ChoCH/EQH labels anywhere (label-off composition)"
+  }
+ ],
+ "summary": {
+  "matched": 6,
+  "wrong": 0,
+  "missing": 1,
+  "extra": 0,
+  "unobservable": 3
+ },
+ "visual_sha256": {
+  "m1/checkpoints/CP-003/visual/runtime-state.png": "07a4789a9f40ea7872f2c5aae743e756b10cfc71c452b77e85b19dff2f3e8c0f",
+  "m1/checkpoints/CP-003/visual/operator-grade-clean.png": "ba84cb395f01c64874af78383e1c52d6aae738fc3d80d725a1fd54083b5f9232",
+  "m1/checkpoints/CP-003/visual/absent-control.png": "521eef93d9ccaa9ec8263f41f49264415c1af2a3cde02d44273a57f8e06caa9f"
+ },
+ "note": "verdict instrument: the canvas-pixel verifier /tmp/pv-verify-room.sh (proof pair: absent=E1_ZONE_BANDS_ABSENT exit1, present=E1_RENDER_VERIFIED exit0)"
+}

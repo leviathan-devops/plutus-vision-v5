@@ -26,7 +26,8 @@ function wickOf(d: Ohlc, side: 'low' | 'high') { return side === 'low' ? Math.mi
  *  The move begins at the first candle after a swing extreme that closes in the move's direction with a body at least the
  *  series' median body (a displacement candle, measured on the same timeframe's pre-cutoff bars); the origin candle is the
  *  one immediately before it (:1353), which may be the swing-extreme candle itself. */
-export function scanSd(bars: Bar[], tf: '4H' | '1H', cutoff: number, minMove = 0.5, minDays = 3): SdZone[] {
+export function scanSd(bars: Bar[], tf: '4H' | '1H', cutoff: number, unit: number, minDays = 3): SdZone[] {
+  const minMove = 0.5 * unit;   // canon 0.5 DXY points = 50 pips, pip-parity (m1/src/units.ts)
   const pre = bars.filter(b => b.time < cutoff); const out: SdZone[] = [];
   const sess = pre.map(b => sessionDate(b.time));
   const bodies = pre.map(b => Math.abs(b.close - b.open)).sort((a, b) => a - b); const medBody = bodies[Math.floor(bodies.length / 2)] ?? 0;
@@ -85,14 +86,14 @@ export function scanSd(bars: Bar[], tf: '4H' | '1H', cutoff: number, minMove = 0
       inZone = touches;
       if (z.side === 'demand' ? b.close < z.lo : b.close > z.hi) { z.brokenAt = b.time; break; }
     }
-    if (z.hi - z.lo > 0.40) z.rejected = 'width > 0.40 (:1388)';
+    if (z.hi - z.lo > 0.40 * unit) z.rejected = `width > ${(0.40 * unit).toFixed(4)} (:1388)`;
   }
   // the same-timeframe opposite-type overlap prohibition (:1359): the later zone is rejected
   for (const z of out) if (!z.rejected) for (const y of out) if (y !== z && !y.rejected && y.side !== z.side && y.t < z.t && !y.brokenAt && y.lo <= z.hi && y.hi >= z.lo) z.rejected = `overlaps ${y.side} ${y.date} (:1359)`;
   return out;
 }
 
-export function pillar5(d1: Ohlc[], h4: Bar[], h1: Bar[], cutoff: number, spot: number, priorWeek: Ohlc, weekly: Ohlc[]): P5Out {
+export function pillar5(d1: Ohlc[], h4: Bar[], h1: Bar[], cutoff: number, spot: number, priorWeek: Ohlc, weekly: Ohlc[], unit: number): P5Out {
   const audit: string[] = [];
   const pre = d1.filter(d => d.key < sessionDate(cutoff));       // completed sessions only; Monday's partial is spot, not structure
   const last = pre[pre.length - 1];
@@ -103,12 +104,12 @@ export function pillar5(d1: Ohlc[], h4: Bar[], h1: Bar[], cutoff: number, spot: 
   for (let i = 0; i < all.length; i++) for (const side of ['low', 'high'] as const) {
     if (side === 'low' ? !isSwingLow(all, i) : !isSwingHigh(all, i)) continue;
     const d = all[i]; const w = wickOf(d, side); const pos = (d.close - d.low) / Math.max(1e-9, d.high - d.low);
-    const qualified = w >= 0.15 && (side === 'low' ? pos >= 0.5 : pos <= 0.5);
+    const qualified = w >= 0.15 * unit && (side === 'low' ? pos >= 0.5 : pos <= 0.5);   // wick 0.15 DXY = 15 pips
     const s: Swing = { price: side === 'low' ? d.low : d.high, date: d.key, t: d.from, wick: w, side, qualified, legacy: d.from < t90 };
     (qualified ? swings : minor).push(s);
   }
   // 180-day conditional extension (:1219): keep 90-180d qualified swings only when spot is within 1.0 of one of them
-  const ext = swings.some(s => s.legacy && Math.abs(s.price - spot) <= 1.0);
+  const ext = swings.some(s => s.legacy && Math.abs(s.price - spot) <= 1.0 * unit);   // 180d extension reach 1.0 DXY = 100 pips
   const sw = swings.filter(s => !s.legacy || ext); const mn = minor.filter(s => !s.legacy);
   audit.push(`P5 Step 0: D1 sessions ${all.length} (180d) | qualified swings ${sw.length} (legacy ${sw.filter(s => s.legacy).length}, 180d extension ${ext ? 'ON' : 'OFF'}) | minor swings ${mn.length}`);
   // Step 0d order blocks on D1
@@ -123,7 +124,7 @@ export function pillar5(d1: Ohlc[], h4: Bar[], h1: Bar[], cutoff: number, spot: 
     let extp = bull ? hi : lo, extAt = k - 1;
     for (let j = k; j < win.length; j++) { if (bull ? win[j].low < lo : win[j].high > hi) break; if (bull ? win[j].high > extp : win[j].low < extp) { extp = bull ? win[j].high : win[j].low; extAt = j; } }
     const move = bull ? extp - hi : lo - extp; const days = extAt - (k - 1);
-    if (move >= 1.0 && days >= 5) ob.push({ side, lo, hi, from: base[0].key, to: base[base.length - 1].key, move, days, highConviction: move >= 2.0 && days >= 10 });
+    if (move >= 1.0 * unit && days >= 5) ob.push({ side, lo, hi, from: base[0].key, to: base[base.length - 1].key, move, days, highConviction: move >= 2.0 * unit && days >= 10 });
   }
   audit.push(`P5 Step 0d: order blocks ${ob.length} (high-conviction ${ob.filter(o => o.highConviction).length})`);
   // Step 0e confluent floors/ceilings
@@ -140,7 +141,7 @@ export function pillar5(d1: Ohlc[], h4: Bar[], h1: Bar[], cutoff: number, spot: 
     levels.push({ id: `P5|ob|${o.side}|${o.from}|hi`, pillar: 'P5', kind: 'order-block', price: o.hi, label: `D1 ${o.side} OB ${o.from} high`, timeframe: 'D', formedAt: Date.parse(o.from), source: [`tv-bars D1 ${o.from}..${o.to}`], side: o.side === 'demand' ? 'support' : 'resistance', tags: o.highConviction ? ['High-Conviction Order Block'] : [], meta: { ...o } });
   }
   // Step 0f 4H and 0g 1H singular-candle S/D
-  const sd = [...scanSd(h4, '4H', cutoff), ...scanSd(h1, '1H', cutoff)];
+  const sd = [...scanSd(h4, '4H', cutoff, unit), ...scanSd(h1, '1H', cutoff, unit)];
   // noise rejection (:1387-1391) parts that need no IP map: MoM with 3X+ mitigations; >3 weeks old with no interaction in the last 3 weeks
   for (const z of sd) if (!z.rejected) {
     if (z.type === 'MoM' && z.mitigations >= 3) z.rejected = 'MoM 3X+ mitigated (:1389)';
@@ -154,10 +155,10 @@ export function pillar5(d1: Ohlc[], h4: Bar[], h1: Bar[], cutoff: number, spot: 
   // Step 0.45 LSZ + 0.45a extension + 0.45d BoM confluence + 0.45e active trigger
   const lsz: Lsz[] = sw.map(s => {
     const demand = s.side === 'low';
-    const lo = demand ? s.price : s.price - 0.05, hi = demand ? s.price + 0.05 : s.price;
-    const extLo = demand ? s.price - 0.10 : lo, extHi = demand ? hi : s.price + 0.10;
+    const lo = demand ? s.price : s.price - 0.05 * unit, hi = demand ? s.price + 0.05 * unit : s.price;   // LSZ band 5 pips
+    const extLo = demand ? s.price - 0.10 * unit : lo, extHi = demand ? hi : s.price + 0.10 * unit;      // extension 10 pips
     const bom = sd.find(z => !z.rejected && z.type === 'BoM' && z.tf === '4H' && (demand ? z.side === 'demand' : z.side === 'supply') && z.lo <= extHi && z.hi >= extLo);
-    const near = Math.min(Math.abs(lo - spot), Math.abs(hi - spot)) <= 0.30;
+    const near = Math.min(Math.abs(lo - spot), Math.abs(hi - spot)) <= 0.30 * unit;   // active trigger reach 30 pips
     return { side: demand ? 'demand' : 'supply', lo, hi, extLo, extHi, source: `D1 swing ${s.side} ${s.date}`, date: s.date,
       priority: near ? 'ACTIVE SL TRIGGER' : 'STANDARD', confluentBoM: bom ? `${bom.tf} ${bom.side} ${bom.date}` : undefined } as Lsz;
   });
@@ -166,13 +167,13 @@ export function pillar5(d1: Ohlc[], h4: Bar[], h1: Bar[], cutoff: number, spot: 
   // Step 0.5 magnets
   const magnets: Magnet[] = []; const seen = new Set<string>();
   for (const a of sw) {
-    const group = sw.filter(b => b.side === a.side && Math.abs(b.price - a.price) <= 0.05);
+    const group = sw.filter(b => b.side === a.side && Math.abs(b.price - a.price) <= 0.05 * unit);   // magnet cluster 5 pips
     const dates = [...new Set(group.map(g => g.date))];
     const key = `${a.side}|${dates.sort().join(',')}`;
     if (dates.length >= 2 && !seen.has(key)) { seen.add(key);
       const wsum = group.reduce((s, g) => s + g.wick, 0); const price = group.reduce((s, g) => s + g.price * g.wick, 0) / wsum;
       magnets.push({ price, dates, type: a.side === 'low' ? 'Repeated Low Magnet' : 'Repeated High Magnet', bonus: dates.length >= 3 ? 2 : 1.5, institutional: false }); }
-    const rr = sw.filter(b => b.side !== a.side && Math.abs(b.price - a.price) <= 0.05);
+    const rr = sw.filter(b => b.side !== a.side && Math.abs(b.price - a.price) <= 0.05 * unit);      // role-reversal cluster 5 pips
     if (rr.length && a.side === 'low') { const k2 = `rr|${a.date}|${rr.map(r => r.date).join(',')}`; if (!seen.has(k2)) { seen.add(k2);
       magnets.push({ price: (a.price + rr.reduce((s, r) => s + r.price, 0)) / (1 + rr.length), dates: [a.date, ...rr.map(r => r.date)], type: 'Role Reversal Magnet', bonus: 2, institutional: false }); } }
   }

@@ -1,0 +1,52 @@
+{
+ "schema": 1,
+ "id": "CP-003",
+ "type": "checkpoint",
+ "asset": "EURUSD",
+ "week": "2026-07-06",
+ "created_at": "2026-11-09T00:51:28+00:00",
+ "title": "first full-chain E1 render on the golden week (fresh instance4, exported composition, active-week detection)",
+ "claims": {
+  "evidence_ready": true,
+  "engine_ready": false,
+  "composition_ready": true,
+  "render_observed": true
+ },
+ "comparison": "m1/checkpoints/CP-003/comparison.json",
+ "visual": [
+  {
+   "path": "m1/checkpoints/CP-003/visual/runtime-state.png",
+   "expectation": "the room (REPLAY-EURUSD, bar 8927 = Jul 10 19:00) showing the E1 card table (asset/week detected from the last candle) and the zone bands on the golden week"
+  },
+  {
+   "path": "m1/checkpoints/CP-003/visual/absent-control.png",
+   "expectation": "the same session with NO E1 render (post-reload empty chart) - the negative control for the pixel instrument"
+  }
+ ],
+ "card": "m1/out/e1-card-EURUSD-2026-07-06.json",
+ "card_sha256": "93d922396afa18bda3da45d62462753a11718de7da3db9545b6bec58881fa9e9",
+ "composition": "m1/out/plutus-vision-v5-e1.pine",
+ "composition_sha256": "f1dc82e9552324d4b6dee3bbeaf142629724360625c04476879edac3bfda70a3",
+ "pinebox": {
+  "mode": "cloud",
+  "surface": "plutus-browser window on the Orca Linux display + tool id 4",
+  "instance": "4",
+  "session": "bt-mw7m24wz-73ecd3 (backtest EUR/USD 1H, cursor 2026-07-10T15:00Z, playing false)",
+  "frame": {
+   "asset": "EURUSD",
+   "tf": "1H",
+   "cursor_bar": 8927,
+   "total_bars": 10972
+  },
+  "shot_sha256": "07a4789a9f40ea7872f2c5aae743e756b10cfc71c452b77e85b19dff2f3e8c0f"
+ },
+ "regenerate": [
+  "bun m1/src/run.ts EURUSD 2026-07-06",
+  "bun m1/src/compose.ts",
+  "PUT m1/out/plutus-vision-v5-e1.pine to /api/v1/i/<inst>/room/indicators",
+  "/tmp/pv-reimport.sh",
+  "/tmp/pv-verify-room.sh"
+ ],
+ "determinism": "CP-003 composition f1dc82e9 (ASCII-label build, E1 layer pure ASCII proven)",
+ "verifier": "/tmp/pv-verify-room.sh (canvas-pixel instrument); proof pair in m1/docs/DEBUG_LOG.md"
+}

@@ -36,13 +36,14 @@ export function regimeAt(spot: number, priorWeek: { high: number; low: number },
   return { state, direction, ema200Cross, basis: `spot ${spot} vs prior week [${priorWeek.low}, ${priorWeek.high}], 5-session change ${ch.toFixed(3)} vs half-range ${(r / 2).toFixed(3)}` };
 }
 
-function scoreLevel(l: Level, all: Level[], regime: Regime, spot: number): ScoredLevel {
+function scoreLevel(l: Level, all: Level[], regime: Regime, spot: number, unit: number): ScoredLevel {
+  const pip = unit * 0.01;
   const why: string[] = []; const near = (d: number, f: (x: Level) => boolean) => all.filter(x => x !== l && f(x) && Math.abs(x.price - l.price) <= d);
   const isTech = TECH.has(l.kind);
-  const techExact = (isTech ? 1 : 0) + near(0.03, x => TECH.has(x.kind) && x.id.split('|')[1] !== l.id.split('|')[1]).length;
-  const technical = techExact >= 2 ? 2 : (isTech || near(0.10, x => TECH.has(x.kind)).length) ? 1 : 0;
-  if (technical) why.push(`technical ${technical} (${techExact} technical within 0.03)`);
-  const opts = [l, ...near(0.15, x => x.kind === 'option')].filter(x => x.kind === 'option' && Math.abs(x.price - l.price) <= ((x.meta?.band as number) ?? 0.10) && x.meta?.r1);
+  const techExact = (isTech ? 1 : 0) + near(0.03 * unit, x => TECH.has(x.kind) && x.id.split('|')[1] !== l.id.split('|')[1]).length;
+  const technical = techExact >= 2 ? 2 : (isTech || near(0.10 * unit, x => TECH.has(x.kind)).length) ? 1 : 0;
+  if (technical) why.push(`technical ${technical} (${techExact} technical within ${0.03 * unit})`);
+  const opts = [l, ...near(0.15 * unit, x => x.kind === 'option')].filter(x => x.kind === 'option' && Math.abs(x.price - l.price) <= ((x.meta?.band as number) ?? 0.10 * unit) && x.meta?.r1);
   const options = opts.some(o => o.meta!.tier === 1) ? 2 : opts.some(o => o.meta!.tier === 2) ? 1 : 0;
   if (options) why.push(`options ${options} (${opts.map(o => o.label).join(', ')})`);
   const analyst = 0;                                                       // P4: no pre-cutoff explicit levels acquired (missing_data)
@@ -51,18 +52,20 @@ function scoreLevel(l: Level, all: Level[], regime: Regime, spot: number): Score
   // extremes are qualified swings, magnets, LSZs, order blocks and S/D origins. Minor swings (0h) are gap-fill only.
   const EXT = ['swing-low', 'swing-high', 'magnet', 'lsz', 'order-block', 'sd-4h', 'sd-1h'];
   const isExt = (x: Level) => EXT.includes(x.kind);
-  const exactExt = isExt(l) || near(0.03, isExt).length > 0;
-  const exactAnchor = l.kind === 'prior-close' || near(0.03, x => x.kind === 'prior-close').length > 0;
-  const structural = exactExt && exactAnchor ? 2 : (exactExt || exactAnchor || near(0.10, isExt).length) ? 1 : 0;
+  const exactExt = isExt(l) || near(0.03 * unit, isExt).length > 0;
+  const exactAnchor = l.kind === 'prior-close' || near(0.03 * unit, x => x.kind === 'prior-close').length > 0;
+  const structural = exactExt && exactAnchor ? 2 : (exactExt || exactAnchor || near(0.10 * unit, isExt).length) ? 1 : 0;
   if (structural) why.push(`structural ${structural}`);
-  const frac = (x: number) => Math.abs(x * 4 - Math.round(x * 4)) / 4;
-  const rn = Math.round(l.price * 4) / 4; const major = Math.abs(rn * 2 - Math.round(rn * 2)) < 1e-9;
-  const psychological = frac(l.price) <= 0.03 ? (major ? 2 : 1) : 0;
-  if (psychological) why.push(`psychological ${psychological} (${rn.toFixed(2)})`);
+  // quarter grid in pips: 25-pip figures get 1, 50-pip big figures get 2, within 3 pips (DXY: 0.25/0.50/0.03 — identical to the canon's absolute numbers)
+  const quarter = 25 * pip, half = 50 * pip, dec = pip === 0.01 ? 2 : 4;
+  const nearestQ = Math.round(l.price / quarter) * quarter; const distQ = Math.abs(l.price - nearestQ);
+  const major = Math.abs(nearestQ / half - Math.round(nearestQ / half)) < 1e-9;
+  const psychological = distQ <= 3 * pip ? (major ? 2 : 1) : 0;
+  if (psychological) why.push(`psychological ${psychological} (${nearestQ.toFixed(dec)})`);
   const towards = regime.direction === 'up' ? l.price > spot : regime.direction === 'down' ? l.price < spot : false;
   const regimeDim = regime.state === 'consolidation' ? 2 : regime.state === 'momentum' ? (towards ? 1 : 2) : (towards ? 0 : 1);
   why.push(`regime ${regimeDim} (${regime.state}${towards ? ', in path' : ''})`);
-  const bonuses = [l, ...near(0.03, x => (x.extremeBonus ?? 0) > 0)].map(x => x.extremeBonus ?? 0);
+  const bonuses = [l, ...near(0.03 * unit, x => (x.extremeBonus ?? 0) > 0)].map(x => x.extremeBonus ?? 0);
   const bonus = Math.min(2, Math.max(0, ...bonuses));
   const legacy = l.legacy ? 0.5 : 0;
   const dims = { technical, options, analyst, structural, psychological, regime: regimeDim };
@@ -71,7 +74,7 @@ function scoreLevel(l: Level, all: Level[], regime: Regime, spot: number): Score
 }
 
 export interface AssembleIn { levels: Level[]; sd: SdZone[]; spot: number; cutoff: number; regime: Regime; preBars: Bar[]; priorDayCloses: { key: string; close: number }[]; optionExpiryTimes: Record<string, number>;
-  arena: { lo: number; hi: number } }   // the week's expected range (run.ts render_policy band): a BoM outside it is not this week's target
+  arena: { lo: number; hi: number }; unit: number }   // unit = pip-parity scale (m1/src/units.ts); arena = the week's expected range (run.ts render_policy band): a BoM outside it is not this week's target
 
 export function assemble(inp: AssembleIn): { zones: Zone[]; scored: ScoredLevel[]; gapFills: { price: number; signals: string[] }[]; reverify: string; audit: string[] } {
   const { spot, regime } = inp; const audit: string[] = [];
@@ -83,7 +86,7 @@ export function assemble(inp: AssembleIn): { zones: Zone[]; scored: ScoredLevel[
     if (e) { e.source = [...new Set([...e.source, ...l.source])]; e.label = `${e.label} = ${l.label}`; } else byPrice.set(k, { ...l, source: [...l.source] });
   }
   const zoneable = [...byPrice.values()];
-  const scored = zoneable.map(l => scoreLevel(l, zoneable, regime, spot)).sort((a, b) => b.price - a.price);
+  const scored = zoneable.map(l => scoreLevel(l, zoneable, regime, spot, inp.unit)).sort((a, b) => b.price - a.price);
   // R3: clustering scan
   const dens = (l: ScoredLevel, d: number) => scored.filter(x => x !== l && Math.abs(x.price - l.price) <= d).length;
   // R4: zones form AROUND clusters: seed from the highest-scoring unassigned level and take every unassigned level within
@@ -91,7 +94,7 @@ export function assemble(inp: AssembleIn): { zones: Zone[]; scored: ScoredLevel[
   const groups: ScoredLevel[][] = []; const taken = new Set<ScoredLevel>();
   for (const seed of [...scored].sort((a, b) => b.total - a.total || b.price - a.price)) {
     if (taken.has(seed)) continue;
-    const g = scored.filter(x => !taken.has(x) && Math.abs(x.price - seed.price) <= 0.075);
+    const g = scored.filter(x => !taken.has(x) && Math.abs(x.price - seed.price) <= 0.075 * inp.unit);
     g.forEach(x => taken.add(x)); groups.push(g.sort((a, b) => b.price - a.price));
   }
   groups.sort((a, b) => b[0].price - a[0].price);
@@ -101,7 +104,7 @@ export function assemble(inp: AssembleIn): { zones: Zone[]; scored: ScoredLevel[
     const role = lo > spot ? 'resistance' : hi < spot ? 'support' : 'equilibrium';
     const modifiers: string[] = []; let score = top.total; const isIp = top.total >= 6;   // an IP zone = MODERATE+ on its own levels
     // consolidation modifier (:1505): the zone holds a 4H/1H origin formed after consolidation
-    const sdIn = inp.sd.filter(z => !z.rejected && z.lo <= hi + 0.05 && z.hi >= lo - 0.05);
+    const sdIn = inp.sd.filter(z => !z.rejected && z.lo <= hi + 0.05 * inp.unit && z.hi >= lo - 0.05 * inp.unit);
     const postConsolidation = sdIn.some(z => z.postConsolidation);
     if (postConsolidation) { score += 1; modifiers.push('POST-CONSOLIDATION ZONE +1'); }
     // 9.7 POI tier: 4H BoM 0X-1X overlapping -> Tier 1 +2; else IP-only Tier 2 +1
@@ -128,7 +131,7 @@ export function assemble(inp: AssembleIn): { zones: Zone[]; scored: ScoredLevel[
       const touches = b.low <= hi && b.high >= lo;
       if (touches) { if (side && !entered) entered = side; continue; }
       const now = b.low > hi ? 'above' : 'below';
-      if (entered && now === entered && (now === 'above' ? b.high - hi : lo - b.low) >= 0.15) { reactions++; entered = null; }
+      if (entered && now === entered && (now === 'above' ? b.high - hi : lo - b.low) >= 0.15 * inp.unit) { reactions++; entered = null; }
       else if (entered && now !== entered) entered = null;          // passed through
       side = now;
     }
@@ -157,7 +160,7 @@ export function assemble(inp: AssembleIn): { zones: Zone[]; scored: ScoredLevel[
     const dims = top.dims;
     return { id: `Z${k + 1}`, origin, lo, hi, role, name: '', members: g, score, degree: degreeOf(score), dims, bonus: top.bonus, modifiers, poiTier, zoneType, zfpBase, zfpMods, zfp,
       breakoutRisk: zfp > 50, measuredMove: null, reactionsPreCutoff: reactions, reactionState: reactions === 0 ? 'Virgin' : reactions <= 2 ? 'Active' : 'Depleted',
-      intra: [], optionDriver: driver ? driver.label : null, highDensity: g.some(x => dens(x, 0.15) >= 2), tight: g.some(x => dens(x, 0.10) >= 1), postConsolidation,
+      intra: [], optionDriver: driver ? driver.label : null, highDensity: g.some(x => dens(x, 0.15 * inp.unit) >= 2), tight: g.some(x => dens(x, 0.10 * inp.unit) >= 1), postConsolidation,
       bom: bestSd ? { tf: bestSd.tf, type: bestSd.type, side: bestSd.side, lo: bestSd.lo, hi: bestSd.hi, date: bestSd.date, mitigations: bestSd.mitigations } : undefined,
       zfpRules: { springReleaseAt: springAt, springRelease: 25, cascade: 25, cascadeAfter: null } } as Zone;
   });
@@ -212,10 +215,10 @@ export function assemble(inp: AssembleIn): { zones: Zone[]; scored: ScoredLevel[
   // 9.5 gap scan: gaps >= 0.20 between adjacent MODERATE+ zones, 2+ supporting signals -> GAP IN-FILL LEVEL
   const mod = zones.filter(z => z.score >= 6).sort((a, b) => b.hi - a.hi); const gapFills: { price: number; signals: string[] }[] = [];
   for (let i = 0; i + 1 < mod.length; i++) {
-    const top = mod[i].lo, bot = mod[i + 1].hi; if (top - bot < 0.20) continue;
+    const top = mod[i].lo, bot = mod[i + 1].hi; if (top - bot < 0.20 * inp.unit) continue;
     const inGap = scored.filter(l => l.price < top && l.price > bot);
-    for (const l of inGap) { const sig = inGap.filter(x => Math.abs(x.price - l.price) <= 0.05).map(x => x.kind);
-      if (new Set(sig).size >= 2 && !gapFills.some(g => Math.abs(g.price - l.price) <= 0.05)) gapFills.push({ price: l.price, signals: [...new Set(sig)] }); }
+    for (const l of inGap) { const sig = inGap.filter(x => Math.abs(x.price - l.price) <= 0.05 * inp.unit).map(x => x.kind);
+      if (new Set(sig).size >= 2 && !gapFills.some(g => Math.abs(g.price - l.price) <= 0.05 * inp.unit)) gapFills.push({ price: l.price, signals: [...new Set(sig)] }); }
   }
   // 9.8 re-verification
   let corrected = 0;

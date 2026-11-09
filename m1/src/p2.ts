@@ -12,7 +12,7 @@ function emaSeries(x: number[], n: number) { const a = 2 / (n + 1); const o: num
 
 export interface P2Out { levels: Level[]; clusters: { lo: number; hi: number; members: string[]; weight: number; recapture: boolean }[]; recaptures: string[]; asOf: string }
 
-export function pillar2(days: Ohlc[]): P2Out {
+export function pillar2(days: Ohlc[], unit: number): P2Out {
   if (days.length < 200) throw new Error(`P2_INSUFFICIENT_HISTORY: ${days.length} sessions < 200`);
   const c = days.map(d => d.close); const last = days.length - 1;
   const mas: { name: string; n: number; type: 'EMA' | 'SMA'; v: number; series: number[] }[] = [];
@@ -29,7 +29,7 @@ export function pillar2(days: Ohlc[]): P2Out {
     meta: { weight: MA_WEIGHT[m.n], recapture: recaptures.includes(m.name) } }));
   const sorted = [...levels].sort((a, b) => a.price - b.price); const clusters: P2Out['clusters'] = []; const used = new Set<string>();
   for (let i = 0; i < sorted.length; i++) {
-    const grp = sorted.filter(l => l.price >= sorted[i].price && l.price - sorted[i].price <= 0.15);
+    const grp = sorted.filter(l => l.price >= sorted[i].price && l.price - sorted[i].price <= 0.15 * unit);   // MA cluster 15 pips
     if (grp.length >= 3 && !grp.every(g => used.has(g.id))) {
       grp.forEach(g => used.add(g.id));
       clusters.push({ lo: grp[0].price, hi: grp[grp.length - 1].price, members: grp.map(g => g.id),
