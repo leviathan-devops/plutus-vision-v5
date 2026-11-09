@@ -7,18 +7,18 @@
 
 ## MISSION
 
-Execute the V5.1 organ-transplant stages without derailling the active M1 golden-week build: quarantine the donors, run OBCV, LMV, freshness, and pressure in shadow mode, attach only proven metadata, reconcile OBCV S/D, and promote organs only through Pinebox captures and the git checkpoint gate.
+Execute the V5.1 organ-transplant stages on the active EURUSD 2026-07-06 golden-week card without preempting M1 presentation cleanup: quarantine non-executable donor references, run ported OBCV/LMV/freshness/pressure adapters in shadow mode, attach only proven metadata to a resealed derived card, reconcile OBCV through canonical scoring, and classify organs only through Pinebox captures and the git checkpoint gate.
 
 ## SCOPE
 
-In scope: the current E1 card; OBCV reconciliation; LMV rungs; freshness events; pressure state; donor provenance; Pinebox golden week A/B renders; checkpoint artifacts; and operator review. Out of scope before unlock: random weeks, E2 implementation, E3, old runtime integration, synthetic zones, and Pinebox source modification.
+In scope: the active EURUSD 2026-07-06 E1 card; OBCV reconciliation; LMV rungs; freshness events; pressure state; donor provenance; derived-card resealing; Pinebox golden week A/B renders after presentation repair; checkpoint artifacts; and operator review. DXY M1-complete requirements are unchanged and are not satisfied by EURUSD organ work. Out of scope before unlock: random weeks, E2 implementation, E3, old runtime integration, synthetic zones, and Pinebox source modification.
 
 ## ACCEPTANCE CRITERIA
 
-1. The running workflow produces a shadow artifact for OBCV, LMV, freshness, and pressure without changing the live E1 card or Pinebox render.
-2. Metadata attachment leaves existing E1 zone geometry unchanged while the sealed card gains precision, freshness, and pressure provenance.
-3. OBCV additions are limited to reconciled missing S/D zones and are visible in the Pinebox golden week A/B capture with measured object budget and oracle overlap.
-4. Every promotion decision cites committed captures, card hashes, donor hashes, checkpoint state, and the external grader verdict.
+1. The running workflow produces a shadow artifact for OBCV, LMV, freshness, and pressure without changing the base E1 card or Pinebox golden week render.
+2. Metadata attachment leaves every existing E1 zone geometry unchanged, writes a schema-versioned derived card with a new SHA and supersedes link, and never mutates the sealed base card.
+3. OBCV additions are limited to reconciled P5 candidate levels that receive canonical scores through `m1/src/assemble.ts`, then appear in the Pinebox golden week A/B capture with measured object budget and oracle overlap.
+4. Every pre-unlock decision is `M1_CANDIDATE`, `METADATA_ONLY`, or `REJECTED`, and cites committed captures, derived/base card hashes, donor hashes, checkpoint state, and the external grader verdict.
 
 ---
 
@@ -37,8 +37,8 @@ A donor organ is another input, not an authority. A donor/canon conflict rejects
 ### W0.1 Freeze the baseline contract
 
 - Read `Checkpoints/v1-ship-approved-working-baseline/dist/plutus-vision-v1.pine` and record its SHA-256.
-- Confirm `pine-ide/ide/renderer/plutus-vision-v1.pine` still matches the H1 seal.
-- Use a new output: `pine-ide/ide/renderer/plutus-vision-v5-e1.pine`.
+- Confirm the archived H1 renderer at `archive/pre-v5-2026-11-08/head/pine-ide/ide/renderer/plutus-vision-v1.pine` still matches SHA-256 `0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1`.
+- Keep the live generated output at `m1/out/plutus-vision-v5-e1.pine`.
 - Preserve the v1 baseline's detector, S/D logic, liquidity arrays and final `f_lqzRender()` behaviour.
 - **Observable completion:** a build manifest with both measured hashes and an output path that is not either v1 path.
 
@@ -202,27 +202,39 @@ Implement each pillar as a pure code module over the reconciled evidence.
 ---
 
 ## W3a — V4.5.3 ORGAN-TRANSPLANT STAGES
+This wave is available only after operator approval of `DESIGN_BLUEPRINT_v5.1_CLOUDFLARE.md:1`. It must not preempt the active M1 presentation cleanup recorded at `m1/checkpoints/CP-005/checkpoint.json:1`. The active golden-week asset is EURUSD 2026-07-06 at CP-005 unless the operator changes it; DXY remains approved.
 
-This wave is available only after operator approval of `DESIGN_BLUEPRINT_v5.1_CLOUDFLARE.md:1`. It must not preempt the active M1 presentation cleanup recorded at `m1/checkpoints/CP-005/checkpoint.json:1`.
+### W3a.0 — Quarantine reference donors and port adapters
 
-### W3a.0 — Quarantine the donors
+- Create `m1/donors/v453/reference/`.
+- Store selected donor sources as non-executable `.txt` copies (for example `lmv.ts.txt`) with byte-identical content and SHA-256 provenance.
+- Never place a donor `.ts` file where Bun/TypeScript can compile or import it.
+- Record dispositions in `m1/donors/v453/PROVENANCE.json`: executable-port source versus reference-only.
+- Port the six executable organ algorithms into current M1 types under `m1/src/organs/`.
+- Runtime code never imports the quarantine or the old dependency graph.
+- Copy no runtime, client, E3, synthesis, secret-shaped file, or transitive old dependency.
+- **Exit:** reference hashes match; adapters compile; no runtime import resolves into `m1/donors/`.
 
-- Create `m1/donors/v453/`.
-- Copy only the selected pure modules listed in blueprint §16.3.
-- Record every source SHA-256 in `m1/donors/v453/PROVENANCE.json`.
-- Copy no runtime, client, E3, synthesis, or secret-shaped file.
-- **Exit:** donor files exist, hashes match, no runtime import references them.
-
-### W3a.1 — Shadow the organs
+### W3a.1 — Shadow the organ adapters
 
 Implement current-type adapters under `m1/src/organs/`:
 
-- `lmv.ts`;
+- `lmv.ts` (including the lqz-matrix touch taxonomy);
 - `obcv.ts`;
 - `freshness.ts`;
 - `pressure.ts`.
 
-Run them beside the current card and emit:
+Temporal law:
+
+```text
+anchorMs == card.window.cutoff (Monday 09:00 London)
+every input bar.timestamp <= anchorMs
+any later bar in an organ input is ORGAN_INPUT_POST_CUTOFF and fails the shadow run
+```
+
+OBCV runs 4H and 1H lanes first. A 30m lane runs only if pre-cutoff 30m bars are already present in the typed evidence contract; otherwise the shadow records `OBCV_30M_DATA_MISSING` and draws no inference from the absent lane.
+
+Run the adapters beside the current card and emit:
 
 ```text
 m1/out/organ-shadow-<checkpoint>.json
@@ -236,66 +248,83 @@ The shadow output records:
 - every pressure lifecycle/link;
 - every rejection token.
 
-**Exit:** shadow output exists for the active golden-week card. The canonical card and chart are byte-for-byte unaffected.
+**Exit:** shadow output exists for EURUSD 2026-07-06. The base canonical card and chart are byte-for-byte unaffected.
 
-### W3a.2 — Attach metadata only
+### W3a.2 — Attach metadata to a derived, resealed card
 
 - Assign LMV rungs to existing canonical zones.
-- Replace the simple reaction counter with the event ledger.
+- Add the freshness event ledger additively.
+- Keep existing downstream fields `reactionsPreCutoff` and `reactionState` as derived views:
+  - `FRESH` → `Virgin`;
+  - `TESTED_1X`/`TESTED_2X` → `Active`;
+  - `DEPLETED` → `Depleted`;
+  - `VIOLATED` → `Depleted` plus `pressure.pierced=true`.
 - Attach pressure lifecycle and defense state.
+- Put zone-less LMV rungs in card-level `unassignedPrecision[]`.
 - Do not add zones.
 - Do not change any zone edge.
 - Do not add chart objects.
+- Never overwrite `m1/out/e1-card-EURUSD-2026-07-06.json`; write a schema-versioned derived card with a new SHA and `supersedes_sha256` pointing to the base.
 
-**Exit:** the card gains `precision`, `freshness`, and `pressure` blocks with complete provenance, while the composition render budget and geometry remain unchanged.
+**Exit:** the derived card gains `precision`, `unassignedPrecision`, `freshness`, and `pressure` blocks with complete provenance; its new SHA is recorded; the base card and composition geometry remain unchanged.
 
-### W3a.3 — Reconcile OBCV S/D
+### W3a.3 — Reconcile OBCV S/D through canonical assembly
 
-- Run current P5 and OBCV independently.
+- Run current P5 and the OBCV adapter independently.
 - Classify every pair as `AGREED`, `OBCV_ADDITIONAL`, `OBCV_MISSING_CURRENT`, `EDGE_CONFLICT`, or `REJECT`.
-- Add only `OBCV_ADDITIONAL` zones.
+- Convert `OBCV_ADDITIONAL` candidates into current P5 `Level` records with complete provenance.
+- Pass those levels through `m1/src/assemble.ts`; canonical six-dimension scoring, clustering, POI, ZFP, and degree decide whether they merge or form zones.
 - Preserve current geometry on `EDGE_CONFLICT`.
-- Record every disagreement.
+- Record every disagreement and every missing 30m lane as `OBCV_30M_DATA_MISSING`.
 
-**Exit:** the reconciliation matrix and updated card are committed; every added zone has complete OBCV metadata.
+**Exit:** the reconciliation matrix and updated card are committed; every added/merged S/D object has canonical score provenance and complete OBCV metadata. No unscored OBCV geometry exists.
 
-### W3a.4 — A/B Pinebox render
+### W3a.4 — A/B Pinebox render after presentation repair
 
-Using the same asset, week, timeframe, and Pinebox instance mode:
+Prerequisite: the CP-005 presentation defect is repaired and a legible baseline checkpoint exists. Do not measure organ labels against the current giant-table/overlapping-label frame.
 
+Using the same operator-active asset, week, timeframe, and Pinebox instance mode:
+
+0. legible current baseline;
 1. current composition;
 2. current + metadata;
-3. current + OBCV-added S/D;
+3. current + canonically scored OBCV-added S/D;
 4. current + pressure/LMV inspection;
 5. full V5.1 candidate.
 
 For each frame record:
 
 - capture SHA;
-- object count;
+- total drawn objects and objects added by the organ layer;
 - label collisions;
-- oracle overlap;
-- missing-zone recall;
+- recall against the 13 collapsed operator bands using CP-003's YES/PARTIAL/MISS method;
 - false additions;
 - edge deltas;
 - previously accepted family regression.
 
-**Exit:** all frames are committed as one checkpoint comparison and opened by a vision-capable reader.
+Before the first A/B run, measure the room's render-failure object boundary by bisection from the legible baseline and record the integer, method, and capture hashes in `m1/out/room-budget-<checkpoint>.json`.
 
-### W3a.5 — Promotion decision
+**Exit:** all frames are committed as one checkpoint comparison and opened by a vision-capable reader; the room-budget artifact exists with a measured integer boundary.
 
-Promote an organ only when:
+### W3a.5 — M1 candidate decision, before operator unlock
 
-1. golden-week recall improves;
-2. no previously accepted family regresses;
-3. object count remains inside the room budget;
-4. constants generalize across at least the first random-week sample;
-5. provenance is complete;
-6. the operator accepts the visual result.
+An organ may become an **M1 candidate** only when:
 
-Otherwise the organ remains shadow metadata or is rejected by name.
+1. YES recall increases, or the operator explicitly accepts a metadata-clarity gain;
+2. no operator band becomes `MISS` and no previously accepted family regresses;
+3. object count remains inside the measured room budget;
+4. provenance is complete;
+5. the operator accepts the visual result.
 
-**Exit:** a `V5.1_ORGAN_DECISION` record lists each organ as `PROMOTED`, `METADATA_ONLY`, or `REJECTED`, with measured evidence.
+Random-week testing remains forbidden before the M1-complete operator unlock. Therefore the pre-unlock decisions are exactly:
+
+```text
+M1_CANDIDATE | METADATA_ONLY | REJECTED
+```
+
+`PROMOTED` is impossible before the post-unlock random-week gate. Historical tuning constants remain shadow/M1-candidate values until that gate.
+
+**Exit:** a `V5.1_ORGAN_DECISION` record lists each organ as `M1_CANDIDATE`, `METADATA_ONLY`, or `REJECTED`, with measured evidence.
 
 ### W3a.6 — Prepare E2 contracts only after E1 acceptance
 
@@ -345,15 +374,16 @@ No E2 shape chain, path render, or E3 logic starts in W3a.
 - Write once in the Durable Object and store bytes in R2.
 - Return the card and SHA to the composition step.
 
-### W5.2 Compose the new indicator
+### W5.2 Extend the live M1 composition generator
 
-Create `scripts/plutus_vision_v5_build.py`:
+Extend `m1/src/compose.ts`, not the archived generator path:
 
 - read the exact v1 checkpoint baseline;
-- read the selected asset/week card;
+- read every sealed `m1/out/e1-card-*.json` selected for the composition;
 - preserve v1 code and render order;
-- add `e1v5_`-namespaced declarations, card arrays and renderer;
-- emit `pine-ide/ide/renderer/plutus-vision-v5-e1.pine`;
+- keep `e1v5_`-namespaced declarations, card arrays and renderer;
+- emit `m1/out/plutus-vision-v5-e1.pine`;
+- upload that generated file through the Pinebox indicator/room API;
 - do not inherit legacy E2/E3 code or five/six-zone limits;
 - compute render timestamps from the card, not fixed dates.
 
@@ -380,7 +410,15 @@ Use `xloc.bar_time`, `color.new` fills and full pressure names. Keep inspection 
 - Correct the responsible computation/render seam, not a colour to disguise it.
 - Retain v1's approved appearance while adding all required canonical zones.
 
-**Phase completion:** the generated artifact is loaded into Pinebox and the chart contains every E1 family for the selected asset/week. This is a render milestone, not yet an accuracy pass.
+### W5.5 Apply the R-36 two-week clip and repair temporal anchoring
+
+- Clip every E1 object to `[week_monday - 7 days, week_friday 21:00 UTC]`.
+- Start an LSZ drawing at its last qualifying pre-cutoff reaction or the left clip boundary, never its old origin candle alone.
+- Keep older origins as card metadata only.
+- Remove the debug/provenance table and five-field label pile from the chart; card data moves to the inspect layer.
+- Re-render and verify that no object crosses the whole active week from a month-old origin.
+
+**Phase completion:** a legible generated artifact is loaded into Pinebox, every E1 family is available on chart or in the inspect layer, temporal anchoring satisfies R-36, and no zone-count cap was used. This is a render milestone, not yet an accuracy pass.
 
 ---
 

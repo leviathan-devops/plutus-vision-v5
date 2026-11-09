@@ -101,35 +101,39 @@ The two planes meet at named bindings, not an agent loop and not a local orchest
 | identity | path | lines | SHA-256 |
 |---|---|---:|---|
 | operator-named working baseline | `Checkpoints/v1-ship-approved-working-baseline/dist/plutus-vision-v1.pine` | 1,179 | `82da437af969a3157bd9454cbe70497ce01cf71fe4681b9e2401b754aa90cd43` |
-| sealed H1 renderer | `pine-ide/ide/renderer/plutus-vision-v1.pine` | 1,270 | `0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1` |
+| archived sealed H1 renderer | `archive/pre-v5-2026-11-08/head/pine-ide/ide/renderer/plutus-vision-v1.pine` | 1,270 | `0d20e8314ce992fc23e27f1b97fed76b981c84e78c647bbe6b3d6e1206517bd1` |
 
 They are different files. **H1 remains untouched.** The composition starts from the operator-named checkpoint baseline, not from an assumption that those two files are identical.
 
 The archived v1 generator, `archive/pre-v5-2026-11-08/head/scripts/lqz_vision_build.py:52-90`, assembles:
 
-- the LuxAlgo SMC section from `plutus-vision-v0.pine`;
-- `plutus-vision-lqz/lqz-core.pine`;
-- `plutus-vision-lqz/lqz-render.pine`;
+- the LuxAlgo SMC section from `archive/pre-v5-2026-11-08/head/plutus-vision-v0.pine`;
+- `archive/pre-v5-2026-11-08/head/plutus-vision-lqz/lqz-core.pine`;
+- `archive/pre-v5-2026-11-08/head/plutus-vision-lqz/lqz-render.pine`;
 - a single indicator declaration.
 
 The baseline contains LuxAlgo S/D/order-block machinery, structural tools and the operator's candle-liquidity engine. Its full-width emitter is `f_lqzRender()` (`Checkpoints/v1-ship-approved-working-baseline/dist/plutus-vision-v1.pine:1140-1160`). It keeps the most recent levels in a bounded buffer (`:886-893`), clusters and scores them, then emits liquidity bands. Its default detector is `"candles"` (`:867`). The LuxAlgo tap functions are stubs returning empty values (`:5-9`).
 
 **Therefore:** this is a working price-structure baseline, not four functioning LuxAlgo liquidity feeds. The v5 design preserves the measured working baseline and does not describe its stubs as external E1.
 
-### 2.2 Add-only composition
+### 2.2 Add-only composition through the live M1 generator
 
-A new generator, `scripts/plutus_vision_v5_build.py`, will produce a **new** artifact:
+The active implementation already owns this seam:
 
-`pine-ide/ide/renderer/plutus-vision-v5-e1.pine`
+```text
+m1/src/run.ts        -> m1/out/e1-card-<asset>-<monday>.json
+m1/src/compose.ts    -> m1/out/plutus-vision-v5-e1.pine
+```
 
-It will read, not modify:
+`m1/src/compose.ts:18` reads the exact checkpoint baseline, and `m1/src/compose.ts:148-149` writes the generated composition. V5.1 extends that generator; it does not create the old `scripts/plutus_vision_v5_build.py` path and does not write into the archived `pine-ide/` tree.
+
+The composition reads, never modifies:
 
 - `Checkpoints/v1-ship-approved-working-baseline/dist/plutus-vision-v1.pine`;
-- the existing modular render sources where their contract is canon-correct;
-- the new `plutus-vision-lqz/e1-v5-render.pine`;
-- a generated, validated card for the selected asset and week.
+- every sealed card under `m1/out/e1-card-*.json`;
+- the current E1 renderer emitted by `m1/src/compose.ts`.
 
-The v1 declaration, detector, S/D logic, liquidity clustering and full-width emitter remain intact. New E1 declarations use an `e1v5_` namespace. There is one `indicator()` declaration and one final render block. v1 renders first; E1 draws after it.
+The v1 declaration, detector, S/D logic, liquidity clustering and full-width emitter remain intact. New E1 declarations keep the existing `e1v5_` namespace. There is one `indicator()` declaration and one final render block. v1 renders first; E1 draws after it. A later Cloudflare port may reuse this generator contract, but it must not fork a second composition generator without a new operator ruling.
 
 ### 2.3 Existing E1 work is not the v5 foundation
 
@@ -261,9 +265,10 @@ Part X uses the data week's Monday minus 14 days and Friday plus 21 days, with `
 ### 5.1 The control plane
 
 - **Worker:** validates `(asset, week)`, starts or retrieves a run, serves the resulting card and generated Pine.
-- **Durable Object named `e1:<asset>:<monday>`:** serialises one run and its write-once card. A second request reads the first card's hash; it does not overwrite it.
+- **Durable Object named `e1:<asset>:<monday>`:** serialises one run and its write-once base card. A second request reads the first card's hash; it does not overwrite it.
+- **Derived V5.1 card:** organ metadata never mutates the base card. A derived card bumps `schema_version`, recomputes SHA-256, records `supersedes_sha256`, and is stored as a new versioned object. The only permitted transition is base → organ-derived for the same asset/week; no second derived generation may branch without an operator ruling.
 - **pi-durable code Tasks:** execute the named steps inside the Durable Object (R-21, Option A). The orchestration is a fixed tree of code calls. No model chooses the next step.
-- **R2:** immutable raw source bytes, screenshots/images, normalized evidence, cards and generated Pine. Keys include asset, week, source and retrieval timestamp.
+- **R2:** immutable raw source bytes, screenshots/images, normalized evidence, base cards, derived cards, and generated Pine. Keys include asset, week, source, card generation, and retrieval timestamp.
 - **D1:** searchable run, source, evidence, zone, judgement and acceptance metadata. R2 remains the byte authority.
 - **Worker secrets:** the plutus-browser bearer token and any provider credentials, never in the card or Pine.
 
@@ -352,9 +357,9 @@ The production call is a Worker `vpc_services` binding named `BROWSER` to servic
 
 The Worker uses the bearer token from a Worker secret for every route except `/health`. The local instance is started with `plutus-browser up --id 20`. plutus-browser is **not** the orchestrator, not a second Pinebox and not a substitute chart environment.
 
-### 6.2 The tunnel is proven, not production-complete
+### 6.2 The tunnel is historically proven, not production-complete
 
-Measured proof: a probe Worker returned `/health` 200 with the local instance PID and `/status` 401 without the bearer token (`/home/leviathan/JARVIS_WORKSPACE/SHIP_PACKAGES/plutus-browser/docs/TESTING_LOG.md:131-139`). The probe Worker was deleted and the instance stopped.
+Historical pre-R-39 proof: a probe Worker returned `/health` 200 with the local instance PID and `/status` 401 without the bearer token; the probe Worker was then deleted and the instance stopped. R-39 now forbids this build from reading, copying, listing, or editing the external plutus-browser/package trees, so that evidence is historical context only and no V5.1 build step may read it.
 
 Remaining operational work:
 
@@ -494,6 +499,8 @@ This is the narrow, explicit resolution: **do not violate Part X's E1 render tem
 ### 9.4 Drawing contract
 
 - `xloc=xloc.bar_time` for E1 boxes, lines and labels.
+- **R-36 two-week clip:** every E1 object is clipped to `[week_monday - 7 days, week_friday 21:00 UTC]`; no object may start one month early or extend three weeks into the future.
+- LSZ render start is its last qualifying pre-cutoff reaction or the left clip boundary, never an old origin candle by itself; old origins stay card-only.
 - IP fill `color.new(base, 70)`, borders fully opaque.
 - IP label: `"{ZoneName} | {PressureDegree} | {strength-based ZFP}% ZFP"`; full degree names.
 - LSZ uses green boxes with no default text clutter; details remain inspectable.
@@ -552,7 +559,7 @@ After the golden week:
 - uniform **95%+** acceptance;
 - no hardcoded week prices, week-specific labels, zone literals or golden-week code branches.
 
-The fixture `fixtures/bars/2026-07-06.json` currently contains **382 1H DXY bars** from timestamp `1782086400000` through `1783987200000`. It is a finite fixture, not the complete 90/180-day E1 input and not proof of generalisation.
+The historical V5.0 fixture `archive/pre-v5-2026-11-08/head/fixtures/bars/2026-07-06.json` contained 382 1H DXY bars and was never a 90/180-day generalisation proof. The live build reads golden-week bars from the current M1/Pinebox data contract. Neither the archived fixture nor the current store is a random-week claim; the random-week matrix remains locked behind operator review.
 
 ### 11.3 What is not acceptance
 
@@ -586,15 +593,15 @@ Implement P1–P9 with formulas and verification. P1 runs all required weekly/da
 
 ### W3a — Organ transplant
 
-Quarantine the selected v4.5.3 donors, run them in shadow mode, attach LMV/freshness/pressure metadata, reconcile OBCV S/D candidates, and promote only measured improvements through the A/B Pinebox gate. The complete stage contract is §16.11.
+Quarantine reference copies, port adapters, run shadow organs, attach LMV/freshness/pressure metadata, convert OBCV candidates into canonically scored P5 levels before assembly, and promote nothing beyond an M1 candidate until the operator unlock. The complete stage contract is §16.11.
 
 ### W4 — E1 assembly and translation
 
 Implement zone assembly, scoring, classifications, reactions, intra-zone levels, ZFP and measured move. Then DXY-first pair translation with Layer 2 verification and full audit trails.
 
-### W5 — Card and full renderer
+### W5 — Card, derived metadata, and full renderer
 
-Seal the immutable card. Build the new v5 composition from the exact baseline. Implement IP, LSZ, options, canonical S/D and all required inspection layers. Remove the old five/six-zone and width-ZFP constraints from this new path.
+Seal the immutable base card, write organ metadata only to a schema-versioned derived card, extend `m1/src/compose.ts`, and emit `m1/out/plutus-vision-v5-e1.pine` from the exact baseline. Implement IP, LSZ, options, canonical S/D and all required inspection layers. Remove the old five/six-zone and width-ZFP constraints from this path.
 
 ### W6 — Pinebox acceptance and repair
 
@@ -633,9 +640,8 @@ After chart acceptance, update the ship record and package the **actual deployed
 
 - The named v1 baseline exists at the measured hash above and its modular generator is understood.
 - The complete E1 canon ranges governing this design were read first-hand, including Parts II–V, IX and X and Appendices A–C/E.
-- plutus-browser is installed as a separate host tool; its installed files match the 22-file ship package and the package audit is PASS.
-- The local headed browser read real investinglive data and produced an opened chart/page capture.
-- Worker→VPC→named tunnel→local browser `/health` was 200 and unauthenticated `/status` was 401.
+- Historical pre-R-39 state: plutus-browser was installed as a separate host tool, read real investinglive data, produced an opened capture, and proved Worker→VPC→named-tunnel `/health` 200 with unauthenticated `/status` 401.
+- R-39 now places all plutus-browser/package trees outside this build; no V5.1 step reads or modifies them.
 - The current partial E1 implementation's limits have been inspected: fixed/limited zones, chart-derived approximations, Yahoo references and width-derived ZFP remain in legacy paths and are not adopted.
 - V5.0 exists and was forked into this V5.1 review document; `design/5.1 update notes.md:1` records the donor rationale.
 - A local/disk M1 implementation exists and has produced a golden-week card and composition through CP-005 (`m1/src/run.ts:1`, `m1/src/compose.ts:1`).
@@ -706,32 +712,36 @@ The law is explicit:
 | E2 anchors | Future shape chain needs zone IDs, not prices | Not a LuxAlgo concern | Contract now, implement after M1 |
 | Storyline | Operator-facing contested-zone explanation | Not a LuxAlgo concern | Read-only future layer |
 
-### 16.3 Donor inventory and exact identities
+### 16.3 Donor inventory, exact identities, and dispositions
 
-All paths are under:
+All source paths are under:
 
 `/home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS/ARCHIVE/agent/Checkpoints/v4.5.3_CLEAN_BASELINE`
 
-| Donor | Lines | SHA-256 | Use |
+| Donor | Lines | SHA-256 | Disposition |
 |---|---:|---|---|
-| `src/mdve/lmv.ts` | 707 | `b636f1790fd12cf4faf925f06dc475e5e2b3b1234cacdbc5cc7f7f3d39742eea` | Precision rung engine |
-| `src/mdve/lqz-matrix.ts` | 658 | `68c87752a993f5f43f7b3005efe4f72eff3af9953a29fcaaf4c3d3cf92576d8a` | Touch taxonomy and matrix confirmation |
-| `src/mdve/freshness.ts` | 202 | `7dbcd5b4edd0be164014d74fa3b545c508873f44ae048cda4c7dd7a07fa2ac59` | Reaction-event state machine |
-| `src/mdve/zone-pressure.ts` | 368 | `c79c509f824334fbe77a047e0fb1e018ffed4b2a50937f356be97ba23db5afcc` | Pressure and defense state |
-| `src/mdve/obcv.ts` | 518 | `7054ddf53790900f05121bba256b54598a0a4cb220b4572051c8a179b7984a4b` | Order-block candle vision |
-| `src/mdve/bom-mom.ts` | 292 | `e92209d7e8bd1101d534ce27dd8597c5d0a9c550edae993105109cda69c119c3` | BoM/MoM classifier |
-| `src/mdve/ob-engine.ts` | 505 | `9f912c4f3773c7d81554671474e274d56b5c40a1f59178f77771746d10a020e8` | Reconciliation/wiring reference |
-| `src/brains/shape-brain.ts` | 2483 | `a1055008f4352c7fe8eadb8bbbf5bcd14b332e061c07d6ef1f003e0f759b194c` | E2 contract reference |
-| `src/brains/storyline-engine.ts` | 567 | `d93156ebb2371139018e27b286a7283814263526dd833ef62ecf3cc33203fbf8` | Future read-only reasoner |
-| `diag-lmv-golden-fx.ts` | 121 | `dd4b3717f2d91d46ca4e573db11f769e83b6cfee451b904b8ca11b24c9f99c1a` | Historical oracle harness |
-| `report_v452.md` | 254 | `f82358156329b07751777ee3a9354ae2832cf3b2488ee3c05acfc85280404314` | Historical measured evidence |
+| `src/mdve/lmv.ts` | 707 | `b636f1790fd12cf4faf925f06dc475e5e2b3b1234cacdbc5cc7f7f3d39742eea` | Executable-port source |
+| `src/mdve/lqz-matrix.ts` | 658 | `68c87752a993f5f43f7b3005efe4f72eff3af9953a29fcaaf4c3d3cf92576d8a` | Executable-port source |
+| `src/mdve/freshness.ts` | 202 | `7dbcd5b4edd0be164014d74fa3b545c508873f44ae048cda4c7dd7a07fa2ac59` | Executable-port source |
+| `src/mdve/zone-pressure.ts` | 368 | `c79c509f824334fbe77a047e0fb1e018ffed4b2a50937f356be97ba23db5afcc` | Executable-port source |
+| `src/mdve/obcv.ts` | 518 | `7054ddf53790900f05121bba256b54598a0a4cb220b4572051c8a179b7984a4b` | Executable-port source |
+| `src/mdve/bom-mom.ts` | 292 | `e92209d7e8bd1101d534ce27dd8597c5d0a9c550edae993105109cda69c119c3` | Executable-port source |
+| `src/mdve/ob-engine.ts` | 505 | `9f912c4f3773c7d81554671474e274d56b5c40a1f59178f77771746d10a020e8` | Reference only; never execute/import |
+| `src/brains/shape-brain.ts` | 2483 | `a1055008f4352c7fe8eadb8bbbf5bcd14b332e061c07d6ef1f003e0f759b194c` | Contract reference only |
+| `src/brains/storyline-engine.ts` | 567 | `d93156ebb2371139018e27b286a7283814263526dd833ef62ecf3cc33203fbf8` | Future read-only reference |
+| `diag-lmv-golden-fx.ts` | 121 | `dd4b3717f2d91d46ca4e573db11f769e83b6cfee451b904b8ca11b24c9f99c1a` | Historical oracle reference |
+| `report_v452.md` | 254 | `f82358156329b07751777ee3a9354ae2832cf3b2488ee3c05acfc85280404314` | Historical evidence reference |
 
-Do not copy:
+**Quarantine contract:** frozen copies live under `m1/donors/v453/reference/` with a `.txt` suffix (for example `lmv.ts.txt`) so no bundler, type-checker, or runtime can import them. Their bytes and SHA-256 remain identical to the donor. `m1/src/organs/*.ts` are hand/kernel ports to current M1 types; they never import the quarantine and never copy the donor's unresolved dependency graph. A port that cannot reproduce a required donor behavior is a named blocker, not permission to import the old tree.
+
+Never copy or execute:
 
 - `src/engine/data-source-router.ts`;
 - `src/tools/plutus-omni-vision.ts`;
 - `src/brains/synthesis-lobe.ts`;
-- old clients, runtime, pipeline, E3 engine, or knowledge graph.
+- old clients, runtime, pipeline, E3 engine, knowledge graph, or their transitive imports.
+
+The selected donor modules are deliberately **not standalone**: they import old `types.ts`, `util.ts`, constants, and brains. That is why the adapter-port boundary above is mandatory.
 
 ### 16.4 OBCV S/D reconciliation
 
@@ -747,11 +757,36 @@ Reconciliation outcomes:
 
 | Outcome | Rule | Card action |
 |---|---|---|
-| `AGREED` | Same side/timeframe/origin with overlap | Keep current geometry, attach OBCV metadata |
-| `OBCV_ADDITIONAL` | Valid OBCV zone with no current equivalent | Add canonical S/D zone |
+| `AGREED` | Same side/timeframe/origin with overlap | Keep current geometry; attach OBCV metadata |
+| `OBCV_ADDITIONAL` | Valid OBCV candidate with no current equivalent | Emit a P5 candidate level; canonical assembly must score/cluster it before any zone exists |
 | `OBCV_MISSING_CURRENT` | Current zone exists; OBCV does not confirm | Keep current zone and record disagreement |
 | `EDGE_CONFLICT` | Same structure, different boundaries | Keep current geometry; record OBCV proposal |
 | `REJECT` | Failed displacement, structure, or BoM gate | Do not add |
+
+**No OBCV object bypasses canonical assembly.** An `OBCV_ADDITIONAL` candidate becomes a `Level` with pillar `P5`, structural kind, geometry, provenance, and OBCV metadata. Current `m1/src/assemble.ts` then applies the six dimensions, bonus, clustering, POI, ZFP, and degree. If it overlaps an existing zone, it merges as provenance; if it stands alone, it becomes a zone only through the normal canonical score. An OBCV-only geometric box with no canonical score is invalid.
+
+Equivalence is mechanical:
+
+```text
+same side
+same timeframe
+origin timestamps equal or within one bar of that timeframe
+overlap_ratio = intersection_width / min(current_width, obcv_width)
+
+origin-equivalent + overlap_ratio >= 0.50 -> AGREED
+origin-equivalent + overlap_ratio <  0.50 -> EDGE_CONFLICT
+no origin-equivalent current object       -> OBCV_ADDITIONAL
+```
+
+Temporal law:
+
+```text
+anchorMs = card.window.cutoff (Monday 09:00 London)
+every OBCV input bar.timestamp <= anchorMs
+any later bar -> ORGAN_INPUT_POST_CUTOFF, shadow run fails
+```
+
+Classifier of record: OBCV metadata uses the donor BoM/MoM classifier; canonical card BoM/MoM remains current M1 P5. A disagreement is recorded in `sd.obcv.bom`/the reconciliation matrix and never silently overwrites either classifier.
 
 Required OBCV metadata:
 
@@ -762,11 +797,13 @@ Required OBCV metadata:
 - structure-break reference;
 - origin candle;
 - width gates;
-- BoM body/wick and body-fraction classification;
+- donor BoM body/wick and body-fraction classification;
 - prior move classification;
-- 30m→1H→4H telescoping;
+- available parent/child timeframes;
 - partition/nesting result;
 - deterministic timestamp ID.
+
+The 30m lane runs only when pre-cutoff 30m bars exist in the typed evidence contract. If absent, the shadow record says `OBCV_30M_DATA_MISSING`; it must not silently imply a scanned 30m lane or invent candidates.
 
 ### 16.5 LMV precision assignment
 
@@ -780,8 +817,10 @@ Rung fields:
 - sweep count;
 - touch kinds;
 - week span;
-- strength-based failure receipt;
+- touch/sweep strength receipt;
 - source swing/reaction timestamps.
+
+The LMV receipt records reaction strength and recurrence only. **It is not a ZFP value and must never overwrite or feed canonical `zone.zfp`.** Canonical ZFP remains the current M1 strength/type calculation.
 
 Assignment:
 
@@ -823,6 +862,15 @@ FRESH(0x) → TESTED_1X → TESTED_2X → DEPLETED(3x+)
 any state → VIOLATED after a qualifying pierce battle
 gap-through does not equal depletion
 ```
+
+Validation mapping is mechanical:
+
+- zero qualifying tests ⇒ `FRESH`;
+- one ⇒ `TESTED_1X`;
+- two ⇒ `TESTED_2X`;
+- three or more ⇒ `DEPLETED`;
+- `VIOLATED` requires a pierce battle event and does not reset the event count;
+- a claimed state with no event ledger is `E1_CARD_INVALID`.
 
 Canonical ZFP remains computed by current M1 rules. Freshness supplies event anatomy and state; it may feed only modifiers the 5.3.3 prompt explicitly allows.
 
@@ -934,8 +982,7 @@ precision: {
   reactionExtreme,
   sweepCount,
   touchKinds,
-  weekSpan,
-  unassigned?: boolean
+  weekSpan
 }
 
 freshness: {
@@ -961,57 +1008,113 @@ donorProvenance: {
 }
 ```
 
+Add to the derived `E1Card`:
+
+```text
+schema_version        // bumped from the base card
+supersedes_sha256     // the immutable base card hash
+unassignedPrecision[] // complete LMV rungs that matched no zone
+organShadowPath       // the shadow artifact provenance
+```
+
+Existing downstream fields remain as derived views:
+
+```text
+reactionsPreCutoff = freshness.qualifyingTestCount
+FRESH                -> reactionState Virgin
+TESTED_1X/TESTED_2X  -> reactionState Active
+DEPLETED             -> reactionState Depleted
+VIOLATED             -> reactionState Depleted + pressure.pierced=true
+```
+
 Card validation rejects:
 
-- an OBCV-added zone without complete OBCV metadata;
+- an OBCV-added zone without complete OBCV metadata and a canonical score/degree from `m1/src/assemble.ts`;
 - a defended edge without an LMV rung ID;
-- a freshness state inconsistent with its event count;
+- any LMV receipt written into canonical `zfp`;
+- a freshness state inconsistent with its mechanical event mapping;
 - a pressure link to a nonexistent liquidity object;
-- donor output without module SHA and adapter identity.
+- donor output without module SHA and adapter identity;
+- a donor reference file imported by runtime code.
 
 ### 16.11 Organ build stages
 
 | Stage | Output | Card effect | Chart effect |
 |---|---|---|---|
-| W3a.0 quarantine | frozen donor copies and provenance | none | none |
-| W3a.1 shadow | organ output JSON beside the card | none | none |
-| W3a.2 metadata attach | precision/freshness/pressure fields | enriched existing zones | none |
-| W3a.3 OBCV reconcile | S/D reconciliation matrix | adds only `OBCV_ADDITIONAL` zones | optional overlay |
-| W3a.4 A/B render | four Pinebox captures | candidate selection | measured comparison |
-| W3a.5 promotion | accepted organ set | frozen schema | only promoted visuals |
+| W3a.0 quarantine | `.ts.txt` reference copies, SHA manifest, adapter ports | none | none |
+| W3a.1 shadow | organ-adapter output JSON beside the card | none | none |
+| W3a.2 metadata attach | schema-versioned derived card and supersedes link | enriched existing zones plus `unassignedPrecision` | none |
+| W3a.3 OBCV reconcile | candidate levels + reconciliation matrix | only canonically scored additions/merges | optional overlay |
+| W3a.4 A/B render | six legible Pinebox captures including frame 0 baseline | candidate selection | measured comparison |
+| W3a.5 M1 decision | `M1_CANDIDATE`, `METADATA_ONLY`, or `REJECTED` | candidate schema | only candidate/inspect visuals |
+| post-unlock promotion | `PROMOTED` or final rejection | frozen schema | final promoted visuals |
 
 ### 16.12 A/B test matrix
 
-Render the same active golden-week asset and week:
+Render the same operator-active golden-week asset and week — currently EURUSD 2026-07-06 at CP-005, unless the operator changes it:
 
+0. a legible post-CP-005 presentation baseline;
 1. current M1 composition only;
 2. current plus hidden metadata;
-3. current plus OBCV-added S/D;
+3. current plus canonically scored OBCV additions;
 4. current plus pressure/LMV inspection;
 5. full V5.1 candidate.
 
+W3a.4 does not run while the CP-005 defect is still present (giant table, overlapping IP labels, S/D text collisions). A polluted, unreadable frame cannot measure label collision or operator visual preference.
+
 Measure:
 
-- oracle overlap;
-- missing-zone recall;
-- false additions;
+- operator-band recall against the 13 collapsed operator bands from `m1/evidence/operator-zones-eurusd/operator-zones.json` and the CP-003 method (`m1/checkpoints/CP-003/zone-overlap-and-outcome.md:24-25`, `:52-55`);
+- `YES` = a rendered canonical band covers the operator band;
+- `PARTIAL` = a canonical edge reaches within 5 pips but does not cover;
+- `MISS` = no canonical band at that level;
+- false additions outside the operator set;
 - edge error in pips;
 - label collisions;
-- object count against the room budget;
+- object count against the measured room budget;
 - regression of every previously accepted family;
 - operator visual verdict.
 
-### 16.13 Constants and generalisation
+An organ can become an M1 candidate only if `YES` increases or the operator explicitly accepts a metadata-clarity gain, `MISS` does not increase, and no previously accepted family regresses.
 
-Every donor constant is classified:
+The room budget is not guessed. Before W3a.4, measure the legible baseline's object count and find the render-failure boundary by bisection; write the integer boundary and method to `m1/out/room-budget-<checkpoint>.json`. That measured integer is the A/B ceiling. The known CP-004 flip is evidence that a boundary exists (intra-on produced a 194,567-byte empty frame; intra-off produced a 353,106-byte render), not the boundary itself.
+
+### 16.13 Constants, unit conversion, and generalisation
 
 | Class | Rule |
 |---|---|
 | Canon-derived | Retain only with a 5.3.3 anchor |
-| Algorithmic | Centralize and make asset/tick/ATR aware |
-| Historical tuning | Shadow only until random-week proof |
+| Absolute pip threshold | Keep the pip number; convert only pip → asset tick size |
+| Structural count | Keep as structural state-machine semantics |
+| Historical tuning | Shadow/M1-candidate only; final promotion after the operator-unlocked random-week gate |
 | Week-specific | Reject |
 | Magic number | Reject |
+
+Required initial donor-constant decisions:
+
+| Constant | Donor value | V5.1 decision |
+|---|---:|---|
+| OBCV displacement floor 4H | 50 pips | Keep absolute; convert to ticks |
+| OBCV displacement floor 1H | 30 pips | Keep absolute; convert to ticks |
+| OBCV displacement floor 30m | 20 pips | Keep absolute when a 30m lane exists |
+| OBCV body multiplier | 1.5 | Donor metadata classifier |
+| OBCV ATR period | 14 | Donor metadata classifier |
+| OBCV structure-break half | 0.5 | Donor structural predicate |
+| LMV swing neighborhood | 1 bar | Keep |
+| LMV minimum prominence | 1 pip | Convert to ticks |
+| LMV cluster tolerance | 2 pips | Convert to ticks |
+| LMV cluster max span | 4 pips | Convert to ticks |
+| LMV minimum reactions | 3 | Keep |
+| LMV minimum distinct kinds | 2 | Keep |
+| LMV minimum rung candles | 2 | Keep for modal emission |
+| LMV default lookback | 720 bars | Run when available; otherwise record `LMV_LOOKBACK_TRUNCATED` with available count |
+| Freshness state thresholds | 0/1/2/3+ tests | Keep structural mapping |
+| Donor freshness ZFP ladders | BoM 10/18/32/65; MoM 65/22/38/70 | Do not import into canonical ZFP |
+| Pressure shield proximity | 20 pips | Convert to ticks; M1-candidate only |
+| Pressure fortress threshold | 4 battles, zero pierces | Keep as lifecycle metadata |
+| BoM sweep lookback | 24 bars | Donor OBCV metadata only |
+| BoM sweep close fraction | 0.5 | Donor OBCV metadata only |
+| BoM consolidation overlap | 0.5 | Donor OBCV metadata only |
 
 The golden week may expose a defect but may not become a tuning set.
 
@@ -1019,17 +1122,20 @@ The golden week may expose a defect but may not become a tuning set.
 
 | Failure | Mechanism |
 |---|---|
-| Duplicate S/D inflation | OBCV additions must pass reconciliation and no-overlap checks |
+| Duplicate S/D inflation | OBCV additions must pass reconciliation, no-overlap checks, and canonical scoring |
 | Organ authority drift | Donor outputs carry provenance and cannot override canon |
 | LMV wallpaper regression | LMV starts hidden and cannot become a zone family without a ruling |
+| LMV ZFP leakage | LMV strength receipts are metadata only and cannot enter canonical `zfp` |
 | Metadata bloat | Freshness/pressure default to inspect tables |
 | Provenance loss | Card validation requires donor SHA and adapter |
-| Old runtime import | Adapters may import only pure donor modules |
-| Hardcoded recurrence | Constants must be asset-aware and generalized |
+| Old runtime import | Runtime code never imports the quarantine or old dependency graph |
+| Unresolved donor dependency | Reference copies are `.txt`; executable behavior is ported to current M1 types |
+| Hardcoded recurrence | Constants must be asset-aware and generalized after unlock |
+| Premature random-week tuning | Random weeks remain locked until operator unlock |
 | E2 premature start | E2 organs remain contract-only until E1 acceptance |
 | Synthetic zones | Old synthesis creators are forbidden |
 | Wall-clock identity | IDs derive from bar timestamps only |
-| Secret leakage | The two secret-shaped historical files are never copied |
+| Secret leakage | `src/engine/data-source-router.ts` and `src/tools/plutus-omni-vision.ts` are never copied |
 
 ## 17. AUTHORITY INDEX
 
@@ -1049,7 +1155,7 @@ The golden week may expose a defect but may not become a tuning set.
 | Existing partial renderer | `archive/pre-v5-2026-11-08/head/plutus-vision-lqz/e1-render.pine:1-314`; `archive/pre-v5-2026-11-08/head/pine-ide/ide/renderer/plutus-vision-v2.pine:1300-1415` |
 | Existing partial engine | `archive/pre-v5-2026-11-08/head/scripts/e1_extract.py:1-183`, `:1047-1243`; `archive/pre-v5-2026-11-08/head/scripts/e1_zfp.py:1-138` |
 | v4.5.3 organ donors | `PLUTUS/ARCHIVE/agent/Checkpoints/v4.5.3_CLEAN_BASELINE/src/mdve/*.ts`; `src/brains/shape-brain.ts`; `src/brains/storyline-engine.ts` |
-| Browser and tunnel proof | `/home/leviathan/JARVIS_WORKSPACE/SHIP_PACKAGES/plutus-browser/docs/TESTING_LOG.md:111-139` |
+| Browser/tunnel history | Historical pre-R-39 measurement recorded in §6.2; external trees are unread by this build |
 | V5.1 review notes | `design/5.1 update notes.md:1` |
 | OBCV donor | v4.5.3 `src/mdve/obcv.ts:1` |
 | LMV donor | v4.5.3 `src/mdve/lmv.ts:1` |
