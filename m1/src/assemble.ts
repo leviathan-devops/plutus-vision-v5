@@ -169,19 +169,27 @@ export function assemble(inp: AssembleIn): { zones: Zone[]; scored: ScoredLevel[
   // is the next IP zone between it and price on the same side.
   const ip = zones.filter(z => z.score >= 6);
   for (const z of ip) {
-    if (z.role === 'equilibrium') continue;
-    // the deeper BoM must be a target THIS week: inside the week's expected arena
-    const beyond = (z.role === 'support' ? ip.filter(y => y.role === 'support' && y.hi < z.lo) : ip.filter(y => y.role === 'resistance' && y.lo > z.hi))
+    const isEq = z.role === 'equilibrium';
+    // the deeper BoM must be a target THIS week: inside the week's expected arena. An equilibrium zone has no
+    // side, so it gets no BoM-target semantics (the pierce sentence needs a direction).
+    const beyond = isEq ? [] : (z.role === 'support' ? ip.filter(y => y.role === 'support' && y.hi < z.lo) : ip.filter(y => y.role === 'resistance' && y.lo > z.hi))
       .filter(y => y.hi >= inp.arena.lo && y.lo <= inp.arena.hi);
-    const nearer = z.role === 'support' ? ip.filter(y => y.lo > z.hi && y.hi < spot).sort((a, b) => a.lo - b.lo)[0] : ip.filter(y => y.hi < z.lo && y.lo > spot).sort((a, b) => b.hi - a.hi)[0];
-    z.zfpRules.cascadeAfter = nearer ? nearer.id : null;
-    // "price will likely pierce through it to reach the BoM zone" (:1159): the BoM must lie in the direction price is
-    // travelling at the cutoff (P9 regime direction), otherwise the zone is not on the way to it.
-    const travelling = z.role === 'support' ? regime.direction === 'down' : regime.direction === 'up';
-    if (z.reactionsPreCutoff >= 3 && travelling && beyond.some(y => y.bom?.type === 'BoM') && z.zfp < 60) {
-      z.zfpMods.push({ signal: 'Depleted between price and a deeper BoM zone: likely pierce (:1159) -> B.1 One-Touch midpoint 60%', value: 60 - z.zfp });
+    // Zone Reaction Counter (:1159): "3+ reactions (Depleted): Zone is likely to fail on next test" - the GENERAL
+    // sentence applies to every Depleted zone, equilibrium included (lift to the B.1 One-Touch midpoint, 60).
+    // The second sentence - "if zone is at 3+ reactions and is between current PA and a deeper BoM zone, price
+    // will likely pierce through it to reach the BoM zone" - adds the directional pierce note when the BoM lies
+    // in the direction price is travelling at the cutoff (P9 regime direction).
+    if (z.reactionsPreCutoff >= 3 && z.zfp < 60) {
+      const travelling = z.role === 'support' ? regime.direction === 'down' : regime.direction === 'up';
+      const pierce = !isEq && travelling && beyond.some(y => y.bom?.type === 'BoM');
+      z.zfpMods.push({ signal: pierce
+        ? 'Depleted (3+ reactions): likely to fail; between price and a deeper BoM -> pierce (:1159) -> 60%'
+        : 'Depleted (3+ reactions): likely to fail on next test (:1159) -> B.1 One-Touch midpoint 60%', value: 60 - z.zfp });
       z.zfp = 60; z.breakoutRisk = true;
     }
+    if (isEq) continue;   // cascade links are side-ful: the nearer-zone chain skips equilibrium
+    const nearer = z.role === 'support' ? ip.filter(y => y.lo > z.hi && y.hi < spot).sort((a, b) => a.lo - b.lo)[0] : ip.filter(y => y.hi < z.lo && y.lo > spot).sort((a, b) => b.hi - a.hi)[0];
+    z.zfpRules.cascadeAfter = nearer ? nearer.id : null;
   }
   // R6 measured move for ZFP > 45%: the zone-to-opposing-zone distance projected beyond the zone
   const ranked = zones.filter(z => z.degree !== 'MINIMAL');

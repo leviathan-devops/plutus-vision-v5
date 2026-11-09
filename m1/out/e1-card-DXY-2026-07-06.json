@@ -1,5 +1,5 @@
 {
- "sha256": "08c073d9856deee6e4a3c6abc9054ce621d9e8523d61bd63a567df4a75b68e67",
+ "sha256": "652fa293e4bd8be9003efac43033e72eab95f736acf5f2c894ce6108357f6a12",
  "card": {
   "schema_version": "pv-e1-card/1",
   "asset": "DXY",
@@ -1544,10 +1544,15 @@
     "poiTier": 1,
     "zoneType": "Soft Wall",
     "zfpBase": 40,
-    "zfpMods": [],
-    "zfp": 40,
-    "breakoutRisk": false,
-    "measuredMove": null,
+    "zfpMods": [
+     {
+      "signal": "Depleted (3+ reactions): likely to fail on next test (:1159) -> B.1 One-Touch midpoint 60%",
+      "value": 20
+     }
+    ],
+    "zfp": 60,
+    "breakoutRisk": true,
+    "measuredMove": 101.558,
     "reactionsPreCutoff": 3,
     "reactionState": "Depleted",
     "intra": [
@@ -2298,10 +2303,15 @@
     "poiTier": 1,
     "zoneType": "Soft Wall",
     "zfpBase": 40,
-    "zfpMods": [],
-    "zfp": 40,
-    "breakoutRisk": false,
-    "measuredMove": null,
+    "zfpMods": [
+     {
+      "signal": "Depleted (3+ reactions): likely to fail on next test (:1159) -> B.1 One-Touch midpoint 60%",
+      "value": 20
+     }
+    ],
+    "zfp": 60,
+    "breakoutRisk": true,
+    "measuredMove": 101.31758858444404,
     "reactionsPreCutoff": 3,
     "reactionState": "Depleted",
     "intra": [
@@ -2643,10 +2653,15 @@
     "poiTier": 2,
     "zoneType": "Standard Wall",
     "zfpBase": 22.5,
-    "zfpMods": [],
-    "zfp": 22.5,
-    "breakoutRisk": false,
-    "measuredMove": null,
+    "zfpMods": [
+     {
+      "signal": "Depleted (3+ reactions): likely to fail on next test (:1159) -> B.1 One-Touch midpoint 60%",
+      "value": 37.5
+     }
+    ],
+    "zfp": 60,
+    "breakoutRisk": true,
+    "measuredMove": 101.14137924394956,
     "reactionsPreCutoff": 3,
     "reactionState": "Depleted",
     "intra": [
@@ -2919,10 +2934,15 @@
     "poiTier": 2,
     "zoneType": "Soft Wall",
     "zfpBase": 40,
-    "zfpMods": [],
-    "zfp": 40,
-    "breakoutRisk": false,
-    "measuredMove": null,
+    "zfpMods": [
+     {
+      "signal": "Depleted (3+ reactions): likely to fail on next test (:1159) -> B.1 One-Touch midpoint 60%",
+      "value": 20
+     }
+    ],
+    "zfp": 60,
+    "breakoutRisk": true,
+    "measuredMove": 100.89906883827308,
     "reactionsPreCutoff": 3,
     "reactionState": "Depleted",
     "intra": [
@@ -3315,10 +3335,15 @@
     "poiTier": 2,
     "zoneType": "Soft Wall",
     "zfpBase": 40,
-    "zfpMods": [],
-    "zfp": 40,
-    "breakoutRisk": false,
-    "measuredMove": null,
+    "zfpMods": [
+     {
+      "signal": "Depleted (3+ reactions): likely to fail on next test (:1159) -> B.1 One-Touch midpoint 60%",
+      "value": 20
+     }
+    ],
+    "zfp": 60,
+    "breakoutRisk": true,
+    "measuredMove": 100.73789395132863,
     "reactionsPreCutoff": 3,
     "reactionState": "Depleted",
     "intra": [

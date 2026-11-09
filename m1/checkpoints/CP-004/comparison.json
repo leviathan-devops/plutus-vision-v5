@@ -1,0 +1,71 @@
+{
+ "schema": 1,
+ "checkpoint": "CP-004",
+ "asset": "EURUSD",
+ "week": "2026-07-06",
+ "rows": [
+  {
+   "family": "active-week detection from the last candle",
+   "status": "MATCHED",
+   "evidence": "runtime-state.png table: \"EURUSD 2026-07-06 (detected from the last candle)\" on bar 8927 = Jul 10 19:00"
+  },
+  {
+   "family": "card/run identity and missing-data status",
+   "status": "MATCHED",
+   "evidence": "runtime-state.png table rows: cutoff 2026-07-06T08:00Z spot 1.14265, consolidation up, 20 zones drawn, band 1.12839-1.15691, K n/a, MISSING P3/P8+P4+P7"
+  },
+  {
+   "family": "strength-based ZFP accuracy vs the oracle",
+   "status": "WRONG",
+   "evidence": "m1/checkpoints/CP-004/outcome.txt: 6/8 = 75.0% after the canon-complete Depleted lift (Z39 fixed to OK, Z42 the new miss); target 95%"
+  },
+  {
+   "family": "Zone Reaction Counter (canon :1159 general sentence)",
+   "status": "MATCHED",
+   "evidence": "m1/src/assemble.ts:177 - the general Depleted lift now applies to every role incl. equilibrium; Z39 card 40 -> 60 (Depleted 7R) -> BREAK -> BROKE = OK"
+  },
+  {
+   "family": "intra-zone precision levels on chart",
+   "status": "MISSING",
+   "evidence": "the intra-on build kills the room render (object cap): intra true -> no render (194567 B empty frame); intra false -> render returns (353106 B). Root-caused, throttled design pending; e1ShowIntra default false"
+  },
+  {
+   "family": "Liquidity Sweep Zones on the chart",
+   "status": "UNOBSERVABLE",
+   "evidence": "not individually confirmed at this zoom; pending the next zoomed read"
+  },
+  {
+   "family": "option-strike targets (P8 native)",
+   "status": "MATCHED",
+   "evidence": "runtime-state.png labels: \"EURUSD 1.14 EUR2.2bn 07-06 -> 1.14000\" native prices"
+  },
+  {
+   "family": "canonical 4H/1H S/D boxes on the chart",
+   "status": "MATCHED",
+   "evidence": "runtime-state.png: \"1H (Unmitigated) | MoM\", \"4H (1X) | BoM\", \"1H (1X) | BoM\" labels drawn"
+  },
+  {
+   "family": "v1 LuxAlgo structure labels removed",
+   "status": "MATCHED",
+   "evidence": "runtime-state.png: no BOS/ChoCH/EQH labels"
+  },
+  {
+   "family": "IP resistance zones vs the operator oracle bands",
+   "status": "MATCHED",
+   "evidence": "m1/checkpoints/CP-003/zone-overlap-and-outcome.md: 9 YES / 4 PARTIAL / 0 MISS (carried forward; same card family)"
+  }
+ ],
+ "summary": {
+  "matched": 7,
+  "wrong": 1,
+  "missing": 1,
+  "extra": 0,
+  "unobservable": 1
+ },
+ "visual_sha256": {
+  "m1/checkpoints/CP-004/visual/runtime-state.png": "23095925082b08db3c4986a12f036982473703bbf7f905306b38e85cec106fe1",
+  "m1/checkpoints/CP-004/visual/render-intra-off.png": "a08aba2e02b26106d92a7c2e4f7f647719847e0c725e4a05001329a9a91210d2",
+  "m1/checkpoints/CP-004/visual/golden-week-framed.png": "80c2f5a3d541fe6f525278d10e6ec73d49a2f4fa255797d1418b3383e351c09a"
+ },
+ "note": "the canon-complete Depleted lift (m1/src/assemble.ts:177) + the intra-on object-cap finding (e1ShowIntra default false)"
+}

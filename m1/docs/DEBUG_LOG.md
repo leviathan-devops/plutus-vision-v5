@@ -193,3 +193,18 @@ Scope: the clean M1 build that restarted from handover 3b69f65 on 2026-11-08.
 - **THE FIX:** `m1/src/options.ts` now writes `EUR` (the E1 layer proven pure ASCII by a full scan).
 - **THE VERIFICATION:** the regenerated composition (f1dc82e9) renders the golden week with native labels; BUT the earlier render failure was actually the missing re-import/re-run trigger (the room does not re-run the script on session attach — the operator's documented refresh flow), not the glyph: the pre-fix script also rendered once re-imported. The ASCII change stands (it removes the suspicion permanently); the trigger lesson is EN-020.
 - **THE LESSON:** remove the suspicious variable AND identify the real trigger; do not credit the fix you cannot isolate.
+
+## EN-020 - the room engine caps objects: the intra-on build rendered nothing (2026-11-09)
+
+- THE FINDING: after e1ShowIntra flipped to true, the room chart rendered ZERO E1 objects (no table, no zones,
+  no error: failedAt 0, console clean) while the IDE compiled and ran the same file fine (boxes 4 lines 40 tables 1).
+- THE ROOT CAUSE: the card path with intra on emits ~200 extra line objects (every MODERATE+ zone x its intra
+  fills: 1H origins + 2 fibs + prior closes + 25-pip rounds); the room engine (StationPineEngine) silently drops
+  the whole run when its object budget is exceeded - a load failure, not a Pine error. The pre-intra build
+  rendered; this one did not.
+- THE FIX: e1ShowIntra default false (m1/src/compose.ts); the MISSING family stays open with a named design:
+  throttle the intra fills (nearest zone only, or one fill class per zone) to fit the room budget.
+- THE VERIFICATION (the flip test): intra true -> capture 194567 B (empty chart); intra false -> capture 353106 B
+  (zones + table). Store verified after the PUT: len 86503, contains d8b3ae7933abc653, intra false.
+- THE LESSON: a canvas engine's object budget is a hard limit with a SILENT failure; count the objects the card
+  path emits before enabling a family, and keep the budget proof next to the toggle.
