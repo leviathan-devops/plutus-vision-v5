@@ -31,8 +31,8 @@
   },
   {
    "family": "IP resistance zones vs the operator oracle bands",
-   "status": "UNOBSERVABLE",
-   "evidence": "the chart view spans Apr-Jul and the golden-week labels overlap at this zoom; a zoomed zone-by-zone comparison against Golden_Operator_Trade_Feedback_EU_GU.md is the next measurement (not yet done)"
+   "status": "MATCHED",
+   "evidence": "m1/checkpoints/CP-003/zone-overlap-and-outcome.md: 9 YES / 4 PARTIAL / 0 MISS against the 13 documented operator bands (visual read of golden-week-zoomed.png)"
   },
   {
    "family": "Liquidity Sweep Zones on the chart",
@@ -41,8 +41,8 @@
   },
   {
    "family": "strength-based ZFP accuracy vs the oracle",
-   "status": "UNOBSERVABLE",
-   "evidence": "evaluate.ts outcome table for the EURUSD card not yet run against this render"
+   "status": "WRONG",
+   "evidence": "m1/checkpoints/CP-003/zone-overlap-and-outcome.md: 6/8 = 75.0% (target 95%); misses Z36 (Spring+Cascade over-fire) and Z39 (equilibrium broke at ZFP 40)"
   },
   {
    "family": "intra-zone / core-spikes / reaction counts on chart",
@@ -56,16 +56,17 @@
   }
  ],
  "summary": {
-  "matched": 6,
-  "wrong": 0,
+  "matched": 7,
+  "wrong": 1,
   "missing": 1,
   "extra": 0,
-  "unobservable": 3
+  "unobservable": 1
  },
  "visual_sha256": {
   "m1/checkpoints/CP-003/visual/runtime-state.png": "07a4789a9f40ea7872f2c5aae743e756b10cfc71c452b77e85b19dff2f3e8c0f",
   "m1/checkpoints/CP-003/visual/operator-grade-clean.png": "ba84cb395f01c64874af78383e1c52d6aae738fc3d80d725a1fd54083b5f9232",
-  "m1/checkpoints/CP-003/visual/absent-control.png": "521eef93d9ccaa9ec8263f41f49264415c1af2a3cde02d44273a57f8e06caa9f"
+  "m1/checkpoints/CP-003/visual/absent-control.png": "521eef93d9ccaa9ec8263f41f49264415c1af2a3cde02d44273a57f8e06caa9f",
+  "m1/checkpoints/CP-003/visual/golden-week-zoomed.png": "80c2f5a3d541fe6f525278d10e6ec73d49a2f4fa255797d1418b3383e351c09a"
  },
  "note": "verdict instrument: the canvas-pixel verifier /tmp/pv-verify-room.sh (proof pair: absent=E1_ZONE_BANDS_ABSENT exit1, present=E1_RENDER_VERIFIED exit0)"
 }
