@@ -1,0 +1,62 @@
+{
+ "schema": 1,
+ "id": "CP-005",
+ "type": "checkpoint",
+ "asset": "EURUSD",
+ "week": "2026-07-06",
+ "created_at": "2026-11-09T08:26:54+00:00",
+ "title": "operator Mac review baseline - render is correct data, unreadable presentation",
+ "claims": {
+  "evidence_ready": true,
+  "engine_ready": false,
+  "composition_ready": false,
+  "render_observed": true
+ },
+ "comparison": "m1/checkpoints/CP-005/comparison.json",
+ "visual": [
+  {
+   "path": "m1/checkpoints/CP-005/visual/Screenshot 2026-11-09 at 11.02.32\u202fAM.png",
+   "expectation": "Mac instance 6, bare EURUSD backtest chart before the indicator import (operator frame 1)"
+  },
+  {
+   "path": "m1/checkpoints/CP-005/visual/Screenshot 2026-11-09 at 11.14.05\u202fAM.png",
+   "expectation": "Mac instance 6, full render with the giant E1 card debug table covering the right third of the price action (operator frame 2)"
+  },
+  {
+   "path": "m1/checkpoints/CP-005/visual/Screenshot 2026-11-09 at 11.15.16\u202fAM.png",
+   "expectation": "Mac instance 6 zoomed Jul 30: ~20 overlapping IP bands, stacked five-field labels, LSZ spans to Jul 31, S/D texts on top of IP labels (operator frame 3)"
+  }
+ ],
+ "card": "m1/out/e1-card-EURUSD-2026-07-06.json",
+ "card_sha256": "d8b3ae7933abc653ec3f636803cd1ac5d0a041c9d354d88e5b3d22c80b3991a2",
+ "composition": "m1/out/plutus-vision-v5-e1.pine",
+ "composition_sha256": "d1121bcc246b969439120c202d251c7ef28f60ac05572d6c2e0bcdf35ec2c0df",
+ "pinebox": {
+  "mode": "cloud",
+  "surface": "mac",
+  "instance": "6",
+  "session": "bt-mw7m24wz-73ecd3 (cursor 2026-07-10T15:00Z)",
+  "frame": {
+   "asset": "EURUSD",
+   "tf": "1H",
+   "cursor_bar": 8927
+  }
+ },
+ "store_verified": {
+  "len": 86503,
+  "contains_card": "d8b3ae7933abc653",
+  "intra_default": "false"
+ },
+ "measurements": {
+  "overlap": "CP-003: 9 YES / 4 PARTIAL / 0 MISS",
+  "outcome": "CP-004: 6/8 = 75.0%",
+  "drawn": "33 MODERATE+ zones, 20 in band, 0 cap"
+ },
+ "regenerate": [
+  "bun m1/src/run.ts EURUSD 2026-07-06",
+  "bun m1/src/compose.ts",
+  "PUT m1/out/plutus-vision-v5-e1.pine to /api/v1/i/<inst>/room/indicators",
+  "m1/tools/pv-reimport.sh"
+ ],
+ "review_ruling": "no code changed in CP-005 other than this verdict record; the cleanup rebuild is the next unit"
+}

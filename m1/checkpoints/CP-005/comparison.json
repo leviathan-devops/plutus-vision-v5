@@ -1,0 +1,81 @@
+{
+ "schema": 1,
+ "checkpoint": "CP-005",
+ "asset": "EURUSD",
+ "week": "2026-07-06",
+ "rows": [
+  {
+   "family": "active-week detection from the last candle",
+   "status": "MATCHED",
+   "evidence": "11-15 image table: EURUSD 2026-07-06 (detected from the last candle) on bar 8927 = Jul 10 18:00"
+  },
+  {
+   "family": "card/run identity and missing-data status",
+   "status": "EXTRA",
+   "evidence": "11-14/11-15 images: the debug/provenance table (card sha, band numbers, MISSING rows) is drawn as chart junk over the right third of the price action; operator verdict: no valuable data, takes up space. The composition has no toggle or compact mode."
+  },
+  {
+   "family": "IP resistance zones vs the operator oracle bands",
+   "status": "WRONG",
+   "evidence": "11-15 image: ~20 simultaneous IP bands; UPPER/RESISTANCE-CEILING labels stacked and overlapping across 1.1440-1.1470; operator verdict: supposed to be six at most, half the labels are slop"
+  },
+  {
+   "family": "IP equilibrium zone",
+   "status": "WRONG",
+   "evidence": "11-15 image: the equilibrium band is inside the overlap pile at 1.1430-1.1435, unreadable against the option-label rows at the same level"
+  },
+  {
+   "family": "IP support zones",
+   "status": "WRONG",
+   "evidence": "11-15 image: support bands overlap each other and the S/D boxes (KEY EXTREME under 1H BoM at 1.1360-1.1365); names repeat across stacked bands"
+  },
+  {
+   "family": "Liquidity Sweep Zones on the chart",
+   "status": "WRONG",
+   "evidence": "11-15 image: LSZ dashed boxes start ~Jun 19 (origin candles) and run to Jul 31, crossing the whole week; operator verdict: temporal anchoring unreadable, cannot tell where a zone starts or ends"
+  },
+  {
+   "family": "option-strike targets (P8 native)",
+   "status": "WRONG",
+   "evidence": "11-15 image: two merged strike labels per line (EURUSD 1.15 EUR2.4bn 07-06 = EURUSD 1.15 EUR2.8bn 07-07) plus a longsuffix print contrived level names; the identical level pair should be one line"
+  },
+  {
+   "family": "canonical 4H/1H S/D boxes on the chart",
+   "status": "WRONG",
+   "evidence": "11-15 image: S/D box texts overlap IP labels (1H (Unmitigated) | MoM at 1.1485 stacked on UPPER RESISTANCE) even though the canon forbids separate S/D mapping (:279, PG9, PG4)"
+  },
+  {
+   "family": "POI tier and pressure-degree data",
+   "status": "EXTRA",
+   "evidence": "11-15 image: the five-field zone label (name | degree+score | ZFP | tier | reaction | BoM/MoM) is unreadable at chart scale; the canon labels IP zones by pressure degree only (:287, PG8)"
+  },
+  {
+   "family": "mitigation and reaction counts",
+   "status": "EXTRA",
+   "evidence": "11-15 image: reaction strings (Active 2R, Virgin 0R) and MoM counts are appended to every label and overlap; the canon keeps them as card data, not chart labels"
+  },
+  {
+   "family": "strength-based ZFP data",
+   "status": "WRONG",
+   "evidence": "11-15 image: ZFP percentages print inside the overlap pile and cannot be associated with their zone; the 6/8 outcome table stands (CP-004/outcome.txt) but the on-chart ZFP is unreadable"
+  },
+  {
+   "family": "v1 LuxAlgo structure labels removed",
+   "status": "MATCHED",
+   "evidence": "all three Mac frames: no BOS/ChoCH/EQH labels; the Historical/Present toggle question is answered below as a no-op under our composition"
+  }
+ ],
+ "summary": {
+  "matched": 2,
+  "wrong": 8,
+  "missing": 0,
+  "extra": 2,
+  "unobservable": 0
+ },
+ "visual_sha256": {
+  "m1/checkpoints/CP-005/visual/Screenshot 2026-11-09 at 11.02.32\u202fAM.png": "d660c8aba630551f330de949ad58ffd0361ab08505f90e79582e933570e78820",
+  "m1/checkpoints/CP-005/visual/Screenshot 2026-11-09 at 11.14.05\u202fAM.png": "383b8f1bd48bc91a4fd1847125c650a63af1074d43d4254ad23df39b4047fe88",
+  "m1/checkpoints/CP-005/visual/Screenshot 2026-11-09 at 11.15.16\u202fAM.png": "d2b0b7d4a15dc81f5732bd0b65fbcdb9f09db7e91c2ddc3684b4301b9975a17a"
+ },
+ "note": "operator Mac review: keep the geometry, rebuild the presentation per Part X (pressure-degree labels only, \u22646 zones, no separate S/D, no debug table on chart)"
+}

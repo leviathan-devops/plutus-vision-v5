@@ -102,6 +102,8 @@ decision (a reset is a ref change the M1 gate grades) — ask, then do it throug
 
 ---
 
+## VC-005 — [moved: the entry lives at the end of the log]
+
 ## WHAT IS MOVING THIS BUILD IN THE RIGHT DIRECTION (keep doing these; read before any change)
 
 1. **Drive Pinebox with the `pinebox` tool only** — `load`, `chart op=view|zoom|pan`, `shot`. No CDP scripts, no IDE
@@ -131,3 +133,26 @@ decision (a reset is a ref change the M1 gate grades) — ask, then do it throug
 - **Operator verdict (verbatim):** "both of the zones are rendered in two completely different places ... They all need
   to be rendered together" — the v1 baseline draws on the newest candle's week (Nov), E1 on the hardcoded golden week.
 - **Families:** MATCHED 4 · WRONG 7 (incl. the week split) · MISSING 2 · EXTRA 1 · UNOBSERVABLE 1.
+
+---
+
+## VC-005 — CP-005 — operator Mac review baseline (2026-11-09 11:15 local)
+
+![CP-005 frame 1 — bare chart](checkpoints/CP-005/visual/Screenshot%202026-11-09%20at%2011.02.32%E2%80%AFAM.png)
+![CP-005 frame 2 — full render with debug table](checkpoints/CP-005/visual/Screenshot%202026-11-09%20at%2011.14.05%E2%80%AFAM.png)
+![CP-005 frame 3 — zoomed Jul 30, the overlap pile](checkpoints/CP-005/visual/Screenshot%202026-11-09%20at%2011.15.16%E2%80%AFAM.png)
+
+- **Commit:** tag `vc/CP-005` (hash back-filled by the next commit)
+- **Commit state (corrected 2026-11-09, append-only):** tag PENDING — commit refused once on MODEL_UNAVAILABLE (grader proxy up, L2 upstream silent); NOT operator-approved
+- **Composition:** sha256 `d1121bcc246b969439120c202d251c7ef28f60ac05572d6c2e0bcdf35ec2c0df` · **Card:** `d8b3ae7933abc653ec3f636803cd1ac5d0a041c9d354d88e5b3d22c80b3991a2`
+- **Frame:** instance 6 (Mac cloud), session `bt-mw7m24wz-73ecd3`, cursor bar 8927/10972 = Jul 10 18:00, EURUSD 1H.
+- **Pictures sha256:** `d660c8aba630…`, `383b8f1bd48b…`, `d2b0b7d4a15d…` (full: comparison.json).
+- **What this is:** YOUR three Mac frames as the standing record of what the render looks like before the
+  presentation rebuild — the bare chart, the full render with the giant debug table, and the zoomed 20-band
+  overlap pile. No code changed in CP-005; the card and composition are CP-004's bytes.
+- **Operator verdict (verbatim):** "This is a complete mess... giant card in the top right corner... why is this
+  here? ... 20 IP zones when there's supposed to be six at most... half of these labels are complete slop...
+  temporal anchoring is completely messed up... There's like 50 zones."
+- **Families:** MATCHED 2 · WRONG 8 · MISSING 0 · EXTRA 2 · UNOBSERVABLE 0.
+- **The cleanup target (your words):** six zones at most, pressure-degree labels only, no debug table on chart,
+  no separate S/D mapping, origin-anchored spans that read. Geometry stays (9 YES / 4 PARTIAL / 0 MISS vs your zones).
