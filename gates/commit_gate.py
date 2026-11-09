@@ -202,8 +202,9 @@ def validate_checkpoint(policy: dict, source: str, checkpoint_path: str, kind: s
     missing = sorted(required - set(cp))
     if missing:
         reject("CHECKPOINT", f"{checkpoint_path} missing {missing}")
-    if cp.get("schema") != 1 or cp.get("asset") != policy["m1"]["asset"] or cp.get("week") != policy["m1"]["week"]:
-        reject("CHECKPOINT", "M1 checkpoints are exactly DXY and week 2026-07-06")
+    allowed_assets = policy["m1"].get("assets") or [policy["m1"]["asset"]]
+    if cp.get("schema") != 1 or cp.get("asset") not in allowed_assets or cp.get("week") != policy["m1"]["week"]:
+        reject("CHECKPOINT", f"M1 checkpoints are week {policy['m1']['week']} on one of {allowed_assets} (got asset={cp.get('asset')!r} week={cp.get('week')!r})")
     if kind == "m1-complete" and cp.get("type") != "m1_complete":
         reject("CHECKPOINT", "PV-Gate m1-complete requires checkpoint.type m1_complete")
     if kind == "checkpoint" and cp.get("type") not in {"checkpoint", "blocked"}:

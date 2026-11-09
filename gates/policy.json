@@ -1,98 +1,102 @@
 {
-  "schema": 1,
-  "name": "PLUTUS VISION M1 git gate",
-  "created_at": "2026-11-08T10:26:59.479562+00:00",
-  "gate_parent": "9b061e08dad8551d1ad4fb17620f4850d2aa9e83",
-  "branch": "step_agent",
-  "milestone": "M1_GOLDEN_WEEK",
-  "enforce_stop_after_m1": true,
-  "model": {
-    "provider": "opencode-go",
-    "endpoint": "http://127.0.0.1:4097/zen/go/v1/responses",
-    "key_command": "$HOME/.omp/agent/bin/go-key.sh",
-    "model": "mimo-v2.6-flash",
-    "min_score": 7,
-    "timeout_seconds": 120,
-    "vision_control": "gates/controls/mimo-vision-control.json"
-  },
-  "grader_context": [
-    "design/DESIGN_BLUEPRINT_v5.0_CLOUDFLARE.md",
-    "design/BUILD_WORKFLOW_v5.0_CLOUDFLARE.md",
-    "m1/EXECUTION_CONTRACT.md"
+ "schema": 1,
+ "name": "PLUTUS VISION M1 git gate",
+ "created_at": "2026-11-08T10:26:59.479562+00:00",
+ "gate_parent": "9b061e08dad8551d1ad4fb17620f4850d2aa9e83",
+ "branch": "step_agent",
+ "milestone": "M1_GOLDEN_WEEK",
+ "enforce_stop_after_m1": true,
+ "model": {
+  "provider": "opencode-go",
+  "endpoint": "http://127.0.0.1:4097/zen/go/v1/responses",
+  "key_command": "$HOME/.omp/agent/bin/go-key.sh",
+  "model": "mimo-v2.6-flash",
+  "min_score": 7,
+  "timeout_seconds": 120,
+  "vision_control": "gates/controls/mimo-vision-control.json"
+ },
+ "grader_context": [
+  "design/DESIGN_BLUEPRINT_v5.0_CLOUDFLARE.md",
+  "design/BUILD_WORKFLOW_v5.0_CLOUDFLARE.md",
+  "m1/EXECUTION_CONTRACT.md"
+ ],
+ "m1": {
+  "asset": "DXY",
+  "week": "2026-07-06",
+  "tf": [
+   "1H",
+   "4H"
   ],
-  "m1": {
-    "asset": "DXY",
-    "week": "2026-07-06",
-    "tf": [
-      "1H",
-      "4H"
-    ],
-    "card_prefix": "m1/out/",
-    "composition_prefix": "m1/out/"
-  },
-  "limits": {
-    "max_work_commits_between_checkpoints": 2,
-    "max_changed_files_work_commit": 80,
-    "max_model_prompt_chars": 220000,
-    "max_model_image_chars": 1500000,
-    "max_diff_chars": 100000
-  },
-  "protected_paths": [
-    "archive/",
-    "Checkpoints/v1-ship-approved-working-baseline/",
-    "Original_Canon_Data/",
-    "MASTER_CONTEXT/OPERATOR_RULINGS_PV.md",
-    "design/",
-    ".githooks/",
-    "gates/policy.json"
+  "card_prefix": "m1/out/",
+  "composition_prefix": "m1/out/",
+  "assets": [
+   "DXY",
+   "EURUSD"
+  ]
+ },
+ "limits": {
+  "max_work_commits_between_checkpoints": 2,
+  "max_changed_files_work_commit": 80,
+  "max_model_prompt_chars": 220000,
+  "max_model_image_chars": 1500000,
+  "max_diff_chars": 100000
+ },
+ "protected_paths": [
+  "archive/",
+  "Checkpoints/v1-ship-approved-working-baseline/",
+  "Original_Canon_Data/",
+  "MASTER_CONTEXT/OPERATOR_RULINGS_PV.md",
+  "design/",
+  ".githooks/",
+  "gates/policy.json"
+ ],
+ "allowed_work_prefixes": [
+  "m1/",
+  "gates/controls/"
+ ],
+ "forbidden_m1_path_patterns": [
+  "(^|/)e2(/|$)",
+  "(^|/)e3(/|$)",
+  "(^|_)engine[-_]?2($|/)",
+  "(^|_)engine[-_]?3($|/)",
+  "random[-_]?weeks?/",
+  "validation[-_]?weeks?/"
+ ],
+ "forbidden_m1_expansion_assets": [
+  "EURUSD",
+  "GBPUSD",
+  "AUDUSD"
+ ],
+ "required_visual_families": [
+  "IP resistance zones",
+  "IP equilibrium zone",
+  "IP support zones",
+  "Liquidity Sweep Zones",
+  "canonical 4H/D1 supply/demand zones beyond the v1 baseline",
+  "option-strike targets",
+  "POI tier and pressure-degree data",
+  "strength-based ZFP data",
+  "BoM/MoM classification",
+  "mitigation and reaction counts",
+  "intra-zone precision levels",
+  "core/spike boundaries where applicable",
+  "card/run identity and missing-data status"
+ ],
+ "checkpoint": {
+  "min_png_bytes": 20000,
+  "m1_complete_min_images": 2,
+  "allowed_statuses": [
+   "MATCHED",
+   "WRONG",
+   "MISSING",
+   "EXTRA",
+   "UNOBSERVABLE"
   ],
-  "allowed_work_prefixes": [
-    "m1/",
-    "gates/controls/"
-  ],
-  "forbidden_m1_path_patterns": [
-    "(^|/)e2(/|$)",
-    "(^|/)e3(/|$)",
-    "(^|_)engine[-_]?2($|/)",
-    "(^|_)engine[-_]?3($|/)",
-    "random[-_]?weeks?/",
-    "validation[-_]?weeks?/"
-  ],
-  "forbidden_m1_expansion_assets": [
-    "EURUSD",
-    "GBPUSD",
-    "AUDUSD"
-  ],
-  "required_visual_families": [
-    "IP resistance zones",
-    "IP equilibrium zone",
-    "IP support zones",
-    "Liquidity Sweep Zones",
-    "canonical 4H/D1 supply/demand zones beyond the v1 baseline",
-    "option-strike targets",
-    "POI tier and pressure-degree data",
-    "strength-based ZFP data",
-    "BoM/MoM classification",
-    "mitigation and reaction counts",
-    "intra-zone precision levels",
-    "core/spike boundaries where applicable",
-    "card/run identity and missing-data status"
-  ],
-  "checkpoint": {
-    "min_png_bytes": 20000,
-    "m1_complete_min_images": 2,
-    "allowed_statuses": [
-      "MATCHED",
-      "WRONG",
-      "MISSING",
-      "EXTRA",
-      "UNOBSERVABLE"
-    ],
-    "required_completion_status": "MATCHED"
-  },
-  "tokens": {
-    "admin_sha256": "732f6423962cb7e4adb4c1932abd533b6a436f4c3b04c2210f67fcc35d690b7a",
-    "operator_unlock_sha256": "3a27dd41726368229c816f89e48320279e518a77e31fc5c98399f68640e4712b"
-  },
-  "failure_mode": "FAIL_CLOSED"
+  "required_completion_status": "MATCHED"
+ },
+ "tokens": {
+  "admin_sha256": "732f6423962cb7e4adb4c1932abd533b6a436f4c3b04c2210f67fcc35d690b7a",
+  "operator_unlock_sha256": "3a27dd41726368229c816f89e48320279e518a77e31fc5c98399f68640e4712b"
+ },
+ "failure_mode": "FAIL_CLOSED"
 }
