@@ -3,9 +3,9 @@
   "phase": "M1",
   "m1_status": "IN_PROGRESS",
   "checkpoint_seq": 12,
-  "work_commits_since_checkpoint": 1,
+  "work_commits_since_checkpoint": 2,
   "last_checkpoint": "DXY-SUBSTRATE",
   "complete_commit": null,
   "operator_review": "PENDING",
-  "updated_at": "2026-11-10T21:13:49+00:00"
+  "updated_at": "2026-11-10T21:17:52+00:00"
 }
