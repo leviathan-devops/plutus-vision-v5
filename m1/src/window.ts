@@ -1,5 +1,6 @@
-// window.ts - the run identity and its time boundaries (blueprint §4; contract §2.5).
-// Worker-compatible: Intl with IANA zones only, no Node APIs.
+// window.ts - the run identity and its time boundaries (blueprint §4; contract §2.5; workflow P2.TURN-01).
+// Worker-compatible: Intl with IANA zones only, no Node APIs. R36 render window: the active
+// week plus one week of history on the left, closing at the Friday 21:00 UTC session end.
 
 export interface RunWindow {
   asset: string;
@@ -7,9 +8,11 @@ export interface RunWindow {
   openUtc: number;         // Sunday 22:00 UTC before the Monday (ms)
   cutoffUtc: number;       // Monday 09:00 Europe/London (ms)
   endUtc: number;          // Friday 21:00 UTC (ms)
-  renderFromUtc: number;   // Monday - 14 days 00:00 UTC (Part X 10.4 tsL)
-  renderToUtc: number;     // Friday + 21 days 23:59:59 UTC (Part X 10.4 tsR)
+  renderFromUtc: number;   // Monday - 7 days 00:00 UTC (R36: active week + one week left)
+  renderToUtc: number;     // Friday 21:00 UTC session end (R36: no right extension)
 }
+
+import { E1Refusal } from './refusals';
 
 const DAY = 86_400_000;
 const HOUR = 3_600_000;
@@ -32,18 +35,18 @@ export function wallClockToUtc(y: number, m: number, d: number, hh: number, mm: 
 
 export function runWindow(asset: string, weekMonday: string): RunWindow {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(weekMonday);
-  if (!m) throw new Error(`W0_WEEK_INVALID: ${weekMonday}`);
+  if (!m) throw new E1Refusal('E1_IDENTITY_INVALID', `W0_WEEK_INVALID: ${weekMonday}`);
   const [y, mo, d] = [+m[1], +m[2], +m[3]];
   const monday = Date.UTC(y, mo - 1, d);
-  if (new Date(monday).getUTCDay() !== 1) throw new Error(`W0_WEEK_NOT_MONDAY: ${weekMonday}`);
-  if (!['DXY', 'EURUSD', 'GBPUSD'].includes(asset)) throw new Error(`W0_ASSET_UNSUPPORTED: ${asset}`);
+  if (new Date(monday).getUTCDay() !== 1) throw new E1Refusal('E1_IDENTITY_INVALID', `W0_WEEK_NOT_MONDAY: ${weekMonday} - WINDOW_NON_MONDAY_REJECTED`);
+  if (!['DXY', 'EURUSD', 'GBPUSD'].includes(asset)) throw new E1Refusal('E1_ASSET_UNSUPPORTED', `W0_ASSET_UNSUPPORTED: ${asset}`);
   return {
     asset, weekMonday,
     openUtc: monday - 2 * HOUR,                               // Sunday 22:00 UTC
     cutoffUtc: wallClockToUtc(y, mo, d, 9, 0, 'Europe/London'),
     endUtc: monday + 4 * DAY + 21 * HOUR,                     // Friday 21:00 UTC
-    renderFromUtc: monday - 14 * DAY,
-    renderToUtc: monday + 4 * DAY + 22 * DAY - 1000,          // Friday + 21 days, 23:59:59
+    renderFromUtc: monday - 7 * DAY,
+    renderToUtc: monday + 4 * DAY + 21 * HOUR,                // R36: Friday 21:00 UTC session end
   };
 }
 

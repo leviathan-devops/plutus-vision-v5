@@ -12,6 +12,12 @@ const EPS = 1e-9;
 const eq = (a: number, b: number) => Math.abs(a - b) <= 1e-7 * Math.max(1, Math.abs(a), Math.abs(b));
 
 export function pivotSet(source: string, timeframe: 'W' | 'D' | 'H', variant: Variant, H: number, L: number, C: number): PivotSet {
+  // P2.TURN-02 rule 4: reject malformed OHLC before any formula runs. H/L/C finite, high >= low,
+  // close inside [low, high]. A malformed source week refuses - never produces NaN levels.
+  if (![H, L, C].every(v => typeof v === 'number' && Number.isFinite(v)))
+    throw new Error(`P1_OHLC_MALFORMED: ${source} H/L/C not finite (H=${H} L=${L} C=${C})`);
+  if (!(H >= L)) throw new Error(`P1_OHLC_MALFORMED: ${source} high ${H} < low ${L}`);
+  if (!(C >= L && C <= H)) throw new Error(`P1_OHLC_MALFORMED: ${source} close ${C} outside [${L}, ${H}]`);
   const R = H - L; const PP = (H + L + C) / 3; let lv: Record<string, number>;
   if (variant === 'classic') lv = { PP, R1: 2 * PP - L, S1: 2 * PP - H, R2: PP + R, S2: PP - R, R3: H + 2 * (PP - L), S3: L - 2 * (H - PP) };
   else if (variant === 'fibonacci') lv = { PP, R1: PP + 0.382 * R, S1: PP - 0.382 * R, R2: PP + 0.618 * R, S2: PP - 0.618 * R, R3: PP + R, S3: PP - R };
