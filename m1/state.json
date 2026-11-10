@@ -2,10 +2,10 @@
   "schema": 1,
   "phase": "M1",
   "m1_status": "IN_PROGRESS",
-  "checkpoint_seq": 12,
-  "work_commits_since_checkpoint": 2,
-  "last_checkpoint": "DXY-SUBSTRATE",
+  "checkpoint_seq": 13,
+  "work_commits_since_checkpoint": 0,
+  "last_checkpoint": "DXY-SUBSTRATE-FINAL",
   "complete_commit": null,
   "operator_review": "PENDING",
-  "updated_at": "2026-11-10T21:17:52+00:00"
+  "updated_at": "2026-11-10T21:23:25+00:00"
 }
