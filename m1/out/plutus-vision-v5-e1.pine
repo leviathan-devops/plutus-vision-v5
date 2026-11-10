@@ -1246,17 +1246,17 @@ if barstate.islast and not e1Drawn
             for i = 0 to array.size(e1zK) - 1
                 if array.get(e1zK, i) == e1Wk
                     box.new(array.get(e1zT0, i), array.get(e1zTop, i), e1WkE, array.get(e1zBot, i), xloc = xloc.bar_time, bgcolor = array.get(e1zFill, i), border_color = array.get(e1zBord, i), border_width = 1)
-                    label.new(e1WkO, array.get(e1zAnchor, i), array.get(e1zTxt, i), xloc = xloc.bar_time, style = label.style_label_lower_left, color = color.new(color.black, 100), textcolor = array.get(e1zBord, i), size = size.tiny)
+                    label.new(e1WkO, array.get(e1zAnchor, i), array.get(e1zTxt, i), xloc = xloc.bar_time, style = label.style_label_lower_left, color = color.new(color.black, 100), textcolor = array.get(e1zBord, i), size = size.small)
         if e1ShowLsz and array.size(e1lK) > 0
             for i = 0 to array.size(e1lK) - 1
                 if array.get(e1lK, i) == e1Wk
                     box.new(array.get(e1lT0, i), array.get(e1lTop, i), e1WkE, array.get(e1lBot, i), xloc = xloc.bar_time, bgcolor = color.new(color.rgb(80, 230, 100), 85), border_color = color.rgb(80, 230, 100), border_width = 1, border_style = line.style_dashed)
-                    label.new(e1WkE, array.get(e1lBot, i), array.get(e1lTxt, i), xloc = xloc.bar_time, style = label.style_label_upper_right, color = color.new(color.black, 100), textcolor = color.rgb(80, 230, 100), size = size.tiny)
+                    label.new(e1WkE, array.get(e1lBot, i), array.get(e1lTxt, i), xloc = xloc.bar_time, style = label.style_label_upper_right, color = color.new(color.black, 100), textcolor = color.rgb(80, 230, 100), size = size.small)
         if e1ShowOpt and array.size(e1oK) > 0
             for i = 0 to array.size(e1oK) - 1
                 if array.get(e1oK, i) == e1Wk
                     line.new(e1WkO, array.get(e1oPx, i), e1WkE, array.get(e1oPx, i), xloc = xloc.bar_time, color = color.rgb(255, 200, 60), width = 1, style = line.style_dashed)
-                    label.new(e1WkE, array.get(e1oPx, i), array.get(e1oTxt, i), xloc = xloc.bar_time, style = label.style_label_right, color = color.new(color.black, 100), textcolor = color.rgb(255, 200, 60), size = size.tiny)
+                    label.new(e1WkE, array.get(e1oPx, i), array.get(e1oTxt, i), xloc = xloc.bar_time, style = label.style_label_right, color = color.new(color.black, 100), textcolor = color.rgb(255, 200, 60), size = size.small)
         if e1ShowSd and array.size(e1sK) > 0
             for i = 0 to array.size(e1sK) - 1
                 if array.get(e1sK, i) == e1Wk
@@ -1270,6 +1270,6 @@ if barstate.islast and not e1Drawn
             int r = 0
             for i = 0 to array.size(e1tK) - 1
                 if array.get(e1tK, i) == e1Wk
-                    table.cell(e1Tbl, 0, r, array.get(e1tKey, i), text_color = color.silver, text_size = size.tiny, text_halign = text.align_left)
-                    table.cell(e1Tbl, 1, r, array.get(e1tVal, i), text_color = color.white, text_size = size.tiny, text_halign = text.align_left)
+                    table.cell(e1Tbl, 0, r, array.get(e1tKey, i), text_color = color.silver, text_size = size.small, text_halign = text.align_left)
+                    table.cell(e1Tbl, 1, r, array.get(e1tVal, i), text_color = color.white, text_size = size.small, text_halign = text.align_left)
                     r += 1
