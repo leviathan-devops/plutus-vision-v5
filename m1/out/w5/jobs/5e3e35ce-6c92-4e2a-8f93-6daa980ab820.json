@@ -1,0 +1,80 @@
+{
+  "job_id": "5e3e35ce-6c92-4e2a-8f93-6daa980ab820",
+  "created_at": "2026-11-10T20:03:23.539Z",
+  "verdict": "PASS",
+  "obligations": [
+    {
+      "id": "sha_format",
+      "verdict": "PASS",
+      "detail": "sha256 abababababababab… sighted, 64-hex"
+    },
+    {
+      "id": "cutoff_conservation",
+      "verdict": "PASS",
+      "detail": "all 2 ts <= cutoff 1783324800"
+    },
+    {
+      "id": "level_conservation",
+      "verdict": "PASS",
+      "detail": "all 2 input lids kept"
+    },
+    {
+      "id": "score_bounds",
+      "verdict": "PASS",
+      "detail": "all 2 scores in 0..14"
+    },
+    {
+      "id": "checkpoint_order",
+      "verdict": "PASS",
+      "detail": "checkpoint seq strictly increases"
+    },
+    {
+      "id": "work_budget",
+      "verdict": "PASS",
+      "detail": "workBudget 0 <= 2"
+    },
+    {
+      "id": "complete_lock",
+      "verdict": "PASS",
+      "detail": "COMPLETE advances only on unlock (bend lock_closed law holds)"
+    },
+    {
+      "id": "bend_positive",
+      "verdict": "PASS",
+      "detail": "check=0 run=0 verdict=0 positive tokens sighted"
+    },
+    {
+      "id": "bend_negative",
+      "verdict": "PASS",
+      "detail": "negative variant refused with status=1"
+    }
+  ],
+  "normalization": {
+    "cutoff_s": 1783324800,
+    "levels_in": 2,
+    "levels_kept": 2,
+    "truncated": false,
+    "audit": []
+  },
+  "bend": {
+    "check": {
+      "status": 0,
+      "token": true
+    },
+    "run": {
+      "status": 0,
+      "token": true
+    },
+    "verdict": {
+      "status": 0,
+      "token": true
+    },
+    "negative": {
+      "status": 1,
+      "token": true
+    }
+  },
+  "tokens": [
+    "PROOF_PASS_VERDICT"
+  ]
+}

@@ -1,0 +1,21 @@
+--- bend PROOF.bend --check-only (full stdout) ---
+ALL PROOFS CHECK
+Use --verdict for mathematical validity.
+bend 2.0.40 is available: run bend update
+OK ALL_PROOFS_CHECK(check-only)
+--- bend PROOF.bend (full stdout) ---
+PROOF_POSITIVE_PASS True False True False False True
+
+bend 2.0.40 is available: run bend update
+OK PROOF_POSITIVE_PASS(run)
+--- bend PROOF.bend --verdict (full stdout) ---
+ALL PROOFS CHECK
+bend 2.0.40 is available: run bend update
+OK ALL_PROOFS_CHECK(verdict)
+--- bend PROOF.bend -- negative (full stdout) ---
+NEGATIVE_MODEL_DETECTED budget=3 ts>cutoff
+
+PROOF_NEGATIVE_MODEL_REJECTED
+bend 2.0.40 is available: run bend update
+OK PROOF_NEGATIVE_MODEL_REJECTED
+CHECK_BEND_PASS
