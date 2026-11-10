@@ -320,5 +320,16 @@ if printf '%s\n' "$STAGED" | grep -qE '^Checkpoints/'; then
   fi
 fi
 
+# WORKFLOW INVALIDATOR — a compiler-grade execution workflow is enforced, not requested prose.
+# Runs only when a workflow or the validator itself is staged, so ordinary M1 implementation commits are unaffected.
+if [ "$FAIL" -eq 0 ] && git diff --cached --name-only 2>/dev/null | grep -qE '^(design/BUILD_WORKFLOW[^/]*\.md|gates/validate_workflow\.py)$'; then
+  WF_PATH="$(git diff --cached --name-only | grep -E '^design/BUILD_WORKFLOW[^/]*\.md' | head -n 1)"
+  if [ -n "$WF_PATH" ]; then
+    python3 gates/validate_workflow.py "$WF_PATH" || FAIL=1
+  else
+    python3 gates/validate_workflow.py design/BUILD_WORKFLOW_v5.2_COMPILER_GRADE.md || FAIL=1
+  fi
+fi
+
 [ "$FAIL" -eq 0 ] && [ -x gates/commit_gate.py ] && { gates/commit_gate.py --surface pre-commit || FAIL=1; }
 [ "$FAIL" -eq 0 ] && echo 'PRE-COMMIT: PASS' || exit 1
