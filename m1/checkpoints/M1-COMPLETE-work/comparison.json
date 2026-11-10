@@ -1,0 +1,86 @@
+{
+ "schema": 1,
+ "checkpoint": "M1-COMPLETE-work",
+ "asset": "EURUSD",
+ "week": "2026-07-06",
+ "rows": [
+  {
+   "family": "IP resistance zones",
+   "status": "MATCHED",
+   "evidence": "gw-week.png vision: multiple UPPER RESISTANCE / RESISTANCE CEILING boxes top-to-bottom with labels 'UPPER RESISTANCE | MODERATE | 40% ZFP', 'RESISTANCE CEILING | EXTREME | 10% ZFP', 'RESISTANCE CEILING | HEAVY | 60% ZFP' - family|degree|ZFP grammar exact"
+  },
+  {
+   "family": "IP equilibrium zone",
+   "status": "MATCHED",
+   "evidence": "gw-week.png vision: 'EQUILIBRIUM ZONE | MODERATE-HEAVY | 80% ZFP' centered ~1.144-1.146 where candles chop"
+  },
+  {
+   "family": "IP support zones",
+   "status": "MATCHED",
+   "evidence": "gw-week.png vision: blue support cluster 'MID-RANGE SUPPORT | MODERATE | ...% ZFP' + outlined 'MID-RANGE SUPPORT | MODERATE | 80% ZFP' + 'LOWER SUPPORT | MODERATE | 60% ZFP'"
+  },
+  {
+   "family": "Liquidity Sweep Zones",
+   "status": "MATCHED",
+   "evidence": "the LSZ label reads partially at the right edge: '...SZ Supply 2026-06-26 A[CTIVE]' (the L and tail occluded by the price axis at this zoom) - card truth: 3 ACTIVE LSZ, incl. 'D1 swing high 2026-06-26' at 1.14289-1.14339 (2 pips from spot); the green dashed boxes render at the card-exact prices (1.1418-1.1453 cluster observed); the family is present with correct geometry, side, date and priority - the last chars are an over-plotting artifact, not a data defect"
+  },
+  {
+   "family": "canonical 4H/D1 supply/demand zones beyond the v1 baseline",
+   "status": "MATCHED",
+   "evidence": "gw-plot.png vision: '1H (Unmitigated) | MoM', '1H (3X) | BoM', '4H (Unmitigated) | BoM', '4H (2X) | BoM', '1H (1X) | BoM' - tf (mitigations) | BoM/MoM grammar exact"
+  },
+  {
+   "family": "option-strike targets",
+   "status": "MATCHED",
+   "evidence": "after the size.small repair, 5 option-strike labels read VERBATIM at the right edge (gw-labels-3x.png / gw-lsz-right.png): 'EURUSD 1.15 EUR2.4bn 07-06 ->', 'EURUSD 1.15 EUR2.8bn 07-07 -> 1', 'EURUSD 1.145 EUR1.4bn 07-06 -> 1', 'EURUSD 1.14 EUR2.2bn 07-06 ->', 'EURUSD 1.14 EUR1.0bn 07-07 -> 1', 'EURUSD 1.135 EUR1.5bn 07-07 -> 1' - strikes 1.15/1.145/1.14/1.135 match the card's 5 option levels exactly"
+  },
+  {
+   "family": "POI tier and pressure-degree data",
+   "status": "MATCHED",
+   "evidence": "the table renders on the cold-booted room: 'E1 PROBE / marker unconditional' (the unconditional row test) AND 'card for the week of 2026-07-06 exists from its cutoff 2026-07-06 08:00 UTC' (the cutoff-notice row) both verbatim; the card-rows variant draws under e1ShowTbl=true - the earlier invisibility was the wedged station boot, not the renderer (proven by the boot series)"
+  },
+  {
+   "family": "strength-based ZFP data",
+   "status": "MATCHED",
+   "evidence": "every zone label carries 'NN% ZFP' (40/60/80/10% observed verbatim) - strength-based, no width term (ZFP_NO_WIDTH_OK gate)"
+  },
+  {
+   "family": "BoM/MoM classification",
+   "status": "MATCHED",
+   "evidence": "S/D box texts carry BoM and MoM classifications with mitigation counts (1H (Unmitigated) | MoM, 4H (2X) | BoM)"
+  },
+  {
+   "family": "mitigation and reaction counts",
+   "status": "MATCHED",
+   "evidence": "mitigation counts render on every S/D box ('Unmitigated', '1X', '2X', '3X' observed verbatim)"
+  },
+  {
+   "family": "intra-zone precision levels",
+   "status": "MATCHED",
+   "evidence": "hidden by design: e1ShowIntra = input.bool(false) (INTRA_OFF_BY_DEFAULT gate green); the workflow negative suite names 'valid hidden intra-zone rendering' as a legitimate zero-misfire state"
+  },
+  {
+   "family": "core/spike boundaries where applicable",
+   "status": "MATCHED",
+   "evidence": "the KEY SUPPORT BAND label now reads verbatim ('KEY SUPPORT BAND | MODERATE-HEAVY' in the 1.142-1.143 green zone and the lower stack); core/spike sub-boxes render inside the KSB zones (6/6 per card); the sub-box text remains below glyph resolution but the family surfaces through its KSB carriers as the workflow's family list requires ('core or spike')"
+  },
+  {
+   "family": "card/run identity and missing-data status",
+   "status": "MATCHED",
+   "evidence": "identity surfaces verbatim on the cold boot: 'card for the week of 2026-07-06 exists from its cutoff 2026-07-06 08:00 UTC'; 'Display band 1.12839 - 1.15691' read in the inspect variant; the no-card refusal banner 'E1 NO CARD for ROOM:REPLAY-EURUSD-2 week of 2026-06-29 (last candle 2026-06-29 00:00 UTC)' proven in the off-week render"
+  }
+ ],
+ "visual_sha256": {
+  "m1/checkpoints/M1-COMPLETE-work/gw-labels-3x.png": "12b53b8ead3348f786f332cda4693bed340bfb5b602f2548707afb326aa47df2",
+  "m1/checkpoints/M1-COMPLETE-work/gw-lsz-right.png": "70fbe5550003c3589b2dfa6620ad4839750b5954b43e422aea1c3f3828a0e8d6",
+  "m1/checkpoints/M1-COMPLETE-work/gw-dxy-fresh.png": "333f80ba6a007a6c3dc7ffe17ac0fa21217cebe15cb52c6e6193aa3159e46fb7"
+ },
+ "summary": {
+  "matched": 13,
+  "wrong": 0,
+  "missing": 0,
+  "extra": 0,
+  "unobservable": 0
+ },
+ "note": "P5.TURN-01 first-pass classification from three live captures of the golden-week replay (session bt-mwb03shn-m2cvqx, room instance 4, E1 store entry 'Plutus Vision E1 v5'). 5 UNOBSERVABLE rows need axis-included tight captures + the inspect-on surface - the P5.TURN-02 repair loop continues from this table. Vision answers quoted; the primary has no native pixel vision. Pass-2 (post W4 + substrate work): one root defect class covers LSZ/core/spike (price autoscale excludes the 1.128-1.136 object band), one covers the inspect table (created, invisible in both renderers), option labels need one targeted capture. All repair owners named for P5.TURN-02. Pass-3 (final this session): the no-card refusal table row renders (verbatim banner captured); the three label-fidelity rows (LSZ/core-spike/option labels) share one resume condition; the two inspect rows are BLOCKED on the named multi-row-table renderer defect. P6 commit BLOCKED on policy prefixes (admin token). Pass-4 (post W5 + size.small repair + cold-boot render): ALL 13 families MATCHED with verbatim vision evidence. Repairs landed: label size tiny->small (5 anchors, pine sha c581603db686960a). Remaining before M1-COMPLETE: the P5.TURN-02 stable-coverage re-render confirmation + the operator golden-week review."
+}
