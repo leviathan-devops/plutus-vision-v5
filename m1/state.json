@@ -2,10 +2,10 @@
   "schema": 1,
   "phase": "M1",
   "m1_status": "IN_PROGRESS",
-  "checkpoint_seq": 6,
-  "work_commits_since_checkpoint": 1,
-  "last_checkpoint": "P1-EVIDENCE",
+  "checkpoint_seq": 7,
+  "work_commits_since_checkpoint": 0,
+  "last_checkpoint": "P3-ORGANS",
   "complete_commit": null,
   "operator_review": "PENDING",
-  "updated_at": "2026-11-10T16:52:35+00:00"
+  "updated_at": "2026-11-10T16:54:06+00:00"
 }
