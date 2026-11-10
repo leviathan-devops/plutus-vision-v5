@@ -1,0 +1,34 @@
+{
+ "schema": 1,
+ "id": "M1-DRAFT",
+ "type": "m1_complete",
+ "asset": "EURUSD",
+ "week": "2026-07-06",
+ "claims": {
+  "evidence_ready": true,
+  "engine_ready": true,
+  "composition_ready": true,
+  "render_observed": true
+ },
+ "comparison": "m1/checkpoints/M1-DRAFT/comparison.json",
+ "visual": [
+  {
+   "path": "m1/checkpoints/M1-DRAFT/visual-eurusd-golden-week.png",
+   "expectation": "the EURUSD golden week (Jul 3-9 2026) post-repair: 11+ zone labels, 6 S/D labels, 5 option-strike labels, the LSZ cluster - all family|degree|ZFP grammar verbatim (the visual family proof)"
+  },
+  {
+   "path": "m1/checkpoints/M1-DRAFT/visual-dxy-room-session.png",
+   "expectation": "the DXY golden-week room session (REPLAY-DXY-2, Jul 10 2026 close, real capture): the Pinebox run identity anchor. NAMED DEFECT recorded on this capture: the room page's DXY 1H cell reports CELL_SPAN_ABSENT (the page-side span wiring; four boots, cold and warm, all reproducible) so the E1 layer does not draw on the DXY cell - the visual family proof is visual 1 (EURUSD). The defect is inside the protected Pinebox package; resume: a room build with the DXY cell span fix, or the operator's acceptance of the EURUSD visual identity."
+  }
+ ],
+ "pinebox": {
+  "asset": "DXY",
+  "week": "2026-07-06",
+  "mode": "local",
+  "session": "bt-mwb5qb3x-ly3lpr (the DXY golden-week room session at the close)",
+  "note": "the run identity is the DXY room session (capture 2); the visual family proof is the EURUSD render (capture 1) - both declared, nothing implied"
+ },
+ "card": "m1/out/e1-card-EURUSD-2026-07-06.json",
+ "composition": "m1/out/plutus-vision-v5-e1.pine",
+ "note": "M1-complete: the workflow's designed stop-for-operator-review transition. After this commit the gate requires the PV-Operator-Unlock token for any further commit. All 29 ST checks PASS (m1/out/trident/container-test-results.json); frozen SHAs in m1/out/frozen-shas.json (card 2247fed1882141b8, derived 7c64d6394c87f257, pine c581603db686960a, worker 2fdeb310320080a); cloud/local parity base acee9172b8255a43 + pine f44503d79368aae2 identical both sides; bend proofs 4/4. Operator review PENDING."
+}
