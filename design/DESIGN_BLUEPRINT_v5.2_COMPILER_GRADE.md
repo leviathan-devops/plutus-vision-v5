@@ -178,7 +178,7 @@ A complete E1 output has:
 
 | Pillar | Canonical computation and evidence | Baseline relation |
 |---|---|---|
-| **P1 — Multi-timeframe pivots** | Classic, Fibonacci, Camarilla; weekly plus each of the last three daily sets; extended historical periods; verification before use (`:967-1059`) | **New external computation.** v1 does not implement this 42-level engine |
+| **P1 — Multi-timeframe pivots** | Classic, Fibonacci, Camarilla; weekly plus each of the last three daily sets; extended overlapping historical periods; arithmetic/order verification before use (`:967-1059`) | **New external computation.** v1 does not implement this variable multi-set pivot engine |
 | **P2 — MA confluence** | EMA/SMA 9/10/20/50/100/200, 3+ within 0.15 DXY, recapture of 50/100/200 within three sessions (`:1065-1079`) | **New.** Not the four chart EMAs in the old v2 approximation |
 | **P3 — Component option conversion** | Full DXY formula and weights, with current component rates, audit trail and notional tiers (`:1092-1165`) | **New.** Cloudflare calculation; no Pine conversion code |
 | **P4 — Institutional commentary** | Explicit analyst levels only; tiers 1/2/3 weights 3/2/1; consensus across sources (`:1179-1199`) | **New.** Named model extraction step, then code scoring |
