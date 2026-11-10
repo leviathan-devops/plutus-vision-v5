@@ -1,0 +1,5 @@
+P4_EXPLICIT_LEVEL_OK id=P4|analyst|ing|99.5 dimension=1
+P4_CUTOFF_REJECT
+P4_CONSENSUS_2 groups=1 independent=2 dimension=2
+P4_SINGLE_SOURCE_NO_FALSE_CONSENSUS independent=1
+P4_NO_PROXY implicit="quoted_span names no exact price - paraphrased implicit levels are not evidence" missing_rows=1
