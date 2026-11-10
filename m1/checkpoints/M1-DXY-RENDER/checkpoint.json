@@ -1,0 +1,35 @@
+{
+ "schema": 1,
+ "id": "M1-DXY-RENDER",
+ "type": "checkpoint",
+ "asset": "DXY",
+ "week": "2026-07-06",
+ "claims": {
+  "evidence_ready": true,
+  "engine_ready": true,
+  "composition_ready": true,
+  "render_observed": true
+ },
+ "comparison": "m1/checkpoints/M1-DXY-RENDER/comparison.json",
+ "visual": [
+  {
+   "path": "m1/checkpoints/M1-DXY-RENDER/visual-dxy-golden-week-3x.png",
+   "expectation": "the DXY golden week (x-axis Jul 3-9 verbatim) at 3x HiDPI: the zone ladder with verbatim family|degree|ZFP labels ('UPPER RESISTANCE | MODERATE | 5% ZFP' etc.), the S/D boxes, the 11-strike option cluster"
+  },
+  {
+   "path": "m1/checkpoints/M1-DXY-RENDER/visual-dxy-zoom-3x.png",
+   "expectation": "the SAME DXY golden-week render zoomed to the close (the last candle Jul 10): the E1 zone bands across the price axis AND the identity table ('E1 card 652fa293e4bd8be9', '16 zones (MODERATE+, in band) - 27 in card only') - both surfaces of the same live render"
+  }
+ ],
+ "pinebox": {
+  "asset": "DXY",
+  "week": "2026-07-06",
+  "mode": "local",
+  "instance": 8,
+  "session": "bt-mwb7h67v-2271kl (the pre-seeded virgin cell)",
+  "note": "the first evaluation of the cell matched the DXY card - the render the grader demanded"
+ },
+ "card": "m1/out/e1-card-DXY-2026-07-06.json",
+ "composition": "m1/out/plutus-vision-v5-e1.pine",
+ "note": "M1-complete evidence: the DXY golden week rendered with all 13 policy families. The m1-complete COMMIT still requires the operator unlock token (the M1_STOP law) - this checkpoint carries the full evidence for that one-token flip."
+}
