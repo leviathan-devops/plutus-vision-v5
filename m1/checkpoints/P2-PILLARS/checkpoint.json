@@ -1,0 +1,36 @@
+{
+ "schema": 1,
+ "id": "P2-PILLARS",
+ "type": "checkpoint",
+ "asset": "DXY",
+ "week": "2026-07-06",
+ "claims": {
+  "evidence_ready": true,
+  "engine_ready": true,
+  "composition_ready": false,
+  "render_observed": false
+ },
+ "comparison": "m1/checkpoints/P2-PILLARS/comparison.json",
+ "visual": [
+  {
+   "path": "m1/checkpoints/P2-PILLARS/visual-pillar-gates.png",
+   "expectation": "the verbatim tool output of the primary's re-run of all seven P2-window gates (WINDOW_/P1_/P2_/P3_/P8_/P5_/P6_/P7_/SCORE_/DEGREE_/CLUSTER_/REACTION_/ZFP_ tokens) - the pillar window's own evidence, not a chart render"
+  }
+ ],
+ "pinebox": {
+  "asset": "DXY",
+  "week": "2026-07-06",
+  "mode": "local",
+  "note": "pillar-window checkpoint; chart render comes at P4/P5"
+ },
+ "gates": {
+  "checkWindow": 0,
+  "checkP1": 0,
+  "checkP2": 0,
+  "checkOptions": 0,
+  "checkP5": 0,
+  "checkP6P7": 0,
+  "checkAssembly": 0
+ },
+ "note": "P2.TURN-01..07; work commits a206308 (TURN-01..03) + 4a2837e (TURN-04..07); every gate re-run by the primary this turn; bunx tsc --noEmit exit 0"
+}
