@@ -1,0 +1,34 @@
+{
+ "schema": 1,
+ "id": "M1-FINAL",
+ "type": "m1_complete",
+ "asset": "DXY",
+ "week": "2026-07-06",
+ "claims": {
+  "evidence_ready": true,
+  "engine_ready": true,
+  "composition_ready": true,
+  "render_observed": true
+ },
+ "comparison": "m1/checkpoints/M1-FINAL/comparison.json",
+ "visual": [
+  {
+   "path": "m1/checkpoints/M1-FINAL/visual-dxy-golden-week-3x.png",
+   "expectation": "the DXY golden week (x-axis Jul 3-9 verbatim) at 3x HiDPI: the zone ladder with verbatim family|degree|ZFP labels, the S/D boxes, the option cluster"
+  },
+  {
+   "path": "m1/checkpoints/M1-FINAL/visual-dxy-zoom-3x.png",
+   "expectation": "the same render at close-zoom: the E1 zone bands + the identity table (card sha, asset/week, cutoff/spot, regime, K, zone counts, MISSING rows)"
+  }
+ ],
+ "pinebox": {
+  "asset": "DXY",
+  "week": "2026-07-06",
+  "mode": "local",
+  "instance": 8,
+  "session": "bt-mwb7h67v-2271kl"
+ },
+ "card": "m1/out/e1-card-DXY-2026-07-06.json",
+ "composition": "m1/out/plutus-vision-v5-e1.pine",
+ "note": "P5.TURN-03's designed terminal action: create the M1-complete checkpoint and stop for operator review. Evidence = the grader-accepted DXY render (7d1e6a9). After this commit the gate requires the operator unlock for any further commit."
+}
