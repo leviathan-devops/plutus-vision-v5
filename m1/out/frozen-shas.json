@@ -1,0 +1,10 @@
+{
+ "schema": 1,
+ "frozenAt": "2026-11-10T20:33:18.288Z",
+ "shas": {
+  "m1/out/e1-card-EURUSD-2026-07-06.json": "2247fed1882141b81506069023c5ce0a4ec99bf82a9b9c2d4fc9bba8e8631f18",
+  "m1/out/e1-derived-EURUSD-2026-07-06.json": "7c64d6394c87f2575831594193ff8563ead4aca14c6638f607ffe6a97ee45175",
+  "m1/out/plutus-vision-v5-e1.pine": "c581603db686960a3b145a4116716a561d410f3fe7e5e3851b43aca96f61b24b",
+  "m1/cloud/dist/worker.js": "2fdeb310320080a6e6765458f12e33f4a2e0781a8d033c7bf6ef839f3fd00742"
+ }
+}

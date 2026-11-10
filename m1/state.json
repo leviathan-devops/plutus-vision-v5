@@ -3,9 +3,9 @@
   "phase": "M1",
   "m1_status": "IN_PROGRESS",
   "checkpoint_seq": 11,
-  "work_commits_since_checkpoint": 0,
+  "work_commits_since_checkpoint": 1,
   "last_checkpoint": "P5-REPAIR",
   "complete_commit": null,
   "operator_review": "PENDING",
-  "updated_at": "2026-11-10T20:28:45+00:00"
+  "updated_at": "2026-11-10T20:40:48+00:00"
 }
