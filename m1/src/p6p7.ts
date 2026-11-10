@@ -44,3 +44,19 @@ export function pillar7(conv: Conversion[]): { arena: Arena | null; levels: Leve
     { id: 'P7|arena|lo', pillar: 'P7', kind: 'arena', price: lo, label: 'pressure arena floor', source: [arena.basis] },
     { id: 'P7|arena|hi', pillar: 'P7', kind: 'arena', price: hi, label: 'pressure arena ceiling', source: [arena.basis] } ] };
 }
+
+/** P2.TURN-06: prefer the exchange arena; the option-wall fallback applies ONLY when the exchange
+ *  source is named missing (P7_EXCHANGE_SOURCE_MISSING / P7_NO_TIER1_WALL). Never silent. */
+import type { ExchangeArena } from './p7exchange';
+export interface P7Resolved { arena: Arena; levels: Level[]; basis: 'exchange' | 'fallback'; missingToken: string | null }
+export function resolveP7(
+  exchange: { arena: ExchangeArena | null; levels: Level[]; missingToken: string | null },
+  conv: Conversion[],
+): P7Resolved {
+  if (exchange.arena)
+    return { arena: { lo: exchange.arena.floor, hi: exchange.arena.ceiling, basis: exchange.arena.basis, ice: 'MISSING', cme: 'MISSING' },
+             levels: exchange.levels, basis: 'exchange', missingToken: null };
+  const fb = pillar7(conv);
+  if (!fb.arena) throw new Error('P7_NO_ARENA: neither exchange evidence nor fallback option walls produced an arena');
+  return { arena: fb.arena, levels: fb.levels, basis: 'fallback', missingToken: exchange.missingToken ?? 'P7_EXCHANGE_SOURCE_MISSING' };
+}
