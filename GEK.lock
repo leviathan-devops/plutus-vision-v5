@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "project": "PLUTUS_VISION",
+  "root": "/home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS_VISION",
+  "remote": "https://github.com/leviathan-devops/plutus-vision-v5.git",
+  "authority": {
+    "design/DESIGN_BLUEPRINT_v5.2_COMPILER_GRADE.md": "d1776a680bb86a8e30be81d097751ebf6ef576f1751cd091117752cfe60f0dcf",
+    "design/BUILD_WORKFLOW_v5.2_COMPILER_GRADE.md": "1d510185f46320ffe9d83231bb8367a0efe31326efa1266b4cfcdc73c835766f"
+  },
+  "oracles": {},
+  "gate_spec": "bc143ca707506363399f6e2e38e020b0b1d2d348df59420fcd5f87402fea3ed4",
+  "armed": false,
+  "server_checks": [
+    "gek-mechanical",
+    "gek-judge",
+    "gek-identity"
+  ]
+}
