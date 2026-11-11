@@ -1,0 +1,17 @@
+server up on 127.0.0.1:28223
+--- GET /health ---
+{"status":"PROOF_HEALTH_OK","service":"plutus-proof","loopback":"127.0.0.1","max_levels":512}
+OK PROOF_HEALTH_OK
+--- POST /prove (positive) ---
+{"status":"PROOF_JOB_CREATED","job_id":"a3aefad1-3eeb-4374-8f3d-39dc02cb54ae"}
+OK PROOF_JOB_CREATED
+--- GET /verdict/:id (positive) ---
+{"job_id":"a3aefad1-3eeb-4374-8f3d-39dc02cb54ae","created_at":"2026-11-10T20:01:32.440Z","verdict":"PASS","obligations":[{"id":"sha_format","verdict":"PASS","detail":"sha256 abababababababab… sighted, 64-hex"},{"id":"cutoff_conservation","verdict":"PASS","detail":"all 2 ts <= cutoff 1783324800"},{"id":"level_conservation","verdict":"PASS","detail":"all 2 input lids kept"},{"id":"score_bounds","verdict":"PASS","detail":"all 2 scores in 0..14"},{"id":"checkpoint_order","verdict":"PASS","detail":"checkpoint seq strictly increases"},{"id":"work_budget","verdict":"PASS","detail":"workBudget 0 <= 2"},{"id":"complete_lock","verdict":"PASS","detail":"COMPLETE advances only on unlock (bend lock_closed law holds)"},{"id":"bend_positive","verdict":"PASS","detail":"check=0 run=0 verdict=0 positive tokens sighted"},{"id":"bend_negative","verdict":"PASS","detail":"negative variant refused with status=1"}],"normalization":{"cutoff_s":1783324800,"levels_in":2,"levels_kept":2,"truncated":false,"audit":[]},"bend":{"check":{"status":0,"token":true},"run":{"status":0,"token":true},"verdict":{"status":0,"token":true},"negative":{"status":1,"token":true}},"tokens":["PROOF_PASS_VERDICT"]}
+OK PROOF_PASS_VERDICT {"verdict":"PASS","obligations":9}
+--- POST /prove (negative: ts past cutoff, budget 3) ---
+{"status":"PROOF_JOB_CREATED","job_id":"6d0157b2-a600-4446-8b55-9d65aa93db60"}
+OK PROOF_JOB_CREATED(negative)
+--- GET /verdict/:id (negative) ---
+{"job_id":"6d0157b2-a600-4446-8b55-9d65aa93db60","created_at":"2026-11-10T20:01:32.888Z","verdict":"FAIL","obligations":[{"id":"sha_format","verdict":"PASS","detail":"sha256 abababababababab… sighted, 64-hex"},{"id":"cutoff_conservation","verdict":"FAIL","detail":"1 ts past cutoff 1783324800"},{"id":"level_conservation","verdict":"PASS","detail":"all 1 input lids kept"},{"id":"score_bounds","verdict":"PASS","detail":"all 1 scores in 0..14"},{"id":"checkpoint_order","verdict":"PASS","detail":"checkpoint seq strictly increases"},{"id":"work_budget","verdict":"FAIL","detail":"workBudget 3 <= 2"},{"id":"complete_lock","verdict":"PASS","detail":"COMPLETE advances only on unlock (bend lock_closed law holds)"},{"id":"bend_positive","verdict":"PASS","detail":"check=0 run=0 verdict=0 positive tokens sighted"},{"id":"bend_negative","verdict":"PASS","detail":"negative variant refused with status=1"}],"normalization":{"cutoff_s":1783324800,"levels_in":1,"levels_kept":1,"truncated":false,"audit":[]},"bend":{"check":{"status":0,"token":true},"run":{"status":0,"token":true},"verdict":{"status":0,"token":true},"negative":{"status":1,"token":true}},"tokens":["PROOF_NEGATIVE_MODEL_REJECTED"]}
+OK PROOF_NEGATIVE_MODEL_REJECTED
+CHECK_SERVICE_PASS

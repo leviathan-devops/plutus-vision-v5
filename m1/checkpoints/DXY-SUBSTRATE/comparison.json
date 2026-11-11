@@ -1,0 +1,33 @@
+{
+ "schema": 1,
+ "checkpoint": "DXY-SUBSTRATE",
+ "asset": "DXY",
+ "week": "2026-07-06",
+ "rows": [
+  {
+   "family": "E1 layer on the DXY cell",
+   "status": "MISSING",
+   "evidence": "7-attempt series (ledger P5.TURN-03): the DXY cell never draws E1 objects despite python-checked arithmetic (e1Mon==e1KeyW[0]==1783296000000; contains('ROOM:REPLAY-DXY-2','DXY')=true); a probe banner whose text exists in NO script on the chart still renders (compiled-state/frozen-table persistence in room-4.db); the 96.0-97.8 bands are the v1 baseline's zones (no E1 grammar labels at 3x HiDPI)"
+  },
+  {
+   "family": "EURUSD cell on the same room",
+   "status": "MATCHED",
+   "evidence": "the identical room build renders the EURUSD golden week with all 13 policy families (P5-REPAIR seq 11) - the defect is DXY-cell-specific"
+  },
+  {
+   "family": "page-side DXY cell wiring",
+   "status": "MISSING",
+   "evidence": "CELL_SPAN_ABSENT on every boot incl. cold restarts while the server /cells endpoint reports full DXY spans (10912 bars) - page-side defect corroborating the evaluation failure"
+  }
+ ],
+ "visual_sha256": {
+  "m1/checkpoints/DXY-SUBSTRATE/visual-dxy-golden-week-3x.png": "d855947bb40764107ebab7fa52e35dc8e624c33237e7d028d821baaa18cee174"
+ },
+ "summary": {
+  "matched": 1,
+  "wrong": 0,
+  "missing": 2,
+  "extra": 0,
+  "unobservable": 0
+ }
+}

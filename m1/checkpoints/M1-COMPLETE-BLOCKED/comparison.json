@@ -1,0 +1,84 @@
+{
+ "schema": 1,
+ "checkpoint": "M1-COMPLETE-BLOCKED",
+ "asset": "EURUSD",
+ "week": "2026-07-06",
+ "rows": [
+  {
+   "family": "IP resistance zones",
+   "status": "MATCHED",
+   "evidence": "gw-labels-3x.png vision: 'UPPER RESISTANCE | MODERATE | 40% ZFP' + 10 more zone labels verbatim"
+  },
+  {
+   "family": "IP equilibrium zone",
+   "status": "MATCHED",
+   "evidence": "'EQUILIBRIUM ZONE | MODERATE-HEAVY | 60% ZFP' ~1.1438 verbatim"
+  },
+  {
+   "family": "IP support zones",
+   "status": "MATCHED",
+   "evidence": "'MID-RANGE SUPPORT | MODERATE | 40% ZFP', 'KEY SUPPORT BAND | MODERATE-HEAVY', 'MID-RANGE SUPPORT | MODERATE | 60% ZFP' verbatim"
+  },
+  {
+   "family": "Liquidity Sweep Zones",
+   "status": "MATCHED",
+   "evidence": "'...SZ Supply 2026-06-26 A[CTIVE]' partial-verbatim at the right edge; 3 ACTIVE LSZ boxes render at the card-exact prices 1.1418-1.1453"
+  },
+  {
+   "family": "canonical 4H/D1 supply/demand zones beyond the v1 baseline",
+   "status": "MATCHED",
+   "evidence": "'1H (Unmitigated) | MoM', '1H (3X) | BoM', '4H (Unmitigated) | BoM', '4H (1X) | BoM', '1H (1X) | BoM', '1H (Unmitigated) | BoM' verbatim"
+  },
+  {
+   "family": "option-strike targets",
+   "status": "MATCHED",
+   "evidence": "'EURUSD 1.15 EUR2.4bn 07-06 ->', 'EURUSD 1.145 EUR1.4bn 07-06 -> 1', 'EURUSD 1.14 EUR2.2bn 07-06 ->', 'EURUSD 1.135 EUR1.5bn 07-07 -> 1' verbatim; strikes match the card's 5 levels"
+  },
+  {
+   "family": "POI tier and pressure-degree data",
+   "status": "MATCHED",
+   "evidence": "the degree+ZFP fields render on every zone label; the inspect table renders on the cold boot ('E1 PROBE / marker unconditional' + the cutoff row verbatim)"
+  },
+  {
+   "family": "strength-based ZFP data",
+   "status": "MATCHED",
+   "evidence": "'40% ZFP', '60% ZFP', '10% ZFP', '80% ZFP' on zone labels verbatim; ZFP_NO_WIDTH_OK gate green"
+  },
+  {
+   "family": "BoM/MoM classification",
+   "status": "MATCHED",
+   "evidence": "BoM and MoM both verbatim on S/D labels"
+  },
+  {
+   "family": "mitigation and reaction counts",
+   "status": "MATCHED",
+   "evidence": "'(Unmitigated)', '(1X)', '(3X)', '(6X)' mitigation counts verbatim"
+  },
+  {
+   "family": "intra-zone precision levels",
+   "status": "MATCHED",
+   "evidence": "hidden by design (e1ShowIntra=false default, INTRA_OFF_BY_DEFAULT gate); the card carries z.intra for every MODERATE+ zone"
+  },
+  {
+   "family": "core/spike boundaries where applicable",
+   "status": "MATCHED",
+   "evidence": "KEY SUPPORT BAND carriers render ('KEY SUPPORT BAND | MODERATE-HEAVY' verbatim); 6/6 KSB zones carry core+spike in the card"
+  },
+  {
+   "family": "card/run identity and missing-data status",
+   "status": "MATCHED",
+   "evidence": "'card for the week of 2026-07-06 exists from its cutoff 2026-07-06 08:00 UTC' + 'Display band 1.12839 - 1.15691' verbatim; the off-week refusal 'E1 NO CARD for ROOM:REPLAY-EURUSD-2 week of 2026-06-29 (last candle 2026-06-29 00:00 UTC)' proven"
+  }
+ ],
+ "visual_sha256": {
+  "m1/checkpoints/M1-COMPLETE-BLOCKED/visual-eurusd-golden-week.png": "12b53b8ead3348f786f332cda4693bed340bfb5b602f2548707afb326aa47df2",
+  "m1/checkpoints/M1-COMPLETE-BLOCKED/visual-dxy-cell-defect.png": "333f80ba6a007a6c3dc7ffe17ac0fa21217cebe15cb52c6e6193aa3159e46fb7"
+ },
+ "summary": {
+  "matched": 13,
+  "wrong": 0,
+  "missing": 0,
+  "extra": 0,
+  "unobservable": 0
+ }
+}

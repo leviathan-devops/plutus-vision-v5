@@ -1,0 +1,31 @@
+{
+ "schema": 1,
+ "id": "DXY-SUBSTRATE-FINAL",
+ "type": "blocked",
+ "asset": "DXY",
+ "week": "2026-07-06",
+ "claims": {
+  "evidence_ready": true,
+  "engine_ready": true,
+  "composition_ready": true,
+  "render_observed": false
+ },
+ "comparison": "m1/checkpoints/DXY-SUBSTRATE-FINAL/comparison.json",
+ "visual": [
+  {
+   "path": "m1/checkpoints/DXY-SUBSTRATE-FINAL/visual-ide-week-pin.png",
+   "expectation": "the IDE chart with the week pinned to 2026-W28: the x-axis STILL Aug 5 -> Nov 3 (the week pin does not re-slice the fixture) + PINE_STATION_DOWN - the structural closure of the IDE surface"
+  },
+  {
+   "path": "m1/checkpoints/DXY-SUBSTRATE-FINAL/visual-room-warm-swap.png",
+   "expectation": "the room warm-swap attempt: 0 E1 objects + CELL_SPAN_ABSENT on the DXY session of a virgin DB with a warmed station - the room surface closure"
+  }
+ ],
+ "pinebox": {
+  "asset": "DXY",
+  "week": "2026-07-06",
+  "mode": "local",
+  "note": "11 attempts across every surface (room x9, IDE x2); the substrate cannot produce a DXY E1 render in this Pinebox build"
+ },
+ "note": "The terminal substrate record. Resume: a Pinebox build with the DXY cell + station fixes, or the operator ruling on the M1 asset contract."
+}

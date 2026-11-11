@@ -1,0 +1,43 @@
+{
+ "schema": 1,
+ "checkpoint": "P1-EVIDENCE",
+ "asset": "EURUSD",
+ "week": "2026-07-06",
+ "rows": [
+  {
+   "family": "bar source (deterministic, pre-cutoff)",
+   "status": "MATCHED",
+   "evidence": "m1/out/w1/checkBars.out: BAR_COUNT_OK n=79 DXY 1H July-2026, BAR_ORDER_OK, OHLC_SHAPE_OK, POST_CUTOFF_BAR_REJECTED (adversarial stub refused), gate re-run by primary exit 0"
+  },
+  {
+   "family": "Protocol A typed evidence",
+   "status": "MATCHED",
+   "evidence": "m1/out/w1/checkProtocolA.out: PROTOCOL_A_VALID + three adversarial refusals; fixture sha 10d594f6 from the real 102419-byte capture"
+  },
+  {
+   "family": "P4 analyst consensus",
+   "status": "MATCHED",
+   "evidence": "m1/out/w1/checkP4.out: P4_EXPLICIT_LEVEL_OK, P4_CUTOFF_REJECT, P4_CONSENSUS_2, P4_NO_PROXY, P4_SINGLE_SOURCE_NO_FALSE_CONSENSUS"
+  },
+  {
+   "family": "P7 exchange arena",
+   "status": "MATCHED",
+   "evidence": "m1/out/w1/checkP7.out: P7_EXCHANGE_ARENA_OK, P7_AFTER_CUTOFF_REJECTED, P7_NO_TIER1_WALL_NAMED, P7_EXCHANGE_SOURCE_MISSING_NAMED"
+  },
+  {
+   "family": "evidence manifest",
+   "status": "MATCHED",
+   "evidence": "m1/out/w1/checkManifest.out: MANIFEST_SHA_OK, MANIFEST_CUTOFF_OK, MANIFEST_FUTURE_REJECTED, MANIFEST_MISSING_NAMED, MANIFEST_CANONICAL_STABLE"
+  }
+ ],
+ "visual_sha256": {
+  "m1/checkpoints/P1-EVIDENCE/visual-protocol-a.png": "71769468798e7f07377b23141dcd6d654493045321317ea791a566e7d4a588b8"
+ },
+ "summary": {
+  "matched": 5,
+  "wrong": 0,
+  "missing": 0,
+  "extra": 0,
+  "unobservable": 0
+ }
+}

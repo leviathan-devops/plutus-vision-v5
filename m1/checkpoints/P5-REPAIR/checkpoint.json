@@ -1,0 +1,33 @@
+{
+ "schema": 1,
+ "id": "P5-REPAIR",
+ "type": "checkpoint",
+ "asset": "EURUSD",
+ "week": "2026-07-06",
+ "claims": {
+  "evidence_ready": true,
+  "engine_ready": true,
+  "composition_ready": true,
+  "render_observed": true
+ },
+ "comparison": "m1/checkpoints/P5-REPAIR/comparison.json",
+ "visual": [
+  {
+   "path": "m1/checkpoints/P5-REPAIR/visual-labels-repaired.png",
+   "expectation": "the EURUSD golden week post-repair: 11+ zone labels, 6 S/D labels in family|degree|ZFP grammar, all legible at 3x HiDPI"
+  },
+  {
+   "path": "m1/checkpoints/P5-REPAIR/visual-lsz-option-labels.png",
+   "expectation": "the right-edge crop: option-strike labels 'EURUSD 1.15 EUR2.4bn 07-06 ->' etc. and the LSZ 'Supply 2026-06-26 A...' label at card-exact prices"
+  }
+ ],
+ "pinebox": {
+  "asset": "EURUSD",
+  "week": "2026-07-06",
+  "mode": "local",
+  "session": "gw-labels (bt-mwb40xdv-6jxmcu), room instance 4, 3x HiDPI capture"
+ },
+ "card": "m1/out/e1-card-EURUSD-2026-07-06.json",
+ "composition": "m1/out/plutus-vision-v5-e1.pine",
+ "note": "the P5.TURN-02 repair checkpoint: label size tiny->small (m1/src/compose.ts, 5 anchors), pine regenerated to sha c581603db686960a; all 13 families MATCHED with verbatim vision evidence post-repair; the R36/presentation/budget gates re-run exit 0 with the new pine."
+}

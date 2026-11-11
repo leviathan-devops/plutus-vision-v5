@@ -41,20 +41,22 @@ export function compose() {
   const files = readdirSync(`${ROOT}m1/out`).filter(n => /^e1-card-.+-.+\.json$/.test(n)).sort();
   if (!files.length) throw new Error('COMPOSE_NO_CARD: no m1/out/e1-card-<asset>-<monday>.json - run m1/src/run.ts first');
   const cards = files.map(n => ({ path: `m1/out/${n}`, ...readCard(readFileSync(`${ROOT}m1/out/${n}`, 'utf8')) }));
-  const label = (z: CardZone) => `${z.name} | ${z.degree} ${z.score} | ${Math.round(z.zfp)}% ZFP${z.zfpRules.springReleaseAt !== null ? ` (+${z.zfpRules.springRelease} after ${new Date(z.zfpRules.springReleaseAt).toISOString().slice(5, 10)} expiry)` : ''}${z.poiTier ? ` | T${z.poiTier}` : ''} | ${z.reactionState} ${z.reactionsPreCutoff}R${z.bom ? ` | ${z.bom.tf} ${z.bom.type} ${z.bom.mitigations}X` : ''}`;
-  const Z: { k: number; z: CardZone }[] = [], Ls: { k: number; top: number; bot: number; t0: number; txt: string }[] = [];
+  const label = (z: CardZone) => `${z.name} | ${z.degree} | ${Math.round(z.zfp)}% ZFP`;   // P4.TURN-03: family, degree, ZFP only
+  const Z: { k: number; z: CardZone; t0: number }[] = [], Ls: { k: number; top: number; bot: number; t0: number; txt: string }[] = [];
   const O: { k: number; px: number; txt: string }[] = [], S: { k: number; top: number; bot: number; t0: number; dem: boolean; txt: string }[] = [];
   const I: { k: number; px: number }[] = [], T: { k: number; key: string; val: string }[] = [];
   cards.forEach(({ card, sha256 }, k) => {
     const band = card.render_policy.band; const inBand = (lo: number, hi: number) => hi >= band.lo && lo <= band.hi;
+    const left = Date.parse(card.week_monday + 'T00:00:00Z') - 7 * 86400000;      // R36: active week + one week of history
+    const clip = (t: number) => Math.max(t, left);                                // old origins never cross into the window
     const zones = card.zones.filter(z => z.score >= 6 && inBand(z.lo, z.hi)).sort((a, b) => b.hi - a.hi);
-    zones.forEach(z => Z.push({ k, z }));
+    zones.forEach(z => Z.push({ k, z, t0: clip(z.origin) }));
     card.pillars.P5.lsz.filter(l => l.priority === 'ACTIVE SL TRIGGER' && inBand(l.extLo, l.extHi))
-      .forEach(l => Ls.push({ k, top: l.extHi, bot: l.extLo, t0: Date.parse(l.date), txt: `LSZ ${l.side} ${l.date} ACTIVE` }));
+      .forEach(l => Ls.push({ k, top: l.extHi, bot: l.extLo, t0: clip(Date.parse(l.date)), txt: `LSZ ${l.side} ${l.date} ACTIVE` }));
     zones.flatMap(z => z.members.filter(m => m.kind === 'option' && m.pillar === 'P8')).filter((v, i, a) => a.findIndex(x => x.id === v.id) === i)
       .forEach(o => O.push({ k, px: o.price, txt: `${o.label} -> ${o.price.toFixed(card.pip === 0.01 ? 3 : 5)}` }));
     card.pillars.P5.sd.filter(z => z.brokenAt === null && inBand(z.lo, z.hi) && Date.parse(card.window.cutoff) - z.t <= 21 * 86_400_000)
-      .forEach(z => S.push({ k, top: z.hi, bot: z.lo, t0: z.t, dem: z.side === 'demand', txt: `${z.tf} (${z.mitigations === 0 ? 'Unmitigated' : z.mitigations + 'X'}) | ${z.type}` }));
+      .forEach(z => S.push({ k, top: z.hi, bot: z.lo, t0: clip(z.t), dem: z.side === 'demand', txt: `${z.tf} (${z.mitigations === 0 ? 'Unmitigated' : z.mitigations + 'X'}) | ${z.type}` }));
     zones.forEach(z => [...z.intra.map(i => i.price), ...(z.core ? [z.core.lo] : []), ...(z.spike ? [z.spike.lo] : [])].forEach(px => I.push({ k, px })));
     const rows: [string, string][] = [['E1 card', `${sha256.slice(0, 16)} ${card.schema_version}`], ['Asset / week', `${card.asset} ${card.week_monday} (detected from the last candle)`],
       ['Cutoff / spot', `${card.window.cutoff.slice(0, 16)}Z  ${card.spot_at_cutoff}`], ['Regime (P9)', `${card.regime.state} ${card.regime.direction}`],
@@ -63,6 +65,22 @@ export function compose() {
       ...card.missing_data.map(m => [`MISSING ${m.protocol}`, m.impact] as [string, string])];
     rows.forEach(([key, val]) => T.push({ k, key, val }));
   });
+  // P4.TURN-03 rule 4: deterministic label layout. Sort by price then priority (score); a label
+  // colliding with a placed one (within 3 pips on this card's scale) moves DOWN one free slot
+  // (3 slots exist); a label with no free slot is DROPPED and its zone id recorded here.
+  const droppedLabels: string[] = [];
+  const slotAnchor: { k: number; anchor: number; slot: number; id: string }[] = [];
+  for (const x of [...Z].sort((a, b) => (b.z.hi - a.z.hi) || (b.z.score - a.z.score))) {
+    const minSep = 3 * (x.z.hi - x.z.lo > 0 ? 0.0001 : 0.0001);  // per-card scale below
+    void minSep;
+    const sep = 3 * 0.0001 * (x.z.hi > 10 ? 100 : 1);             // DXY-scale anchors are ~100x coarser
+    let slot = 0;
+    while (slot < 3 && slotAnchor.some(y => y.k === x.k && Math.abs(y.anchor - (x.z.hi - slot * sep)) < sep))
+      slot++;
+    if (slot >= 3) { droppedLabels.push(x.z.id); continue; }
+    slotAnchor.push({ k: x.k, anchor: x.z.hi - slot * sep, slot, id: x.z.id });
+  }
+  const anchorOf = (z: CardZone) => slotAnchor.find(y => y.id === z.id && y.k >= 0 && Z.some(w => w.z.id === y.id && w.k === y.k))!.anchor;
   const ks = (xs: { k: number }[]) => arr(xs.map(x => String(x.k)), '-1');
   const L: string[] = ['', '// =====================================================================================================',
     `// E1 LAYER v5 - GENERATED by m1/src/compose.ts from ${cards.length} card(s): ${cards.map(c => `${c.path} ${c.sha256.slice(0, 16)}`).join(', ')}`,
@@ -75,15 +93,16 @@ export function compose() {
     'e1ShowOpt   = input.bool(true, "E1 option strikes (own pair)", group = "E1 - Trident 5.3.3")',
     'e1ShowSd    = input.bool(true, "E1 canonical 4H/1H S/D", group = "E1 - Trident 5.3.3")',
     'e1ShowIntra = input.bool(false, "E1 intra-zone levels", group = "E1 - Trident 5.3.3")',
-    'e1ShowTbl   = input.bool(true, "E1 card table", group = "E1 - Trident 5.3.3")',
+    'e1ShowTbl   = input.bool(false, "E1 card table", group = "E1 - Trident 5.3.3")',
     'string e1Ticker = str.upper(str.replace(syminfo.ticker, "/", ""))',
     `var e1KeyA = ${arr(cards.map(c => q(c.card.asset)), '""')}`,
     `var e1KeyW = ${arr(cards.map(c => String(Date.parse(c.card.week_monday + 'T00:00:00Z'))), 'na')}`,
     `var e1Cut = ${arr(cards.map(c => String(Date.parse(c.card.window.cutoff))), 'na')}`,
     `var e1zK = ${ks(Z)}`, `var e1zTop = ${arr(Z.map(x => f(x.z.hi)), 'na')}`, `var e1zBot = ${arr(Z.map(x => f(x.z.lo)), 'na')}`,
-    `var e1zT0 = ${arr(Z.map(x => String(x.z.origin)), '0')}`,
+    `var e1zT0 = ${arr(Z.map(x => String(x.t0)), '0')}`,   // R36-clipped origin (monday - 7d)
     `var e1zFill = ${arr(Z.map(x => `color.new(${rgb(x.z.role, x.z.degree)}, ${x.z.degree === 'EXTREME' || x.z.degree === 'HEAVY' ? 72 : 82})`), 'na')}`,
-    `var e1zBord = ${arr(Z.map(x => rgb(x.z.role, x.z.degree)), 'na')}`, `var e1zTxt = ${arr(Z.map(x => q(label(x.z))), '""')}`,
+    `var e1zBord = ${arr(Z.map(x => rgb(x.z.role, x.z.degree)), 'na')}`, `var e1zAnchor = ${arr(Z.map(x => f(anchorOf(x.z))), 'na')}`,   // staggered label anchors (collisions moved down, overflow dropped)
+    `var e1zTxt = ${arr(Z.map(x => q(label(x.z))), '""')}`,
     `var e1lK = ${ks(Ls)}`, `var e1lTop = ${arr(Ls.map(x => f(x.top)), 'na')}`, `var e1lBot = ${arr(Ls.map(x => f(x.bot)), 'na')}`,
     `var e1lT0 = ${arr(Ls.map(x => String(x.t0)), '0')}`, `var e1lTxt = ${arr(Ls.map(x => q(x.txt)), '""')}`,
     `var e1oK = ${ks(O)}`, `var e1oPx = ${arr(O.map(x => f(x.px)), 'na')}`, `var e1oTxt = ${arr(O.map(x => q(x.txt)), '""')}`,
@@ -105,7 +124,6 @@ export function compose() {
     '            break',
     '    int e1WkO = e1Mon - 7200000',
     '    int e1WkE = e1Mon + 4 * 86400000 + 75600000',
-    '    int e1TsR = e1Mon + 25 * 86400000',
     '    if e1Wk < 0',
     '        table.cell(e1Tbl, 0, 0, "E1", text_color = color.silver, text_size = size.small)',
     '        table.cell(e1Tbl, 1, 0, "NO CARD for " + e1Ticker + " week of " + str.format_time(e1Mon, "yyyy-MM-dd", "UTC") + " (last candle " + str.format_time(time, "yyyy-MM-dd HH:mm", "UTC") + " UTC)", text_color = color.rgb(255, 120, 120), text_size = size.small)',
@@ -116,18 +134,18 @@ export function compose() {
     '        if e1ShowIP and array.size(e1zK) > 0',
     '            for i = 0 to array.size(e1zK) - 1',
     '                if array.get(e1zK, i) == e1Wk',
-    '                    box.new(array.get(e1zT0, i), array.get(e1zTop, i), e1TsR, array.get(e1zBot, i), xloc = xloc.bar_time, bgcolor = array.get(e1zFill, i), border_color = array.get(e1zBord, i), border_width = 1)',
-    '                    label.new(e1WkO, array.get(e1zTop, i), array.get(e1zTxt, i), xloc = xloc.bar_time, style = label.style_label_lower_left, color = color.new(color.black, 100), textcolor = array.get(e1zBord, i), size = size.tiny)',
+    '                    box.new(array.get(e1zT0, i), array.get(e1zTop, i), e1WkE, array.get(e1zBot, i), xloc = xloc.bar_time, bgcolor = array.get(e1zFill, i), border_color = array.get(e1zBord, i), border_width = 1)',
+    '                    label.new(e1WkO, array.get(e1zAnchor, i), array.get(e1zTxt, i), xloc = xloc.bar_time, style = label.style_label_lower_left, color = color.new(color.black, 100), textcolor = array.get(e1zBord, i), size = size.small)',
     '        if e1ShowLsz and array.size(e1lK) > 0',
     '            for i = 0 to array.size(e1lK) - 1',
     '                if array.get(e1lK, i) == e1Wk',
-    '                    box.new(array.get(e1lT0, i), array.get(e1lTop, i), e1TsR, array.get(e1lBot, i), xloc = xloc.bar_time, bgcolor = color.new(color.rgb(80, 230, 100), 85), border_color = color.rgb(80, 230, 100), border_width = 1, border_style = line.style_dashed)',
-    '                    label.new(e1WkE, array.get(e1lBot, i), array.get(e1lTxt, i), xloc = xloc.bar_time, style = label.style_label_upper_right, color = color.new(color.black, 100), textcolor = color.rgb(80, 230, 100), size = size.tiny)',
+    '                    box.new(array.get(e1lT0, i), array.get(e1lTop, i), e1WkE, array.get(e1lBot, i), xloc = xloc.bar_time, bgcolor = color.new(color.rgb(80, 230, 100), 85), border_color = color.rgb(80, 230, 100), border_width = 1, border_style = line.style_dashed)',
+    '                    label.new(e1WkE, array.get(e1lBot, i), array.get(e1lTxt, i), xloc = xloc.bar_time, style = label.style_label_upper_right, color = color.new(color.black, 100), textcolor = color.rgb(80, 230, 100), size = size.small)',
     '        if e1ShowOpt and array.size(e1oK) > 0',
     '            for i = 0 to array.size(e1oK) - 1',
     '                if array.get(e1oK, i) == e1Wk',
     '                    line.new(e1WkO, array.get(e1oPx, i), e1WkE, array.get(e1oPx, i), xloc = xloc.bar_time, color = color.rgb(255, 200, 60), width = 1, style = line.style_dashed)',
-    '                    label.new(e1WkE, array.get(e1oPx, i), array.get(e1oTxt, i), xloc = xloc.bar_time, style = label.style_label_right, color = color.new(color.black, 100), textcolor = color.rgb(255, 200, 60), size = size.tiny)',
+    '                    label.new(e1WkE, array.get(e1oPx, i), array.get(e1oTxt, i), xloc = xloc.bar_time, style = label.style_label_right, color = color.new(color.black, 100), textcolor = color.rgb(255, 200, 60), size = size.small)',
     '        if e1ShowSd and array.size(e1sK) > 0',
     '            for i = 0 to array.size(e1sK) - 1',
     '                if array.get(e1sK, i) == e1Wk',
@@ -141,13 +159,13 @@ export function compose() {
     '            int r = 0',
     '            for i = 0 to array.size(e1tK) - 1',
     '                if array.get(e1tK, i) == e1Wk',
-    '                    table.cell(e1Tbl, 0, r, array.get(e1tKey, i), text_color = color.silver, text_size = size.tiny, text_halign = text.align_left)',
-    '                    table.cell(e1Tbl, 1, r, array.get(e1tVal, i), text_color = color.white, text_size = size.tiny, text_halign = text.align_left)',
+    '                    table.cell(e1Tbl, 0, r, array.get(e1tKey, i), text_color = color.silver, text_size = size.small, text_halign = text.align_left)',
+    '                    table.cell(e1Tbl, 1, r, array.get(e1tVal, i), text_color = color.white, text_size = size.small, text_halign = text.align_left)',
     '                    r += 1', ''];
   const out = Buffer.concat([Buffer.from(baselineText), Buffer.from(L.join('\n'))]);
   const path = 'm1/out/plutus-vision-v5-e1.pine';
   writeFileSync(`${ROOT}${path}`, out);
   return { path, sha: createHash('sha256').update(out).digest('hex'), cards: cards.map(c => c.path), assets: [...new Set(cards.map(c => c.card.asset))],
-    zones: Z.length, lsz: Ls.length, opts: O.length, sd: S.length, labelsOff: LABEL_INPUTS_OFF };
+    zones: Z.length, lsz: Ls.length, opts: O.length, sd: S.length, labelsOff: LABEL_INPUTS_OFF, droppedLabels };
 }
 if (import.meta.main) { console.log(JSON.stringify(compose())); }

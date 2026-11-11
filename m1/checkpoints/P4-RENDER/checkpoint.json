@@ -1,0 +1,39 @@
+{
+ "schema": 1,
+ "id": "P4-RENDER",
+ "type": "checkpoint",
+ "asset": "EURUSD",
+ "week": "2026-07-06",
+ "claims": {
+  "evidence_ready": true,
+  "engine_ready": true,
+  "composition_ready": true,
+  "render_observed": true
+ },
+ "comparison": "m1/checkpoints/P4-RENDER/comparison.json",
+ "visual": [
+  {
+   "path": "m1/checkpoints/P4-RENDER/visual-room-frame.png",
+   "expectation": "the live Pinebox room (instance 4, EURUSD 1H, fixture store 11006 bars) rendering the regenerated composition plutus-vision-v5-e1.pine (sha 518f40d4); the frame shows the EMA-ribbon baseline on the fixture tail viewport - the E1 layer's golden-week objects anchor off this viewport (see the UNOBSERVABLE row)"
+  }
+ ],
+ "pinebox": {
+  "asset": "EURUSD",
+  "week": "2026-07-06",
+  "mode": "local",
+  "instance": 4,
+  "session": "pv52-build",
+  "ports": {
+   "station": 10141,
+   "room": 9843
+  },
+  "load": "plutus-vision-v5-e1.pine sha 518f40d4b49ff0be"
+ },
+ "gates": {
+  "checkDerivedCard": 0,
+  "checkR36": 0,
+  "checkPresentation": 0,
+  "checkRoomBudget": 0
+ },
+ "note": "P4.TURN-01..04; work commit 345f06a (TURN-01..03); TURN-04 = this checkpoint. Budget boundary reproduced exactly across two independent runs (2031600). Scratch probes remain untracked under m1/out/scratch-room-budget/ (never committed)."
+}

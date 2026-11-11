@@ -1,0 +1,259 @@
+{
+ "checkpoint": "P4-RENDER",
+ "baseline": 62,
+ "budget": 2031585,
+ "method": "bisection",
+ "probes": 35,
+ "captures": [
+  {
+   "n": 0,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194624,
+   "sha256": "7c9adafcfa0ffccd3a3e27d75521cacf1d3ff31d540915d106897e4cbfac1dbd"
+  },
+  {
+   "n": 124,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194635,
+   "sha256": "7cc60f610c77cebae4afe7dd5883b9939544e4977781b0baf544e733185ca3ce"
+  },
+  {
+   "n": 248,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194550,
+   "sha256": "de86d2ae1193f9a6742fcfdfc746364b578e75d9c274afa3e6df2ab59c22ef40"
+  },
+  {
+   "n": 496,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194609,
+   "sha256": "e44b17273bcc8ce12f6f9a296c6b5f40e9ca1a52521d6dd89f1c52c988758556"
+  },
+  {
+   "n": 992,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194489,
+   "sha256": "c89abbf1d9a7628cc8ca8859ca5bc838f32d76dfb0d74e35d4e3ca0b6efeb285"
+  },
+  {
+   "n": 1984,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194445,
+   "sha256": "3cadb998b4d30f2010b746a7f7df83f7b47e7eb578c104ab40b40ce266cf6e02"
+  },
+  {
+   "n": 3968,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194548,
+   "sha256": "abbcafd28fa27ef7fb2961dcc97704c19b59997efafd4f033ef2f4c3a80114d3"
+  },
+  {
+   "n": 7936,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194509,
+   "sha256": "bc7930696c6db9dac661d1674a0b5319bff6fb95c51ede85975ec95c2ed011ba"
+  },
+  {
+   "n": 15872,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194567,
+   "sha256": "725876748a9e1e58b086b310d18fb562d783f22afb36cfa825ef455dc0baa953"
+  },
+  {
+   "n": 31744,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194656,
+   "sha256": "776fb363b0be7cdf86973da6cbe0db6907ec7966e60337291a5c24fd505fa753"
+  },
+  {
+   "n": 63488,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194612,
+   "sha256": "e13a4c39b9856ce06152a6f6509a9b369ba52a6c852098546e37f2a62760f501"
+  },
+  {
+   "n": 126976,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194590,
+   "sha256": "96449f9b639d1e287f894e8a524991cad917e70b1b4fd2b079e08413761916da"
+  },
+  {
+   "n": 253952,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194467,
+   "sha256": "136a90247b13e4f1ae0d1df249fc404f5d5da60d13307a48534930bd15886d18"
+  },
+  {
+   "n": 507904,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194509,
+   "sha256": "5900761f7ada5d747a955a7883c2c8336e8c6f1adbed8bc18204b8f004c92f80"
+  },
+  {
+   "n": 1015808,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194476,
+   "sha256": "0497c716b3bd08b935b23c3a10bfc9112df0dc88b1bca6c88963bce7756851c6"
+  },
+  {
+   "n": 2031616,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194146,
+   "sha256": "36ca7fcd959a3480fd61ac4741a8d5c9c80bd1ce7687c2df074f8f4ba39a53fb"
+  },
+  {
+   "n": 1523712,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194123,
+   "sha256": "1111ae0165103b784af9dd69a3e74a9a9f89c8f309958aeed879951671e8983a"
+  },
+  {
+   "n": 1777664,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194127,
+   "sha256": "d707e40072ae2292beacdb274c6e0e54cf86a35693b269bb625b09357460e1c2"
+  },
+  {
+   "n": 1904640,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194130,
+   "sha256": "5061569b6372bae84e472455a8093af81a6a1850ba46627306e64d5534af7aa7"
+  },
+  {
+   "n": 1968128,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194085,
+   "sha256": "44562e5118219a287148947e134ad5daa767445852bbbd505113283995bafd12"
+  },
+  {
+   "n": 1999872,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194043,
+   "sha256": "a60a6d47a9ce45742a7bc0c298dbd8ceb4c924d52b6b74083c2b8400b705897f"
+  },
+  {
+   "n": 2015744,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 193995,
+   "sha256": "c0fb3a213c962521938abd7e50f7b1497b7b8110565e078ad3220cdf71e2b4cb"
+  },
+  {
+   "n": 2023680,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194102,
+   "sha256": "f0ac61e6f8229b036ce918275bcce5254322c0170994ee045732ec6e8f019ff9"
+  },
+  {
+   "n": 2027648,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194202,
+   "sha256": "3797f220c4e48177f7e0fa1d900ac9782ce41cd676069cf1c438d320240b8f6d"
+  },
+  {
+   "n": 2029632,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194214,
+   "sha256": "3dc87435341e09ed1d6d18aee0685d57097be8be344d81609db13bdf25108333"
+  },
+  {
+   "n": 2030624,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194116,
+   "sha256": "ebe5bf80e7c8e2356484a92d9743a0060440f3077a56753c42f5352be5e7add4"
+  },
+  {
+   "n": 2031120,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194203,
+   "sha256": "2b2e9e398324cc66ccc03841b018ced5f1d5ea0a8d418134b94e209dba21c24d"
+  },
+  {
+   "n": 2031368,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194042,
+   "sha256": "119bd63929675b47b7a69293c6256b2ebf7005ec13a222e33c7eb3aa3297917f"
+  },
+  {
+   "n": 2031492,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 193994,
+   "sha256": "57a9b218090ebb819319556e7545fb32679db0397b93404837c1908830ac7e86"
+  },
+  {
+   "n": 2031554,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 194098,
+   "sha256": "9c90dd7608ae54f72315b658269f21e308b23861bf49f468c3f70d2d09a1e927"
+  },
+  {
+   "n": 2031585,
+   "accepted": true,
+   "nonempty": true,
+   "bytes": 198353,
+   "sha256": "4621c9bd1687a98c4bbfd6d310cb5b5ce9958c9375f6a31c7872b5104b6cd302"
+  },
+  {
+   "n": 2031600,
+   "accepted": false,
+   "nonempty": false,
+   "bytes": 0,
+   "sha256": null,
+   "reason": "load refused (station timeout / runtime error): no frame captured"
+  },
+  {
+   "n": 2031592,
+   "accepted": false,
+   "nonempty": false,
+   "bytes": 0,
+   "sha256": null,
+   "reason": "load refused (station timeout / runtime error): no frame captured"
+  },
+  {
+   "n": 2031588,
+   "accepted": false,
+   "nonempty": false,
+   "bytes": 0,
+   "sha256": null,
+   "reason": "load refused (station timeout / runtime error): no frame captured"
+  },
+  {
+   "n": 2031586,
+   "accepted": false,
+   "nonempty": false,
+   "bytes": 0,
+   "sha256": null,
+   "reason": "load refused (station timeout / runtime error): no frame captured"
+  }
+ ],
+ "note": "synthetic objects only in m1/out/scratch-room-budget/ (git-ignored scratch); accepted captures hashed; the boundary is the station render timeout (PINE_STATION_SLOW) - the display census additionally shows Pine caps drawn boxes at 500 (max_boxes_count); the empirical budget is the load-timeout boundary, an integer by construction"
+}

@@ -1,0 +1,36 @@
+{
+ "schema": 1,
+ "id": "P3-ORGANS",
+ "type": "checkpoint",
+ "asset": "EURUSD",
+ "week": "2026-07-06",
+ "claims": {
+  "evidence_ready": true,
+  "engine_ready": false,
+  "composition_ready": false,
+  "render_observed": false
+ },
+ "comparison": "m1/checkpoints/P3-ORGANS/comparison.json",
+ "visual": [
+  {
+   "path": "m1/checkpoints/P3-ORGANS/visual-organ-gates.png",
+   "expectation": "the verbatim tool output of the primary's re-run of all seven organ gates (DONOR_/LMV_/OBCV_/FRESHNESS_/PRESSURE_/TOUCH_ tokens) - the organ wave's own evidence, not a chart render"
+  }
+ ],
+ "pinebox": {
+  "asset": "EURUSD",
+  "week": "2026-07-06",
+  "mode": "local",
+  "note": "organ-plane checkpoint; chart render comes at P4/P5"
+ },
+ "gates": {
+  "checkDonors": 0,
+  "checkCandlePressure": 0,
+  "checkLmv": 0,
+  "checkObcv": 0,
+  "checkObcvReconcile": 0,
+  "checkFreshness": 0,
+  "checkPressure": 0
+ },
+ "note": "P3.TURN-01..07; donors byte-verified against the v4.5.3 baseline by the primary; bunx tsc --noEmit exit 0 whole-project"
+}

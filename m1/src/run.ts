@@ -98,7 +98,7 @@ if (import.meta.main) {
   const { path, sha, card } = await runE1(asset, monday);
   console.log(`card ${path} sha256 ${sha}`);
   console.log(card.audit.join('\n'));
-  const dec = pip === 0.01 ? 3 : 5;
+  const pip = card.pip; const dec = pip === 0.01 ? 3 : 5;
   for (const z of card.zones.filter(z => z.score >= 4).sort((a, b) => b.hi - a.hi))
     console.log(`${z.id} ${z.lo.toFixed(dec)}-${z.hi.toFixed(dec)} ${z.role} ${z.name} | ${z.degree} ${z.score} | ZFP ${z.zfp}% ${z.zoneType} | ${z.bom ? z.bom.tf + ' ' + z.bom.type + ' ' + z.bom.mitigations + 'X' : '-'} | react ${z.reactionsPreCutoff} | ${z.members.map(m => m.kind).join(',')}`);
 }

@@ -1,0 +1,53 @@
+{
+ "schema": 1,
+ "checkpoint": "P3-ORGANS",
+ "asset": "EURUSD",
+ "week": "2026-07-06",
+ "rows": [
+  {
+   "family": "donor quarantine",
+   "status": "MATCHED",
+   "evidence": "primary re-run checkDonors exit 0; 9 donor sha256 independently re-measured byte-exact vs PLUTUS v4.5.3 baseline; no executable ts/js under m1/donors; no imports into donors"
+  },
+  {
+   "family": "candle pressure",
+   "status": "MATCHED",
+   "evidence": "m1/out/w2/checkCandlePressure.out: 5 tokens incl. TOUCH_POST_CUTOFF_REJECTED adversarial"
+  },
+  {
+   "family": "LMV defended-edge",
+   "status": "MATCHED",
+   "evidence": "m1/out/w2/checkLmv.out: LMV_CLUSTER_OK, LMV_REACTION_3_OK, LMV_KIND_2_OK, LMV_DEFENDED_EDGE_OK, LMV_TRUNCATION_NAMED"
+  },
+  {
+   "family": "OBCV floors",
+   "status": "MATCHED",
+   "evidence": "m1/out/w2/checkObcv.out: 4H=50/1H=30/30m=20 pips from exported DISPLACEMENT_FLOOR constant, 30m-missing named, post-cutoff rejected"
+  },
+  {
+   "family": "OBCV reconciliation",
+   "status": "MATCHED",
+   "evidence": "m1/out/w2/checkObcvReconcile.out: AGREED/EDGE_CONFLICT/ADDITIONAL_LEVEL_ONLY/NO_CANONICAL_SCORE; no geometry rewrite"
+  },
+  {
+   "family": "freshness ledger",
+   "status": "MATCHED",
+   "evidence": "m1/out/w2/checkFreshness.out: state map, VIOLATED, gap-not-depleted, event count"
+  },
+  {
+   "family": "pressure lifecycle",
+   "status": "MATCHED",
+   "evidence": "m1/out/w2/checkPressure.out: VIRGIN..FORTRESS/BROKEN, SHIELD_FUEL, gap-not-battle"
+  }
+ ],
+ "visual_sha256": {
+  "m1/checkpoints/P3-ORGANS/visual-organ-gates.png": "3c8682a38a27cfe8e7b3b8145e45c666fde7f07236871ff87952cb2d35cce899"
+ },
+ "summary": {
+  "matched": 7,
+  "wrong": 0,
+  "missing": 0,
+  "extra": 0,
+  "unobservable": 0
+ }
+}

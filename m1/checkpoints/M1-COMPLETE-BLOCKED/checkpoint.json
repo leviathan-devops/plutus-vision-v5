@@ -1,0 +1,45 @@
+{
+ "schema": 1,
+ "id": "M1-COMPLETE-BLOCKED",
+ "type": "blocked",
+ "asset": "EURUSD",
+ "week": "2026-07-06",
+ "claims": {
+  "evidence_ready": true,
+  "engine_ready": true,
+  "composition_ready": true,
+  "render_observed": true
+ },
+ "comparison": "m1/checkpoints/M1-COMPLETE-BLOCKED/comparison.json",
+ "visual": [
+  {
+   "path": "m1/checkpoints/M1-COMPLETE-BLOCKED/visual-eurusd-golden-week.png",
+   "expectation": "the EURUSD golden week (Jul 3-9 2026) with the repaired size.small labels: 11+ zone labels, 6 S/D labels, 5 option-strike labels, the LSZ cluster - all family|degree|ZFP grammar verbatim"
+  },
+  {
+   "path": "m1/checkpoints/M1-COMPLETE-BLOCKED/visual-dxy-cell-defect.png",
+   "expectation": "the DXY golden-week attempt on a fresh cold boot showing the room's DXY cell defect (CELL_SPAN_ABSENT banner) - the named block for P5.TURN-03"
+  }
+ ],
+ "pinebox": {
+  "asset": "EURUSD",
+  "week": "2026-07-06",
+  "mode": "local",
+  "session": "gw-labels (bt-mwb40xdv-6jxmcu), room instance 4"
+ },
+ "card": "m1/out/e1-card-EURUSD-2026-07-06.json",
+ "composition": "m1/out/plutus-vision-v5-e1.pine",
+ "blocked": [
+  {
+   "token": "GATE_ASSET_CONFLICT",
+   "detail": "gates/commit_gate.py:276 hardcodes pinebox.asset=='DXY' for m1-complete while BUILD_WORKFLOW P5.TURN-01 mandates EURUSD; the gate is admin-token protected",
+   "resume": "operator admin token aligns the gate to policy m1.assets, or an operator ruling"
+  },
+  {
+   "token": "ROOM_DXY_CELL_SPAN_ABSENT",
+   "detail": "the room page's DXY 1H cell reports no first/last bar time on every boot (fresh cold boots included) while the server /cells endpoint reports full DXY spans - a page-side defect in the protected Pinebox package",
+   "resume": "a Pinebox room build whose DXY cell reads spans, or operator acceptance of the EURUSD identity"
+  }
+ ],
+ "note": "All 13 policy families MATCHED with verbatim vision evidence on the EURUSD golden week; cloud/local parity OK (base acee9172b8255a43 both sides); bend proofs green. The m1-complete COMMIT is blocked by the two named operator decisions above; this blocked checkpoint carries the full evidence pack for the operator review."
+}

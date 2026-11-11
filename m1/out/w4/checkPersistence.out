@@ -1,0 +1,6 @@
+R2_KEYS_OK card=cards/EURUSD/2026-07-06/acee9172b8255a43dc9d565d918e8c045fa14b13775a2a4d59e09da83bd9b472.json pine=pine/EURUSD/2026-07-06/f44503d79368aae2a2cf51e5b7cfd39ae23772dbeca70ac8ef622beddb73a6c8.pine raws=4
+R2_IMMUTABLE_PUT_OK same-bytes idempotent; different-bytes refused R2_IMMUTABLE_VIOLATION
+D1_RUN_ROW_OK id=EURUSD-2026-07-06 state=COMPLETE
+D1_SOURCE_ROWS_OK n=4 ids=tv-bars-EURUSD-1H,tv-bars-EURUSD-4H,investinglive-protocol-a,ice-walls
+D1_ZONE_VERDICT_ROWS_OK zones=2 verdicts=1
+DUPLICATE_RUN_IDEMPOTENT run=EURUSD-2026-07-06 rows=1

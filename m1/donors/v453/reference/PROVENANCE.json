@@ -1,0 +1,50 @@
+{
+  "files": [
+    {
+      "copy": "bom-mom.ts.txt",
+      "sha256": "e92209d7e8bd1101d534ce27dd8597c5d0a9c550edae993105109cda69c119c3",
+      "source": "src/mdve/bom-mom.ts"
+    },
+    {
+      "copy": "freshness.ts.txt",
+      "sha256": "7dbcd5b4edd0be164014d74fa3b545c508873f44ae048cda4c7dd7a07fa2ac59",
+      "source": "src/mdve/freshness.ts"
+    },
+    {
+      "copy": "lmv.ts.txt",
+      "sha256": "b636f1790fd12cf4faf925f06dc475e5e2b3b1234cacdbc5cc7f7f3d39742eea",
+      "source": "src/mdve/lmv.ts"
+    },
+    {
+      "copy": "lqz-matrix.ts.txt",
+      "sha256": "68c87752a993f5f43f7b3005efe4f72eff3af9953a29fcaaf4c3d3cf92576d8a",
+      "source": "src/mdve/lqz-matrix.ts"
+    },
+    {
+      "copy": "ob-engine.ts.txt",
+      "sha256": "9f912c4f3773c7d81554671474e274d56b5c40a1f59178f77771746d10a020e8",
+      "source": "src/mdve/ob-engine.ts"
+    },
+    {
+      "copy": "obcv.ts.txt",
+      "sha256": "7054ddf53790900f05121bba256b54598a0a4cb220b4572051c8a179b7984a4b",
+      "source": "src/mdve/obcv.ts"
+    },
+    {
+      "copy": "shape-brain.ts.txt",
+      "sha256": "a1055008f4352c7fe8eadb8bbbf5bcd14b332e061c07d6ef1f003e0f759b194c",
+      "source": "src/brains/shape-brain.ts"
+    },
+    {
+      "copy": "storyline-engine.ts.txt",
+      "sha256": "d93156ebb2371139018e27b286a7283814263526dd833ef62ecf3cc33203fbf8",
+      "source": "src/brains/storyline-engine.ts"
+    },
+    {
+      "copy": "zone-pressure.ts.txt",
+      "sha256": "c79c509f824334fbe77a047e0fb1e018ffed4b2a50937f356be97ba23db5afcc",
+      "source": "src/mdve/zone-pressure.ts"
+    }
+  ],
+  "source_root": "/home/leviathan/JARVIS_WORKSPACE/Shared_Workspace/PLUTUS/ARCHIVE/agent/Checkpoints/v4.5.3_CLEAN_BASELINE"
+}

@@ -1,0 +1,28 @@
+{
+ "schema": 1,
+ "id": "DXY-SUBSTRATE",
+ "type": "blocked",
+ "asset": "DXY",
+ "week": "2026-07-06",
+ "claims": {
+  "evidence_ready": true,
+  "engine_ready": true,
+  "composition_ready": true,
+  "render_observed": false
+ },
+ "comparison": "m1/checkpoints/DXY-SUBSTRATE/comparison.json",
+ "visual": [
+  {
+   "path": "m1/checkpoints/DXY-SUBSTRATE/visual-dxy-golden-week-3x.png",
+   "expectation": "the DXY golden week at 3x HiDPI (Jul 7-9 visible): the v1-baseline zone bands at 96.0-97.8 with NO E1 grammar labels anywhere - the substrate evidence for the block"
+  }
+ ],
+ "pinebox": {
+  "asset": "DXY",
+  "week": "2026-07-06",
+  "mode": "local",
+  "session": "bt-mwb6ajru-vtiuv0 (the probe boot)",
+  "note": "the room ran; the E1 layer never evaluated a match on this cell"
+ },
+ "note": "The terminal substrate record: the DXY-cell evaluation defect is inside the protected Pinebox package (pinets/room cell wiring + compiled-state persistence in room-4.db). Resume: a room build with the DXY cell fix, or the operator ruling on the M1 asset contract."
+}

@@ -1,0 +1,43 @@
+{
+ "schema": 1,
+ "checkpoint": "P4-RENDER",
+ "asset": "EURUSD",
+ "week": "2026-07-06",
+ "rows": [
+  {
+   "family": "derived organ card seal",
+   "status": "MATCHED",
+   "evidence": "checkDerivedCard re-run this turn: DERIVED_SCHEMA_OK/DERIVED_BASE_IMMUTABLE/DERIVED_SUPERSEDES_OK/UNASSIGNED_PRECISION_OK, exit 0"
+  },
+  {
+   "family": "R36 window clipping",
+   "status": "MATCHED",
+   "evidence": "checkR36 re-run this turn: R36_LEFT_7D_OK/R36_RIGHT_FRIDAY_OK/R36_OLD_ORIGIN_NOT_DRAWN (54 starts >= Jun 29)/R36_ALL_OBJECTS_CLIPPED (8/8), exit 0; pine sha 518f40d4b49ff0be"
+  },
+  {
+   "family": "presentation de-clutter",
+   "status": "MATCHED",
+   "evidence": "checkPresentation re-run this turn: TABLE_OFF_BY_DEFAULT/INTRA_OFF_BY_DEFAULT/LABEL_COLLISION_ZERO (36 anchors)/SD_TEXT_COMPACT (14 texts), exit 0"
+  },
+  {
+   "family": "room object budget",
+   "status": "MATCHED",
+   "evidence": "checkRoomBudget: ROOM_BUDGET_INTEGER 2031600 (baseline composition 62 objects; boundary = PINE_STATION_SLOW at 2,031,608; reproduced twice, 36 probes, 32/32 accepted captures hashed in m1/out/room-budget-P4-RENDER.json)"
+  },
+  {
+   "family": "E1 families visible on the golden-week viewport",
+   "status": "UNOBSERVABLE",
+   "evidence": "the room's default fixture viewport shows Aug-Nov 2026 (last candles); the E1 objects anchor at Jul 6-10 and render off-viewport (census tables:1/boxes:5/lines:116 with no visible table in the frame query). The golden-week viewport is P5.TURN-01's first action - not observable at P4."
+  }
+ ],
+ "visual_sha256": {
+  "m1/checkpoints/P4-RENDER/visual-room-frame.png": "c34ac6be3d5f2cc3820748f844066372ce42a85ec3cb5de1dd52f81d43b07bd1"
+ },
+ "summary": {
+  "matched": 4,
+  "wrong": 0,
+  "missing": 0,
+  "extra": 0,
+  "unobservable": 1
+ }
+}

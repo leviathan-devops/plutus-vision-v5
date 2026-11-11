@@ -1,0 +1,34 @@
+{
+ "schema": 1,
+ "id": "P1-EVIDENCE",
+ "type": "checkpoint",
+ "asset": "EURUSD",
+ "week": "2026-07-06",
+ "claims": {
+  "evidence_ready": true,
+  "engine_ready": false,
+  "composition_ready": false,
+  "render_observed": false
+ },
+ "comparison": "m1/checkpoints/P1-EVIDENCE/comparison.json",
+ "visual": [
+  {
+   "path": "m1/checkpoints/P1-EVIDENCE/visual-protocol-a.png",
+   "expectation": "Protocol A pass-2 capture of EURUSD/USDJPY Monday expiries (investinglive headed page, three-pass extraction source); the evidence plane hashes this exact table image"
+  }
+ ],
+ "pinebox": {
+  "asset": "EURUSD",
+  "week": "2026-07-06",
+  "mode": "local",
+  "note": "evidence-plane checkpoint; no chart render claimed in P1"
+ },
+ "gates": {
+  "checkBars": 0,
+  "checkProtocolA": 0,
+  "checkP4": 0,
+  "checkP7": 0,
+  "checkManifest": 0
+ },
+ "note": "P1.TURN-01..05; primary re-ran every gate this turn (exit 0, all named tokens in tool output); diffs hunk-audited; W1 file scope verified exact"
+}

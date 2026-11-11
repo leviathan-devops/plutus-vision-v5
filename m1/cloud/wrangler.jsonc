@@ -1,0 +1,11 @@
+{
+  "name": "plutus-e1-staging",
+  "main": "worker.ts",
+  "compatibility_date": "2024-09-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "973c234c2f4bfc9086089ab1364d10bb",
+  "durable_objects": { "bindings": [{ "name": "E1_RUN", "class_name": "E1Run" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["E1Run"] }],
+  "r2_buckets": [{ "binding": "E1_R2", "bucket_name": "plutus-e1-staging" }],
+  "d1_databases": [{ "binding": "E1_D1", "database_name": "plutus-e1-staging", "database_id": "f5ed4679-5707-4922-b5d7-8b90ec322f87" }]
+}
