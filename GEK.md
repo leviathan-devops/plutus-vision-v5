@@ -11,6 +11,6 @@ evidence:
   claims: [complete, proven, verified, PASS, MATCHED]
   requires_oracle_metric: true
 phases:
-## phase P5 | turns: P5.TURN-01, P5.TURN-02, P5.TURN-03 | tokens: [PV-Gate: checkpoint@m1/checkpoints/**] | allow: m1/**, design/**, gates/**, GEK.md, GEK.lock, gate-spec.json, thresholds.json, .github/**, m1/evidence/** | deny: archive/**
-## phase P4 | turns: P4.TURN-01, P4.TURN-02, P4.TURN-03, P4.TURN-04 | allow: m1/**, design/**, GEK.md, GEK.lock, gate-spec.json, thresholds.json, .github/**, m1/evidence/** | deny: archive/**
+## phase P5 | turns: P5.TURN-01, P5.TURN-02, P5.TURN-03 | tokens: [PV-Gate: checkpoint@m1/checkpoints/**] | allow: m1/**, design/**, gates/**, GEK.md, GEK.lock, gate-spec.json, thresholds.json, .github/**, m1/evidence/** | deny: archive/**, **/*.sh, **/*.exe, **/*.bin
+## phase P4 | turns: P4.TURN-01, P4.TURN-02, P4.TURN-03, P4.TURN-04 | allow: m1/**, design/**, GEK.md, GEK.lock, gate-spec.json, thresholds.json, .github/**, m1/evidence/** | deny: archive/**, **/*.sh, **/*.exe, **/*.bin
 remote: https://github.com/leviathan-devops/plutus-vision-v5.git

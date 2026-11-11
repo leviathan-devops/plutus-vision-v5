@@ -19,6 +19,14 @@
       "anchor": "design/BUILD_WORKFLOW_v5.2_COMPILER_GRADE.md:1"
     },
     {
+      "kind": "oracle_pin",
+      "anchor": "GEK.md:8"
+    },
+    {
+      "kind": "oracle_pin",
+      "anchor": "GEK.md:8"
+    },
+    {
       "kind": "armed",
       "anchor": "gek://design/DESIGN_BLUEPRINT_GEK_V1.md:246"
     },
@@ -29,6 +37,18 @@
     {
       "kind": "ceremony",
       "anchor": "gek://design/DESIGN_BLUEPRINT_GEK_V1.md:239"
+    },
+    {
+      "kind": "spec_pin",
+      "anchor": "gek://design/DESIGN_BLUEPRINT_GEK_V1.md:246"
+    },
+    {
+      "kind": "lock_pin",
+      "anchor": "gek://design/DESIGN_BLUEPRINT_GEK_V1.md:246"
+    },
+    {
+      "kind": "thresholds_pin",
+      "anchor": "gek://design/DESIGN_BLUEPRINT_GEK_V1.md:246"
     },
     {
       "kind": "evidence_class",
@@ -63,7 +83,10 @@
         "m1/evidence/**"
       ],
       "deny": [
-        "archive/**"
+        "archive/**",
+        "**/*.sh",
+        "**/*.exe",
+        "**/*.bin"
       ],
       "anchor": "design/BUILD_WORKFLOW_v5.2_COMPILER_GRADE.md:1508"
     },
@@ -185,7 +208,10 @@
         "m1/evidence/**"
       ],
       "deny": [
-        "archive/**"
+        "archive/**",
+        "**/*.sh",
+        "**/*.exe",
+        "**/*.bin"
       ],
       "anchor": "design/BUILD_WORKFLOW_v5.2_COMPILER_GRADE.md:1320"
     }
@@ -223,5 +249,16 @@
       "thresholds_ref": "thresholds.json#commit-substance-v1"
     }
   ],
-  "oracles": []
+  "oracles": [
+    {
+      "path": "m1/evidence/operator-zones-eurusd/operator-zones.json",
+      "metric": "zone_recall>=0.95",
+      "anchor": "GEK.md:oracle"
+    },
+    {
+      "path": "m1/evidence/operator-zones-eurusd/operator-zones.json",
+      "metric": "zone_recall>=0.95",
+      "anchor": "GEK.md:oracle"
+    }
+  ]
 }
